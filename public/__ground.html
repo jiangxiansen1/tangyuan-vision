@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="utf-8" /><title>ground diagnostics</title>
+  <style>body{margin:0;background:#222;color:#eee;font-family:monospace;padding:16px}pre{line-height:1.5}</style>
+  </head>
+  <body>
+    <pre id="out">running…</pre>
+    <iframe id="f" src="/" style="width:1200px;height:700px;border:1px solid #555"></iframe>
+    <script>
+      // Report the RESOLVED ground at every level that can own one, plus which
+      // stylesheet rules actually match :root. Reasoning about a cascade from the
+      // source is what produced a contradiction; this reads the browser's answer.
+      const log = [];
+      const p = (s) => { log.push(s); document.getElementById('out').textContent = log.join('\n'); };
+
+      function rgb(s) {
+        const m = String(s).match(/rgba?\(([^)]+)\)/);
+        if (!m) return s;
+        const v = m[1].split(',').map((x) => parseFloat(x));
+        return '#' + v.slice(0, 3).map((n) => Math.round(n).toString(16).padStart(2, '0')).join('');
+      }
+
+      setTimeout(() => {
+        const w = document.getElementById('f').contentWindow;
+        const d = document.getElementById('f').contentDocument;
+        const cs = (el) => w.getComputedStyle(el);
+
+        p('html  bg=' + rgb(cs(d.documentElement).backgroundColor) +
+          '  --color-canvas=' + cs(d.documentElement).getPropertyValue('--color-canvas').trim() +
+          '  scheme=' + cs(d.documentElement).colorScheme +
+          '  data-ground=' + (d.documentElement.getAttribute('data-ground') || '(none)'));
+
+        p('body  bg=' + rgb(cs(d.body).backgroundColor) +
+          '  --color-canvas=' + cs(d.body).getPropertyValue('--color-canvas').trim());
+
+        const scene = d.querySelector('.scene');
+        if (scene) {
+          p('scene bg=' + rgb(cs(scene).backgroundColor) +
+            '  --color-canvas=' + cs(scene).getPropertyValue('--color-canvas').trim() +
+            '  --color-text=' + cs(scene).getPropertyValue('--color-text').trim());
+          p('      class=' + (scene.className || '').toString().slice(0, 60) +
+            '  data-ground=' + (scene.getAttribute('data-ground') || '(none)'));
+        }
+
+        // Which rules mention --color-canvas, and in what order do they win?
+        p('');
+        p('rules declaring --color-canvas (in cascade order):');
+        for (const sheet of d.styleSheets) {
+          let rules;
+          try { rules = sheet.cssRules; } catch { continue; }
+          const walk = (list) => {
+            for (const r of list) {
+              if (r.style && r.style.getPropertyValue('--color-canvas')) {
+                p('  ' + String(r.selectorText || r.conditionText || r.cssText.slice(0, 40)).slice(0, 70) +
+                  '  -> ' + r.style.getPropertyValue('--color-canvas').trim());
+              }
+              if (r.cssRules) walk(r.cssRules);
+            }
+          };
+          walk(rules);
+        }
+
+        // And the same for the light/dark ground blocks specifically.
+        p('');
+        p('ground selectors present:');
+        for (const sheet of d.styleSheets) {
+          let rules;
+          try { rules = sheet.cssRules; } catch { continue; }
+          const walk = (list) => {
+            for (const r of list) {
+              if (r.selectorText && /data-ground/.test(r.selectorText)) {
+                p('  ' + r.selectorText.replace(/\s+/g, ' ').slice(0, 80));
+              }
+              if (r.cssRules) walk(r.cssRules);
+            }
+          };
+          walk(rules);
+        }
+        p('DONE');
+      }, 2600);
+    </script>
+  </body>
+</html>

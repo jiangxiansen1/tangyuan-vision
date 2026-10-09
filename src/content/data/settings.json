@@ -2,10 +2,10 @@
   "siteTitle": "汤圆Vision",
   "siteTitleSuffix": "汤圆Vision",
   "siteDescription": "汤圆Vision · 汤圆视界。以镜头记录世界，以好奇心探索未来。摄影作品、地球 Online 进度、AI 与编程实验、个人项目与随笔。A WORLD BEYOND THE FRAME.",
-  "themeColor": "#F4F6F8",
-  "shellForeground": "#161B22",
-  "shellMuted": "#5C6672",
-  "shellAccent": "#1B83B8",
+  "themeColor": "#05070A",
+  "shellForeground": "#E8ECF2",
+  "shellMuted": "#97A2B0",
+  "shellAccent": "#8FE3FF",
   "ogImage": "/assets/brand/logo-light.png",
   "homeScene": "home",
   "secretEnabled": true,
@@ -13,10 +13,10 @@
   "locale": "zh-CN",
   "homeBackground": {
     "src": "/assets/photography/sample-caustic-03.jpg",
-    "tone": "#1a2635",
-    "overlay": 0.5,
+    "tone": "#0b1017",
+    "overlay": 0.72,
     "provenance": "sample",
-    "note": "首页背景。替换成你自己的摄影作品时改这里的 src，并把 provenance 改为 real。未填写时会自动回退为程序绘制的渐变场景，不会出现破图。"
+    "note": "首页背景。换成你自己的摄影作品时改这里的 src，并把 provenance 改为 real。未填写时回退为程序绘制的渐变场景，不会破图。深色主题下 overlay 建议 0.7 以上：背景要克制，不能抢主体。"
   },
   "keywords": [
     "汤圆Vision",

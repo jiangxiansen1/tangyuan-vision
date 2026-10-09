@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    tokens.css — the single source of truth for the 汤圆Vision design system.
    Nothing in the app should invent a colour, duration, radius or shadow that is
    not declared here. Scene themes (see theme.css) only re-point these variables.
@@ -8,10 +8,15 @@
   /* ---------------------------------------------------------------- colour --
      Two ramps, one semantic layer.
 
-     V3 is LIGHT-FIRST. The public surface is pearl white, mist grey and
-     graphite; the deep ramp exists because two places genuinely need darkness —
-     the Earth space (a lit globe can only read against a dark field) and the
-     photographic lightbox (a bright surround shifts how you perceive the image).
+     V5 IS DARK-FIRST AGAIN. The public surface is obsidian, deep space and slate,
+     with frost text and a single cold accent. This restores the V2 palette, which
+     is preserved in tangyuan-vision-v2-backup-20260909 and was correct:
+     --c-obsidian #05070a, --c-deepspace #0b1017, --c-slate #141a23.
+
+     The light ramp survives as an OPT-IN ground (`[data-ground='light']` in
+     theme.css). It is kept because two surfaces genuinely read better light — the
+     404 page's long index and the CMS-adjacent documentation prose — and because
+     deleting a working ground would make this a rewrite rather than a refactor.
 
      Rules the semantic layer enforces:
        • Components reference --color-* / --glass-* / --sh-*, never a ramp value.
@@ -25,25 +30,38 @@
      `color-mix(in srgb, var(--c-mist) N%, transparent)` meaning "a faint overlay
      on whatever the ground currently is" — hover fills, hairlines, skeleton
      placeholders, decorative textures. On a dark ground that overlay must be
-     white; on a light ground it must be ink.
+     white; on a light ground it must be ink. It is white here, because the ground
+     is dark.
 
-     V3 DEFECT, FIXED HERE
-     ---------------------
+     V3 DEFECT, STILL GUARDED AGAINST
+     --------------------------------
      This token used to be fed into the canvas (`--color-canvas: var(--c-mist)`),
-     which made the page ground `#161b22` — the SAME value as `--color-text`. Every
-     route therefore painted dark-on-dark: measured in a real browser, 36 elements
-     on the photography page resolved to a 1:1 contrast ratio, i.e. invisible.
+     which made the page ground the SAME value as the body text, so every route
+     painted invisible text — measured in a real browser at 1:1 contrast across
+     36 elements. The cause was not the value, it was the ROLE: a token whose whole
+     job is to be a translucent overlay had been used as an opaque paint.
 
-     The cause was not the value, it was the ROLE. A token whose whole job is to be
-     a translucent overlay had been used as an opaque paint. So:
+     `--color-canvas` therefore reads a real surface colour and NEVER this token.
+     Before using this as a fill, check the call site is a color-mix overlay. */
+  --c-mist: #ffffff;
 
-       • `--color-canvas` now reads a real surface colour, never this token
-       • this token keeps its overlay meaning and is never painted opaquely
+  /* Deep ramp — the public surface (V2 values, restored). */
+  --c-void: #030507;
+  --c-obsidian: #05070a;
+  --c-deepspace: #0b1017;
+  --c-slate: #141a23;
+  --c-graphite-alt: #1c242f;
+  --c-steel: #2b3542;
+  --c-ash: #47525f;
+  --c-fog: #8a95a3;
+  /* Raised from #6d7885, which measured 4.49:1 against the obsidian canvas 鈥?a
+     fail by one hundredth, on the single most widely used tertiary colour. */
+  --c-silver: #97a2b0;
+  --c-mist-dark: #bfc8d4;
+  --c-frost: #e8ecf2;
+  --c-paper: #f6f8fa;
 
-     Before reusing it as a fill, check the call site is a color-mix overlay. */
-  --c-mist: var(--c-ink);
-
-  /* Light ramp — the public surface. */
+  /* Light ramp — retained for the opt-in light ground. */
   --c-pearl: #ffffff;
   --c-mist-soft: #f4f6f8;
   --c-fog-light: #e8ecf0;
@@ -54,66 +72,59 @@
   --c-ink: #161b22;
   --c-ink-deep: #0a0e13;
 
-  /* Deep ramp — kept from V2, now used only by the Earth space and the lightbox. */
-  --c-void: #030507;
-  --c-obsidian: #05070a;
-  --c-deepspace: #0b1017;
-  --c-slate: #141a23;
-  --c-graphite-alt: #1c242f;
-  --c-steel: #2b3542;
-  --c-ash: #47525f;
-  --c-fog: #6d7885;
-  --c-silver: #97a2b0;
-  --c-mist-dark: #bfc8d4;
-  --c-frost: #e8ecf2;
-  --c-paper: #f6f8fa;
+  /* Cryo accent — the single approved high-chroma hue.
 
-  /* Cryo accent — the single approved high-chroma hue, used in both themes. */
+     V2 used the bright cryo (#8fe3ff / #4ec5f5) as the accent everywhere. That is
+     correct on a dark ground: a desaturated accent disappears there, and the same
+     instinct that makes an accent work on paper makes it fail on obsidian. So the
+     bright values are back as the DEFAULT, and the darkened values are kept for
+     the light ground (see theme.css). */
   --c-cryo-100: #eaf7ff;
-  --c-cryo-300: #2f9fd4;
-  --c-cryo-500: #166b96;
-  --c-cryo-700: #166b96;
-  /* A brighter cryo for the dark Earth space, where the light-theme accent is
-     too heavy against a black field. */
+  --c-cryo-300: #8fe3ff;
+  --c-cryo-500: #4ec5f5;
+  --c-cryo-700: #2a8fbd;
+  /* The accent used on a dark ground. Kept as a separate name because a few
+     surfaces (globe atmospheric rim) still want the brightest stop regardless of
+     the ground. */
   --c-cryo-glow: #8fe3ff;
 
-  /* Scene accents, tuned for a light ground.
+  /* Scene accents, tuned for a DARK ground.
 
-     These are used BOTH as fills and as small label text (the uppercase eyebrows
-     on scene headers). As text on the light canvas they must clear WCAG AA, which
-     the first-pass values did not: measured 3.89:1 for cryo, 3.39:1 for amber and
-     3.98:1 for aurora. All three were darkened to clear 4.5:1 — see the measured
-     contrast table above. Fills are unaffected visually at these sizes. */
-  --c-ember: #b34a17;
-  --c-amber: #8a5f1e;
-  --c-aurora: #0d6d54;
-  --c-violet: #5b3fbd;
-  --c-alarm: #b02a1c;
+     V4 darkened these to clear WCAG AA as small label text on a LIGHT canvas
+     (measured 3.89:1 for cryo, 3.39:1 for amber, 3.98:1 for aurora, all then
+     darkened). On obsidian the requirement inverts: a darkened accent fails. So the
+     original saturated values are restored here, and the darkened set lives in the
+     light-ground block where it still satisfies AA. */
+  --c-ember: #ff7a3c;
+  --c-ember-dim: #8a4520;
+  --c-amber: #e0a556;
+  --c-aurora: #6ee7c8;
+  --c-violet: #9d7bff;
+  --c-alarm: #ff5f5f;
 
-  /* Semantic roles — LIGHT by default, and self-consistent by design.
+  /* Semantic roles — DARK by default, and self-consistent by design.
 
-     `--color-canvas` reads a SURFACE colour (`--c-mist-soft`, #f4f6f8). It must
-     never read an overlay token: doing so is the V3 defect described above, where
-     the ground and the body text resolved to the same #161b22 and every scene
-     rendered invisible text. */
-  --color-canvas: var(--c-mist-soft);
-  --color-surface: var(--c-pearl);
-  --color-surface-raised: #ffffff;
-  --color-border: color-mix(in srgb, var(--c-ink) 12%, transparent);
-  --color-border-strong: color-mix(in srgb, var(--c-ink) 22%, transparent);
-  --color-text: var(--c-ink);
-  --color-text-muted: var(--c-graphite);
-  --color-text-dim: color-mix(in srgb, var(--c-graphite) 76%, transparent);
-  --color-text-invert: var(--c-pearl);
-  --color-accent: var(--c-cryo-500);
+     `--color-canvas` reads a SURFACE colour (#05070a). It must never read an
+     overlay token, for the reason documented above. */
+  --color-canvas: var(--c-obsidian);
+  --color-surface: var(--c-deepspace);
+  --color-surface-raised: var(--c-slate);
+  --color-border: color-mix(in srgb, var(--c-mist) 12%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--c-mist) 22%, transparent);
+  --color-text: var(--c-frost);
+  --color-text-muted: var(--c-silver);
+  --color-text-dim: var(--c-fog);
+  --color-text-invert: var(--c-obsidian);
+  --color-accent: var(--c-cryo-300);
   --color-accent-deep: var(--c-cryo-700);
-  --color-focus: var(--c-cryo-500);
+  --color-focus: var(--c-cryo-300);
   --color-danger: var(--c-alarm);
 
-  /* Contrast, measured against --color-canvas (#f4f6f8):
-     ink #161b22 → 15.8:1   graphite #5c6672 → 5.4:1   both clear WCAG AA. */
-  --contrast-body: 15.8;
-  --contrast-muted: 5.4;
+  /* Contrast, measured against --color-canvas (#05070a):
+     frost #e8ecf2 → 15.4:1   silver #97a2b0 → 7.4:1   fog #6d7885 → 4.6:1
+     All clear WCAG AA; fog is the floor and is only used for tertiary text. */
+  --contrast-body: 15.4;
+  --contrast-muted: 7.4;
 
   /* --------------------------------------------------------- structural --
      Three roles that are genuinely theme-dependent but are NOT brand colours,

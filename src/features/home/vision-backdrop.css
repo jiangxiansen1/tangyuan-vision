@@ -22,84 +22,92 @@
 
 /*
   The drawn composition is not a placeholder for the photograph — it is the
-  design's floor. On a light ground it is built from three soft cool sources plus
-  a very slight vertical ramp, which together give the page depth before any
-  content exists.
+  design's floor. On the dark ground it is built from soft cool sources over a deep
+  obsidian-to-slate ramp.
+
+  The structure follows the dark-space reference: a BLUE-SHIFTED field rather than
+  flat black (pure #000 is the most common cheap-looking dark-mode tell), with the
+  ambient light concentrated low and off-centre so the composition has a floor and
+  a direction instead of being evenly lit.
 */
 .vback__drawn {
   position: absolute;
   inset: 0;
   background:
+    /* A cool nebula low and left, where the eye enters the row. */
     radial-gradient(
-      68% 52% at 50% 34%,
-      color-mix(in srgb, #bcd6ec 62%, transparent) 0%,
-      transparent 72%
+      58% 44% at 22% 78%,
+      color-mix(in srgb, #16324f 72%, transparent) 0%,
+      transparent 70%
     ),
+    /* A second, dimmer source high right, so the field is not one-directional. */
     radial-gradient(
-      90% 62% at 12% 6%,
-      color-mix(in srgb, #dbe8f4 78%, transparent) 0%,
-      transparent 66%
-    ),
-    radial-gradient(
-      80% 56% at 92% 88%,
-      color-mix(in srgb, #e8e2d8 62%, transparent) 0%,
+      46% 38% at 84% 16%,
+      color-mix(in srgb, #12283d 60%, transparent) 0%,
       transparent 68%
     ),
-    linear-gradient(178deg, #f7f9fb 0%, #eef2f6 52%, #e6ecf2 100%);
+    /* A very faint warm counterpoint, so the page does not read as blue plastic.
+       Held under 25% so it never becomes a colour of its own. */
+    radial-gradient(
+      40% 30% at 62% 92%,
+      color-mix(in srgb, #2a2118 46%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(178deg, #070b12 0%, #05070a 46%, #04060a 100%);
 }
 
 /* ----------------------------------------------------------- L2 · photo -- */
 
 /*
-  The photograph is held far back. `saturate(0.62)` is doing real work here: at
-  full saturation, a dark-toned photo behind a light page turns the top of the
-  viewport muddy and the white wordmark disappears. Desaturating and lifting it
-  keeps it as atmosphere.
+  The photograph is held far back — further than on the light ground, because a
+  dark page has less tolerance for a busy image behind its text. `saturate(0.55)`
+  does real work: at full saturation a warm photograph turns the obsidian muddy.
 
-  `mix-blend-mode: luminosity` is deliberately NOT used — it would discard the
-  photograph's colour entirely, which defeats using a photograph at all.
+  `brightness(0.72)` is deliberately below 1. The image is atmosphere here, not
+  content; the photographs are the content, two clicks away.
 */
 .vback__photo {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center 34%;
-  filter: saturate(0.62) contrast(0.94) brightness(1.22);
-  opacity: calc(1 - var(--photo-overlay, 0.5));
+  filter: saturate(0.55) contrast(1.02) brightness(0.72);
+  opacity: calc(1 - var(--photo-overlay, 0.72));
   animation: vback-in 1400ms var(--ease-standard) both;
 }
 
 @keyframes vback-in {
   from { opacity: 0; }
-  to { opacity: calc(1 - var(--photo-overlay, 0.5)); }
+  to { opacity: calc(1 - var(--photo-overlay, 0.72)); }
 }
 
 /* ------------------------------------------------------------ L3 · wash -- */
 
 /*
-  The legibility wash. This is what the brand core's contrast actually rests on,
-  so it is a real layer rather than a nicety:
+  The legibility wash. On a dark ground its job INVERTS: instead of lightening the
+  centre so dark text can sit on it, it DARKENS the centre so the frost wordmark
+  holds its contrast over whatever the photograph happens to be doing there.
 
-    • a pale halo behind the centre, which is where the wordmark sits
-    • a vertical ramp that lightens toward the bottom, so the core windows sit on
-      a cleaner field than the hero does
+  THIS LAYER IS WHAT WAS PAINTING THE PAGE LIGHT after the dark restore. A wash
+  built from white at 82% is not a subtle overlay — it is a light theme, and it sat
+  on top of a correctly dark ground.
 */
 .vback__wash {
   position: absolute;
   inset: 0;
   background:
     radial-gradient(
-      58% 42% at 50% 40%,
-      color-mix(in srgb, #ffffff 82%, transparent) 0%,
-      color-mix(in srgb, #ffffff 42%, transparent) 44%,
-      transparent 76%
+      56% 40% at 50% 42%,
+      color-mix(in srgb, #04060a 76%, transparent) 0%,
+      color-mix(in srgb, #04060a 40%, transparent) 46%,
+      transparent 78%
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, #ffffff 42%, transparent) 0%,
-      transparent 22%,
-      transparent 62%,
-      color-mix(in srgb, #f4f6f8 58%, transparent) 100%
+      color-mix(in srgb, #04060a 50%, transparent) 0%,
+      transparent 24%,
+      transparent 58%,
+      color-mix(in srgb, #04060a 60%, transparent) 100%
     );
 }
 
@@ -110,23 +118,23 @@
   inset: 0;
   background: linear-gradient(
     118deg,
-    color-mix(in srgb, #ffffff 34%, transparent) 0%,
-    transparent 38%,
-    transparent 72%,
-    color-mix(in srgb, #cfe0ef 22%, transparent) 100%
+    color-mix(in srgb, #9fd4ff 8%, transparent) 0%,
+    transparent 36%,
+    transparent 70%,
+    color-mix(in srgb, #0b1a2c 36%, transparent) 100%
   );
 }
 
 /* --------------------------------------------------------- L4 · grain -- */
 
-/* The same static turbulence texture the rest of the product uses, at a lower
-   opacity because a light field shows banding more than a dark one and needs
-   proportionally less grain to hide it. */
+/* The same static turbulence texture the rest of the product uses. `multiply`
+   would darken a dark field into mud, so it SCREENS here: grain should add
+   micro-texture to the shadows, not crush them. */
 .vback__grain {
   position: absolute;
   inset: -6%;
-  opacity: 0.22;
-  mix-blend-mode: multiply;
+  opacity: 0.3;
+  mix-blend-mode: screen;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.34'/%3E%3C/svg%3E");
   background-size: 160px 160px;
 }

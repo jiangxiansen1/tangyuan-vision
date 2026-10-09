@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    theme.css — ground and scene theming.
 
    TWO GROUNDS, ONE MATERIAL
@@ -27,8 +27,111 @@
    GROUND: LIGHT (default)
    ========================================================================== */
 
+/* ==========================================================================
+   GROUND: DARK (default) — the V5 public surface.
+
+   This restores the V2 glass recipe, and it is NOT the light recipe recoloured.
+   On a dark ground glass reads because it is LIGHTER than its surroundings, so the
+   bright edge belongs on the TOP bevel and the specular returns to `screen`
+   blending. Reusing the light-ground values here produces exactly the "dark card
+   with a white outline" look the brief rejects.
+   ========================================================================== */
+
 :root,
+[data-ground='dark'] {
+  /* A deep blue-shifted tint. A neutral grey over obsidian turns the pane muddy;
+     the blue keeps it reading as cold optical glass. */
+  --glass-tint-top: #16202e;
+  --glass-tint-bottom: #070c13;
+  --glass-tint-top-pct: 62%;
+  --glass-tint-bottom-pct: 74%;
+  --glass-tint-opacity: 0.44;
+
+  --glass-hairline: rgb(255 255 255 / 0.08);
+  --glass-hairline-strong: rgb(255 255 255 / 0.16);
+
+  /* The top bevel faces the light on a dark ground. */
+  --glass-stroke-angle: 145deg;
+  --glass-edge-top: rgb(255 255 255 / 0.3);
+  --glass-edge-mid: rgb(255 255 255 / 0.04);
+  --glass-edge-low: rgb(0 0 0 / 0.28);
+  --glass-edge-end: rgb(255 255 255 / 0.1);
+  --glass-edge-light: 0.3;
+
+  /* Screen blending is meaningful again: the pane is darker than the specular, so
+     the highlight adds light instead of being swallowed by an already-bright
+     surface. */
+  --glass-specular-color: rgb(255 255 255 / 0.16);
+  --glass-specular-color-2: rgb(255 255 255 / 0.06);
+  --glass-specular-blend: screen;
+  --glass-specular-size: 220px;
+  --glass-highlight-soft-alpha: 0.09;
+
+  --glass-ripple-color: rgb(255 255 255 / 0.26);
+  --glass-fallback-bg: color-mix(in srgb, var(--c-deepspace) 92%, transparent);
+  --glass-dispersion: 0.5;
+
+  /* Shadows return to the dark-ground recipe. */
+  --sh-ambient: 0 1px 2px rgb(0 0 0 / 0.34);
+  --sh-raised: 0 2px 6px rgb(0 0 0 / 0.32), 0 8px 22px -6px rgb(0 0 0 / 0.44);
+  --sh-float: 0 4px 12px rgb(0 0 0 / 0.3), 0 18px 46px -12px rgb(0 0 0 / 0.55),
+    0 42px 90px -40px rgb(3 8 18 / 0.7);
+  --sh-window: 0 2px 4px rgb(0 0 0 / 0.36), 0 22px 60px -18px rgb(0 0 0 / 0.62),
+    0 60px 130px -50px rgb(2 6 14 / 0.82);
+  --sh-inset-top: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  --sh-inset-bottom: inset 0 -1px 0 rgb(0 0 0 / 0.32);
+  --sh-focus: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-focus);
+  --sh-on-dark: 0 2px 6px rgb(0 0 0 / 0.4), 0 18px 46px -12px rgb(0 0 0 / 0.6);
+
+  --overlay-scrim: color-mix(in srgb, var(--c-void) 62%, transparent);
+  --overlay-solid: color-mix(in srgb, var(--c-ink-deep) 96%, black);
+  --overlay-solid-text: var(--c-frost);
+  --overlay-solid-border: color-mix(in srgb, #ffffff 16%, transparent);
+  --wash-strong: color-mix(in srgb, #000000 88%, transparent);
+  --wash-mid: color-mix(in srgb, #000000 58%, transparent);
+  --wash-soft: color-mix(in srgb, #000000 26%, transparent);
+  --ring-offset: var(--c-obsidian);
+
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   GROUND: LIGHT (opt-in, NOT the default)
+
+   Kept because a few surfaces genuinely read better light — the 404 page's long
+   index, and the documentation prose. It re-points the semantic layer fully,
+   including the ramps and the accent, or it would be a half-light theme.
+   ========================================================================== */
+
 [data-ground='light'] {
+  --color-canvas: var(--c-mist-soft);
+  --color-surface: var(--c-pearl);
+  --color-surface-raised: #ffffff;
+  --color-border: color-mix(in srgb, var(--c-ink) 12%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--c-ink) 22%, transparent);
+  --color-text: var(--c-ink);
+  --color-text-muted: var(--c-graphite);
+  --color-text-dim: color-mix(in srgb, var(--c-graphite) 76%, transparent);
+  --color-text-invert: var(--c-pearl);
+  /* The overlay token flips to ink on a light ground. */
+  --c-mist: var(--c-ink);
+  /* Accents must darken: the bright set that works on obsidian fails as small text
+     on a light canvas (measured 3.89:1 for the bright cryo, 3.39:1 for amber,
+     3.98:1 for aurora). */
+  --color-accent: #166b96;
+  --color-accent-deep: #166b96;
+  --color-focus: #166b96;
+  --c-cryo-300: #2f9fd4;
+  --c-cryo-500: #166b96;
+  --c-ember: #b34a17;
+  --c-amber: #8a5f1e;
+  --c-aurora: #0d6d54;
+  --c-violet: #5b3fbd;
+  --c-alarm: #b02a1c;
+  --contrast-body: 15.8;
+  --contrast-muted: 5.4;
+  color-scheme: light;
+
   /* Glass on a light ground.
      The tint is a faint cool grey rather than a dark blue, because a dark tint
      over pearl white turns the pane grey and dead. Real separation comes from
@@ -76,72 +179,17 @@
   color-scheme: light;
 }
 
-/* ==========================================================================
-   GROUND: DARK (Earth space, lightbox, and anything embedded in them)
-   ========================================================================== */
+/* Removed: a duplicate `[data-ground='dark']` block used to live here.
 
-[data-ground='dark'] {
-  --color-canvas: var(--c-obsidian);
-  --color-surface: var(--c-deepspace);
-  --color-surface-raised: var(--c-slate);
-  --color-border: color-mix(in srgb, var(--c-frost) 14%, transparent);
-  --color-border-strong: color-mix(in srgb, var(--c-frost) 26%, transparent);
-  --color-text: var(--c-frost);
-  --color-text-muted: var(--c-silver);
-  --color-text-dim: var(--c-fog);
-  --color-text-invert: var(--c-obsidian);
-  --color-accent: var(--c-cryo-glow);
-  --color-focus: var(--c-cryo-glow);
+   It was written in V4 when dark was the EXCEPTION and light was the default, so
+   it described "the dark ground" as a special case. Now that dark is the root
+   default, the block above already declares all of it — and because this one came
+   LATER in the file it would have silently overridden the new defaults, which is
+   exactly the kind of duplication that makes a theme unfixable by inspection.
 
-  /* The overlay token flips back to white on a dark ground. */
-  --c-mist: #ffffff;
+   Its one genuinely unique declaration, a brighter accent for the dark ground, was
+   folded into the default block above. */
 
-  /* Glass on a dark ground — the V2 behaviour, retained. */
-  --glass-tint-top: #16202e;
-  --glass-tint-bottom: #070c13;
-  --glass-tint-top-pct: 62%;
-  --glass-tint-bottom-pct: 74%;
-
-  --glass-hairline: rgb(255 255 255 / 0.08);
-  --glass-hairline-strong: rgb(255 255 255 / 0.16);
-
-  --glass-stroke-angle: 145deg;
-  --glass-edge-top: rgb(255 255 255 / 0.3);
-  --glass-edge-mid: rgb(255 255 255 / 0.04);
-  --glass-edge-low: rgb(0 0 0 / 0.28);
-  --glass-edge-end: rgb(255 255 255 / 0.1);
-  --glass-edge-light: 0.3;
-
-  --glass-specular-color: rgb(255 255 255 / 0.16);
-  --glass-specular-color-2: rgb(255 255 255 / 0.06);
-  --glass-specular-blend: screen;
-  --glass-specular-size: 220px;
-
-  --glass-ripple-color: rgb(255 255 255 / 0.26);
-  --glass-fallback-bg: color-mix(in srgb, var(--c-deepspace) 92%, transparent);
-  --glass-dispersion: 0.5;
-
-  --glass-highlight-soft-alpha: 0.09;
-
-  --overlay-scrim: color-mix(in srgb, var(--c-void) 62%, transparent);
-  --overlay-solid: color-mix(in srgb, var(--c-ink-deep) 96%, black);
-  --overlay-solid-text: var(--c-frost);
-  --overlay-solid-border: color-mix(in srgb, #ffffff 16%, transparent);
-  --wash-strong: color-mix(in srgb, #000000 88%, transparent);
-  --wash-mid: color-mix(in srgb, #000000 58%, transparent);
-  --wash-soft: color-mix(in srgb, #000000 26%, transparent);
-  --ring-offset: var(--c-obsidian);
-
-  /* Shadows return to the dark-ground recipe. */
-  --sh-ambient: 0 1px 2px rgb(0 0 0 / 0.34);
-  --sh-raised: 0 2px 6px rgb(0 0 0 / 0.32), 0 8px 22px -6px rgb(0 0 0 / 0.44);
-  --sh-float: 0 4px 12px rgb(0 0 0 / 0.3), 0 18px 46px -12px rgb(0 0 0 / 0.55),
-    0 42px 90px -40px rgb(3 8 18 / 0.7);
-  --sh-window: 0 2px 4px rgb(0 0 0 / 0.36), 0 22px 60px -18px rgb(0 0 0 / 0.62),
-    0 60px 130px -50px rgb(2 6 14 / 0.82);
-
-  color-scheme: dark;
-}
 
 /* Dark-ground scenes also get their ambient colours from here, so a scene
    nested inside the dark ground looks like it belongs. */
@@ -228,7 +276,7 @@
 [data-scene='projects'] {
   --scene-light-a: #dbe7f5;
   --scene-light-b: #eceff4;
-  --scene-accent: #2f6ea8;
+  --scene-accent: #7fb2dd;
   --ambient-a: 40%;
   --ambient-b: 50%;
 }
@@ -237,7 +285,7 @@
 [data-scene='journal'] {
   --scene-light-a: #e7eaee;
   --scene-light-b: #f2f4f6;
-  --scene-accent: var(--c-slate-deep);
+  --scene-accent: #9fb0c2;
   --ambient-a: 30%;
   --ambient-b: 38%;
 }
@@ -322,4 +370,42 @@
 
 [data-transparency='reduced'] .glass__specular {
   display: none;
+}
+
+/* ==========================================================================
+   AMBIENT LIGHT ON THE DARK GROUND
+
+   The per-scene ambient colours above were authored for a LIGHT page: pale blues,
+   warm creams and greys at 30-60% alpha. That is correct over pearl white and
+   turns a dark page into a foggy grey wash, which is one of the layers that was
+   defeating the dark restore.
+
+   WHY THIS IS AN OVERRIDE AND NOT NINE EDITED SCENE BLOCKS
+   Each scene declares `--scene-light-*` on `html[data-scene]`, which is
+   specificity (0,1,1) 鈥?the attribute selector carries class-equivalent weight. A
+   plain `[data-ground='dark']` rule is (0,1,0) and LOSES, so the light values
+   would win wherever this sat. The selector below mirrors that specificity and
+   this block sits at the very end of the file, which is what makes it apply.
+
+   Every scene keeps its own hue; only the LUMINANCE is corrected for a dark
+   ground, so per-scene identity survives. No `!important` is used.
+   ========================================================================== */
+
+html:not([data-ground='light']) .scene-ambient {
+  /* Values are lower-luminance versions of the per-scene colours, reached by
+     overriding the two custom properties the scenes set. */
+  --scene-light-a: #16324f;
+  --scene-light-b: #0d1a2b;
+
+  background:
+    radial-gradient(
+      120% 80% at var(--ambient-x, 22%) var(--ambient-y, 14%),
+      color-mix(in srgb, var(--scene-light-a) 20%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      90% 70% at 84% 88%,
+      color-mix(in srgb, var(--scene-light-b) 24%, transparent) 0%,
+      transparent 64%
+    );
 }

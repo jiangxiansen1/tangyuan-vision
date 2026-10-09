@@ -20,7 +20,7 @@
     <title>{{SITE_TITLE}}</title>
     <meta name="description" content="{{SITE_DESCRIPTION}}" />
     <meta name="theme-color" content="{{THEME_COLOR}}" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="dark" />
     <meta name="keywords" content="{{SITE_KEYWORDS}}" />
 
     <meta name="robots" content="index, follow" />
@@ -44,20 +44,26 @@
       A single early style reset. Inlined so the very first paint is already the
       correct background colour: without it a slow network shows a white flash
       before the stylesheet arrives, which is exactly the flash the brief rules
-      out. This is not a substitute for the real stylesheet — it is 12 declarations
-      that only need to be correct for a few hundred milliseconds.
+      out. This is not a substitute for the real stylesheet — it is a handful of
+      declarations that only need to be correct for a few hundred milliseconds.
+
+      WHY THE VALUES COME FROM settings.json RATHER THAN BEING WRITTEN HERE
+      ---------------------------------------------------------------------
+      These are LITERAL colours in an inline <style>, so they win over every
+      stylesheet rule. When V5 restored the dark ground, this block still painted
+      #F4F6F8: the token `--color-canvas` resolved correctly to #05070a, and the
+      page was still light, because an inline declaration beats a custom property
+      that nobody here reads. The fix was to point these at the same source of
+      truth as the rest of the content (settings.json `themeColor` / `shell*`),
+      not to edit a second copy of the palette by hand.
     -->
     <style>
       html,
       body {
         margin: 0;
-        /* V3 is a light-first product. The inline shell uses the light canvas so
-           the very first paint is already the correct ground — the dark values
-           V2 used here would have produced a black flash before the stylesheet
-           arrived, which is exactly what this block exists to prevent. */
         background: {{SHELL_BG}};
         color: {{SHELL_FG}};
-        color-scheme: light;
+        color-scheme: dark;
       }
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
