@@ -1,4 +1,4 @@
-/**
+﻿/**
  * verify-glass.cjs — prove the glass material is actually COMPOSITED.
  *
  * WHY A CODE CHECK IS NOT A VERIFICATION
@@ -152,6 +152,14 @@ fs.writeFileSync(
   'utf8'
 );
 spawnSync(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', sp], { stdio: 'ignore', timeout: 170000 });
+
+// Remove the probe wrapper from public/ as soon as the measurement is captured, so
+// a published build can never contain it.
+try {
+  for (const f of fs.readdirSync(publicDir)) {
+    if (f.startsWith('__')) fs.unlinkSync(path.join(publicDir, f));
+  }
+} catch { /* the directory is optional for dist-only runs */ }
 
 const dom = fs.existsSync(dump) ? fs.readFileSync(dump, 'utf8') : '';
 const m = dom.match(/<div id="tv-glass-audit"[^>]*>([\s\S]*?)<\/div>/);

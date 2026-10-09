@@ -51,3 +51,8 @@ tools/_earth-src/
 # Local Supabase CLI state (created if the operator runs `supabase start`).
 supabase/.temp/
 supabase/.branches/
+
+# Temporary probe wrappers written into public/ by tools/audit-*.cjs and
+# tools/verify-*.cjs while measuring a running site. They exist for the duration of
+# a check and must never be published.
+public/__*

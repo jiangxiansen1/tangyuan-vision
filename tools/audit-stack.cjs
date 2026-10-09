@@ -1,4 +1,4 @@
-/**
+﻿/**
  * audit-stack.cjs — for a given element, walk the ancestor chain and report what
  * each level actually paints, so a dark ground can be traced to its source
  * instead of guessed at.
@@ -115,6 +115,14 @@ fs.writeFileSync(
   'utf8'
 );
 spawnSync(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', sp], { stdio: 'ignore', timeout: 160000 });
+
+// Remove the probe wrapper from public/ as soon as the measurement is captured, so
+// a published build can never contain it.
+try {
+  for (const f of fs.readdirSync(publicDir)) {
+    if (f.startsWith('__')) fs.unlinkSync(path.join(publicDir, f));
+  }
+} catch { /* the directory is optional for dist-only runs */ }
 
 const dom = fs.existsSync(dump) ? fs.readFileSync(dump, 'utf8') : '';
 const m = dom.match(/<div id="tv-stack-audit"[^>]*>([\s\S]*?)<\/div>/);
