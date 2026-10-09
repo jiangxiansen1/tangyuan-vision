@@ -32,6 +32,8 @@ import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useRegionVotes } from '@/hooks/useRegionVotes';
 import { useVisualStore } from '@/store/useVisualStore';
 import { EarthGlobe } from './EarthGlobe';
+import { MapGlobe } from './MapGlobe';
+import { RegionSearch } from './RegionSearch';
 import { RegionPanel, type RegionVoteState } from './RegionPanel';
 import { GeoIndex, type RegionShape } from './geo-index';
 import { regionLabel, regionStats, travelFor, hasChineseLabel } from './regions';
@@ -54,6 +56,22 @@ export default function EarthPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
+
+  /**
+   * Set when the map renderer cannot run, which switches the page to the local globe.
+   *
+   * This is not a decorative error state. The map needs the network — a style
+   * document and then tiles — so it fails on a blocked host, in a sandboxed preview,
+   * or wherever the tile CDN is unreachable. The old globe needs nothing: its
+   * textures are bundled and its geometry is local. Keeping it as the fallback is
+   * what makes region identification and voting survive an offline visit, and those
+   * are the page's actual business functions.
+   *
+   * A declared failure (the library failed to load, the style was rejected) is
+   * distinguished from a slow tile by only switching on the former; a tile 404 is
+   * routine, because the satellite imagery legitimately ends at z9.
+   */
+  const [mapFailed, setMapFailed] = useState(false);
 
   /** Built once. ~40 ms, and it is what makes region lookup per-frame cheap. */
   const geoIndex = useMemo(() => {
@@ -169,16 +187,52 @@ export default function EarthPage() {
 
   return (
     <div className="scene epage" data-scene="earth">
-      <a className="skip-link" href="#earth-list">
-        跳到地区列表 <span className="skip-link__en">Skip to region list</span>
+      {/*
+        The skip link now targets the MAP, not a list. The list is gone (see the
+        removal note further down); the map is the thing a keyboard user needs to
+        reach, and it is genuinely focusable because MapLibre binds arrow-key panning
+        to its canvas.
+      */}
+      <a className="skip-link" href="#earth-map">
+        跳到地图 <span className="skip-link__en">Skip to the map</span>
       </a>
 
-      {/* ============================================================ globe == */}
-      <div className="epage__stage shared-hero">
-        <EarthGlobe
-          onSelectRegion={(id) => setSelectedId((cur) => (cur === id ? null : id))}
-          quality={reduced ? 'balanced' : glassQuality === 'balanced' ? 'balanced' : glassQuality === 'off' ? 'off' : 'high'}
-        />
+      {/* ============================================================ map === */}
+      <div className="epage__stage shared-hero" id="earth-map">
+        {/*
+          Two renderers, one page.
+
+          MapGlobe is the real map: it loads MORE data as you zoom in, which is the
+          only thing that fixes "there is no detail when zoomed". The old WebGL globe
+          is kept and used when MapLibre cannot start — a fully offline renderer that
+          needs no tiles, no network and no key, so the page still identifies regions
+          and records votes when the map library or the imagery is unreachable.
+        */}
+        {mapFailed ? (
+          <EarthGlobe
+            onSelectRegion={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+            quality={
+              reduced
+                ? 'balanced'
+                : glassQuality === 'balanced'
+                  ? 'balanced'
+                  : glassQuality === 'off'
+                    ? 'off'
+                    : 'high'
+            }
+          />
+        ) : (
+          <MapGlobe
+            geoIndex={geoIndex}
+            onSelectRegion={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+            onFail={() => setMapFailed(true)}
+            onHoverRegion={() => {
+              /* Hover feedback lives in the map's own cursor and labels; the old
+                 globe's tooltip is not needed here and would duplicate MapLibre's
+                 place labels. */
+            }}
+          />
+        )}
 
         {/* --------------------------------------------------------- chrome -- */}
         <header className="epage__chrome">
@@ -235,86 +289,62 @@ export default function EarthPage() {
             onClose={closePanel}
           />
         ) : null}
+
+        {/* ----------------------------------------------------- region search -- */}
+        {/*
+          The permanent 174-row grid that used to sit below the map is gone. It was
+          doing two jobs that both had to survive: keyboard reachability of every
+          region, and finding a region by name. Both now live in this collapsed panel
+          — the same complete dataset, reachable on demand, occupying no space until
+          asked for. Removing it without replacing that would have made the page less
+          usable, not more immersive.
+        */}
+        <RegionSearch
+          geoIndex={geoIndex}
+          selectedId={selectedId}
+          onSelect={(id) => setSelectedId((cur) => (cur === id ? null : id))}
+        />
       </div>
-
-      {/* ===================================================== region list == */}
-      <section className="epage__list-section" id="earth-list" aria-labelledby="earth-list-label">
-        <div className="epage__list-head">
-          <h2 id="earth-list-label" className="epage__list-title">
-            地区列表
-          </h2>
-          <p className="epage__list-note">
-            地球上的每个国家与地区在这里都能用键盘到达。带中文名的排在前面，
-            其余使用数据源中的英文名称——没有经过机器翻译，因为一个错误的中文名比一个正确的英文名更糟。
-          </p>
-        </div>
-
-        {listRegions.length === 0 ? (
-          <p className="epage__list-empty">
-            国界数据未能加载，因此列表为空。地球仍然可以旋转与缩放。
-          </p>
-        ) : (
-          <ul className="epage__list">
-            {listRegions.map((region) => {
-              const travel = travelFor(region.id);
-              return (
-                <li key={region.id}>
-                  <button
-                    type="button"
-                    className="epage__list-item"
-                    data-status={travel.status}
-                    aria-pressed={selectedId === region.id}
-                    onClick={() => {
-                      setSelectedId(region.id);
-                      // Move focus to the list heading region so a keyboard user
-                      // lands somewhere sensible rather than at the document top.
-                      document.getElementById('earth-list')?.scrollIntoView({
-                        behavior: reduced ? 'auto' : 'smooth',
-                        block: 'start',
-                      });
-                    }}
-                  >
-                    <span className="epage__list-status" aria-hidden="true" />
-                    <span className="epage__list-name">{regionLabel(region.id, region.nameEn)}</span>
-                    <span className="epage__list-name-en">{region.nameEn}</span>
-                    <span className="epage__list-tag">
-                      {travel.status === 'visited'
-                        ? '已到访'
-                        : travel.status === 'planned'
-                          ? '计划中'
-                          : '尚未记录'}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
 
       {/* ======================================================= credits == */}
       <footer className="epage__credits">
         <h2 className="epage__credits-title u-label">数据与素材来源</h2>
         <ul>
           <li>
-            地表与海洋：NASA / Goddard Space Flight Center 的合成影像，经 Wikimedia Commons
-            分发，**公有领域**。
+            <strong>全球视图（z0–z4）</strong>：NASA 的 BlueMarble 无云参考镶嵌图，
+            <strong>公有领域</strong>，无需密钥。它不是某一天的天气，而是由数月观测合成的
+            无云地表——正因为没有云、没有轨道空档，这里没有任何黑带。
           </li>
           <li>
-            夜间城市灯光：NASA GSFC / NOAA NGDC 的 DMSP 1994–1995 合成图，**公有领域**。
-            这是真实观测，但已距今约三十年，不代表当下的灯光分布。
+            <strong>大陆与区域视图（z4–z9）</strong>：NASA EOSDIS GIBS 的 MODIS Terra
+            真彩日合成图（2024-07-01），<strong>公有领域</strong>，无需密钥。
+            最深 z9（约 610 m/像素），z10 服务器直接返回 400。
+            这是<strong>真实观测</strong>，但它是每日合成图，所以会看到
+            <strong>卫星轨道条带之间的接缝</strong>——那是传感器没有拍到的空隙，
+            不是渲染错误。放大后看到的是下面的矢量街道图，不是更清晰的卫星照片。
           </li>
-          <li>云层：three.js 示例素材（MIT）。这是渲染纹理，不是某一天的真实云图。</li>
           <li>
-            国界：Natural Earth 1:110m（公有领域）。该精度下小岛屿与部分边界会被简化或缺失。
+            <strong>路网与地名（z4 起）</strong>：OpenStreetMap 数据，经 OpenFreeMap
+            分发（MIT 许可，无需密钥）。道路、建筑轮廓与地名在各缩放级别都是真实数据。
+          </li>
+          <li>
+            国界：Natural Earth 1:110m（公有领域）。该精度下小岛屿与部分边界会被简化或缺失，
+            因此地球上的国界仅供识别，不能作为精确边界使用。
           </li>
           <li>
             昼夜与太阳位置：本地按低精度太阳位置算法计算，误差小于 1°。
-            这是真实的天文位置，但不是精密星历，也不包含大气折射。
+            这是真实的天文位置，但不是精密星历，也不包含大气折射。地图视图不绘制昼夜分界。
+          </li>
+          <li>
+            本地三维地球（地图库不可用时的降级渲染器）使用 NASA / Goddard 的合成影像
+            （经 Wikimedia Commons 分发，公有领域）。该渲染器<strong>不联网</strong>，
+            因此在离线或影像源不可达时仍然可用。
           </li>
         </ul>
         <p className="epage__credits-note">
-          完整来源、许可与体积记录在 <code>public/assets/earth/textures.json</code>。
+          地图影像为固定日期的合成图，不是实时卫星画面。完整来源与许可记录在{' '}
+          <code>public/assets/earth/textures.json</code> 与{' '}
+          <code>src/features/earth/map-sources.ts</code>。
         </p>
       </footer>
 

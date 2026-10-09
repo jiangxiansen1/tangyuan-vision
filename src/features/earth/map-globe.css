@@ -1,0 +1,245 @@
+/* ==========================================================================
+   MapGlobe — the Earth page's multi-level map surface.
+
+   The map is the protagonist of this page, so it takes the full stage. Everything
+   else on the page floats over it rather than being stacked beside it: a floating
+   search entry, a floating region panel, and a small HUD. That is what makes the
+   page read as spatial rather than as a form with a picture in it.
+   ========================================================================== */
+
+.mglobe {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+
+  /* The map contains its own stacking context, so controls and overlays inside it
+     cannot end up behind the page chrome. */
+  isolation: isolate;
+
+  /* A dark field before the first tile arrives. Without this the container is
+     transparent and the page's own background shows through at the wrong scale,
+     which reads as a flash of empty space. */
+  background: radial-gradient(120% 120% at 50% 40%, #0b1017 0%, #05070a 72%);
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.mglobe__canvas {
+  position: absolute;
+  inset: 0;
+  /* MapLibre sizes its own canvas to this element; it must be a real box. */
+  width: 100%;
+  height: 100%;
+}
+
+/* MapLibre's canvas is focusable for keyboard panning; give it the site's ring
+   rather than the browser default, which is invisible on a dark ground. */
+.mglobe__canvas:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------- loading -- */
+
+/*
+  A loading state that is honest about what is happening. The map genuinely needs a
+  style document and several tile requests before anything appears, and on a slow
+  connection that is several seconds. Showing nothing would read as a broken page.
+*/
+.mglobe__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.02em;
+  background: radial-gradient(80% 70% at 50% 45%, rgb(11 16 23 / 0.6), rgb(5 7 10 / 0.9));
+  pointer-events: none;
+}
+
+.mglobe__spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--color-accent) 26%, transparent);
+  border-top-color: var(--color-accent);
+  animation: mglobe-spin 900ms linear infinite;
+}
+
+@keyframes mglobe-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mglobe__spinner {
+    animation-duration: 2400ms;
+  }
+}
+
+/* ----------------------------------------------------------------- failed -- */
+
+/*
+  The failure state is deliberately explicit and names the fallback. A silent blank
+  globe would be indistinguishable from a slow load, and the page does still work
+  without the map — the region panel, the votes and the search all keep running off
+  the local GeoIndex.
+*/
+.mglobe__failed {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  padding: 28px;
+  text-align: center;
+  background: color-mix(in srgb, var(--c-void) 78%, transparent);
+}
+
+.mglobe__failed-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  color: var(--color-text);
+}
+
+.mglobe__failed-body {
+  margin: 0 auto;
+  max-width: 44ch;
+  font-size: var(--fs-sm);
+  line-height: 1.75;
+  color: var(--color-text-muted);
+}
+
+/* -------------------------------------------------------------------- HUD -- */
+
+/*
+  The zoom readout and the legend of what you are currently looking at.
+
+  THIS IS NOT DECORATION. The free satellite imagery stops at z9 — measured, the
+  server returns HTTP 400 past it — and beyond that the page is showing street
+  VECTOR data rather than a sharper photograph. Saying so on screen is the
+  difference between a map that is honest about its resolution and one that invites
+  the visitor to keep zooming in search of detail that does not exist.
+*/
+.mglobe__hud {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 11px;
+  border-radius: var(--r-pill, 999px);
+
+  background: color-mix(in srgb, var(--c-void) 66%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 12%, transparent);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+}
+
+.mglobe__zoom {
+  color: var(--color-accent);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.mglobe__legend {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------- MapLibre control skins -- */
+
+/*
+  MapLibre ships light-styled controls. Leaving them unstyled puts four white
+  rectangles on a black page, which is the single most obvious "not designed for
+  this site" tell on a map. These rules restate them in the site's material.
+*/
+.mglobe .maplibregl-ctrl-group {
+  background: color-mix(in srgb, var(--c-deepspace) 82%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 12%, transparent);
+  border-radius: var(--r-md, 10px);
+  box-shadow: var(--sh-raised);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  overflow: hidden;
+}
+
+.mglobe .maplibregl-ctrl-group button {
+  width: 30px;
+  height: 30px;
+  background: transparent;
+}
+
+.mglobe .maplibregl-ctrl-group button + button {
+  border-top: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
+}
+
+.mglobe .maplibregl-ctrl-group button:hover {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+/*
+  The default control icons are dark SVGs, which vanish on a dark ground. `invert`
+  is the honest fix: it flips the shipped icons rather than redrawing them, so the
+  affordances stay exactly as MapLibre designed them.
+*/
+.mglobe .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) opacity(0.82);
+}
+
+.mglobe .maplibregl-ctrl-scale {
+  background: color-mix(in srgb, var(--c-void) 62%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+  border-top: none;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mglobe .maplibregl-ctrl-attrib {
+  background: color-mix(in srgb, var(--c-void) 64%, transparent);
+  border-radius: var(--r-sm, 6px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.mglobe .maplibregl-ctrl-attrib a,
+.mglobe .maplibregl-ctrl-attrib {
+  color: var(--color-text-dim);
+  font-size: 10px;
+}
+
+.mglobe .maplibregl-ctrl-attrib a:hover {
+  color: var(--color-text-muted);
+}
+
+/*
+  MapLibre's own popups are light-themed. The site does not use them, but a default
+  one can still appear from an interaction, so it is skinned rather than left to
+  surprise the visitor with a white bubble.
+*/
+.mglobe .maplibregl-popup-content {
+  background: var(--c-slate);
+  color: var(--color-text);
+  border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+  border-radius: var(--r-md, 10px);
+  box-shadow: var(--sh-float);
+}
+
+.mglobe .maplibregl-popup-tip {
+  border-top-color: var(--c-slate);
+  border-bottom-color: var(--c-slate);
+}

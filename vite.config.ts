@@ -1,7 +1,8 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, copyFileSync, statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /**
  * htmlMetaPlugin — substitutes the {{TOKEN}} markers in index.html from the
@@ -88,6 +89,55 @@ function htmlMetaPlugin(): Plugin {
 }
 
 /**
+ * maplibreWorkerPlugin — ship MapLibre's web worker next to the bundle.
+ *
+ * THE FAILURE THIS PREVENTS, AND WHY IT IS INVISIBLE
+ * MapLibre derives its worker URL from its OWN module filename:
+ *
+ *   let t = e.endsWith('-dev.mjs') ? 'maplibre-gl-worker-dev.mjs' : 'maplibre-gl-worker.mjs';
+ *   let i = new URL(`./${t}`, e);
+ *
+ * In dev that resolves to the real file in node_modules and everything works. In a
+ * production build Rollup bundles the library into `assets/vendor-maplibre-*.js`, so the
+ * same expression looks for `assets/maplibre-gl-worker.mjs` — a file the build never
+ * emits, because Rollup has no idea the string refers to an asset.
+ *
+ * The result is not a build error. The map renders its raster basemap perfectly, because
+ * raster tiles are fetched on the main thread — and silently draws NO vector geometry at
+ * all, because vector tiles are parsed in the worker. Measured on the production build:
+ * `roads 0`, `place-city 0`, `water 0`. The same audit against the dev server reports
+ * `roads 6383`, `water 103`, `place-city 8`.
+ *
+ * So this copies the worker into the output directory after the bundle is written. That
+ * makes the relative URL resolve in both the dev server and the built site.
+ */
+function maplibreWorkerPlugin(): Plugin {
+  return {
+    name: 'tv-maplibre-worker',
+    apply: 'build',
+    writeBundle(options) {
+      try {
+        const outDir = options.dir ?? fileURLToPath(new URL('./dist', import.meta.url));
+        const from = fileURLToPath(
+          new URL('./node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs', import.meta.url)
+        );
+        // The assets subdirectory is where the bundled chunk lands, so the worker must
+        // sit beside it rather than at the output root.
+        const to = join(outDir, 'assets', 'maplibre-gl-worker.mjs');
+        mkdirSync(dirname(to), { recursive: true });
+        copyFileSync(from, to);
+        const kb = Math.round(statSync(to).size / 1024);
+        console.log(`\n  [tv-maplibre-worker] copied maplibre-gl-worker.mjs -> assets/ (${kb} KB)`);
+      } catch (err) {
+        // Loud, because a missing worker removes all vector geometry without any other
+        // symptom, and a silent skip here would look exactly like a working build.
+        this.error(`could not copy the MapLibre worker: ${(err as Error).message}`);
+      }
+    },
+  };
+}
+
+/**
  * GitHub Pages sub-path support.
  *
  * The public site is hosted from a project sub-path, so every emitted asset URL
@@ -124,7 +174,7 @@ export default defineConfig(({ mode }) => {
   const base = resolveBasePath();
   return {
     base,
-    plugins: [react(), htmlMetaPlugin()],
+    plugins: [react(), htmlMetaPlugin(), maplibreWorkerPlugin()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -132,6 +182,27 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       __BASE_PATH__: JSON.stringify(base),
+    },
+    /*
+     * maplibre-gl MUST NOT be dependency-pre-bundled.
+     *
+     * This is a measured requirement, not a preference. Left in the default
+     * `optimizeDeps` set, Vite rewrites the library through its dep optimizer, and
+     * MapLibre's internal web worker then fails to start:
+     *
+     *   Error: Worker failed to load. Check that the worker URL is correct.
+     *
+     * The failure is quiet and misleading. The style document loads, raster tiles are
+     * fetched (35 of them in the measured run) and the globe even appears — but the
+     * worker is what parses VECTOR tiles, so `load` never fires, `data-status` stays
+     * 'loading' forever, and the map never becomes interactive. It reads as "the map
+     * is slow" rather than as an error, which is why it is worth stating here.
+     *
+     * Excluding it keeps the library on its own build, where the worker's blob URL is
+     * correct.
+     */
+    optimizeDeps: {
+      exclude: ['maplibre-gl'],
     },
     build: {
       target: 'es2022',
@@ -146,6 +217,9 @@ export default defineConfig(({ mode }) => {
           manualChunks: (id) => {
             if (!id.includes('node_modules')) return undefined;
             if (id.includes('three')) return 'vendor-three';
+            // MapLibre gets its own chunk because it is large (~290 KB gzip) and is
+            // needed by exactly one route.
+            if (id.includes('maplibre')) return 'vendor-maplibre';
             if (id.includes('motion') || id.includes('framer')) return 'vendor-motion';
             if (id.includes('react-router')) return 'vendor-router';
             if (id.includes('react')) return 'vendor-react';

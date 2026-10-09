@@ -1,0 +1,316 @@
+/* ==========================================================================
+   RegionSearch — the collapsed region list.
+
+   The panel is anchored to a small pill in the stage's top-left area, below the page
+   chrome. It floats over the map rather than displacing it, so opening the search
+   never moves the globe the visitor is looking at.
+   ========================================================================== */
+
+.rsearch {
+  position: absolute;
+  left: clamp(16px, 3vw, 44px);
+  top: clamp(150px, 20vh, 220px);
+  z-index: 3;
+}
+
+/* --------------------------------------------------------------- trigger -- */
+
+.rsearch__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-radius: var(--r-pill, 999px);
+
+  background: color-mix(in srgb, var(--c-deepspace) 74%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 13%, transparent);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow: var(--sh-raised), var(--sh-inset-top);
+
+  color: var(--color-text-muted);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    color var(--t-fast, 160ms) var(--ease-standard),
+    border-color var(--t-fast, 160ms) var(--ease-standard),
+    background-color var(--t-fast, 160ms) var(--ease-standard);
+}
+
+.rsearch__trigger:hover,
+.rsearch__trigger[aria-expanded='true'] {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--c-slate) 82%, transparent);
+}
+
+.rsearch__count {
+  font-size: 10px;
+  color: var(--color-accent);
+  padding-left: 6px;
+  border-left: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+}
+
+/* ----------------------------------------------------------------- panel -- */
+
+.rsearch__panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 10px);
+  width: min(370px, calc(100vw - 48px));
+  max-height: min(56vh, 460px);
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+
+  border-radius: var(--r-lg, 14px);
+  background: color-mix(in srgb, var(--c-obsidian) 88%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: var(--sh-window);
+
+  animation: rsearch-in 220ms var(--ease-standard) both;
+  transform-origin: top left;
+}
+
+@keyframes rsearch-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsearch__panel {
+    animation: none;
+  }
+}
+
+/* ----------------------------------------------------------------- field -- */
+
+.rsearch__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: var(--r-md, 10px);
+  background: color-mix(in srgb, #ffffff 6%, transparent);
+  border: 1px solid color-mix(in srgb, #ffffff 10%, transparent);
+  color: var(--color-text-dim);
+}
+
+.rsearch__field:focus-within {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+
+.rsearch__input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+}
+
+.rsearch__input::placeholder {
+  color: var(--color-text-dim);
+}
+
+/* The browser's own search-input clear button is light-themed and clashes. */
+.rsearch__input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.rsearch__close {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-sm, 6px);
+  border: none;
+  background: none;
+  color: var(--color-text-dim);
+  cursor: pointer;
+}
+
+.rsearch__close:hover {
+  color: var(--color-text);
+  background: color-mix(in srgb, #ffffff 8%, transparent);
+}
+
+/* --------------------------------------------------------------- filters -- */
+
+.rsearch__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rsearch__filter {
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 999px);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--color-text-dim);
+  background: color-mix(in srgb, #ffffff 5%, transparent);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 150ms var(--ease-standard), background-color 150ms var(--ease-standard);
+}
+
+.rsearch__filter:hover {
+  color: var(--color-text-muted);
+}
+
+.rsearch__filter[data-active='true'] {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 34%, transparent);
+}
+
+/* ------------------------------------------------------------------ list -- */
+
+.rsearch__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  /* The list scrolls, the panel does not: the field and filters stay put while you
+     scan, which is the whole reason the panel has a max-height. */
+  max-height: min(38vh, 300px);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rsearch__item {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 0 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border: none;
+  border-radius: var(--r-sm, 7px);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 130ms var(--ease-standard);
+}
+
+.rsearch__item:hover {
+  background: color-mix(in srgb, #ffffff 7%, transparent);
+}
+
+.rsearch__item[aria-current='true'] {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+.rsearch__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-dim);
+}
+
+/* Status colours mirror the globe, so the two representations agree. */
+.rsearch__item[data-status='visited'] .rsearch__dot {
+  background: var(--c-aurora);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c-aurora) 60%, transparent);
+}
+
+.rsearch__item[data-status='planned'] .rsearch__dot {
+  background: var(--c-amber);
+}
+
+.rsearch__name {
+  grid-column: 2;
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+}
+
+.rsearch__name-en {
+  grid-column: 2;
+  color: var(--color-text-dim);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.rsearch__tag {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  font-size: 10px;
+  color: var(--color-text-dim);
+  white-space: nowrap;
+}
+
+.rsearch__item[data-status='visited'] .rsearch__tag {
+  color: var(--c-aurora);
+}
+
+.rsearch__item[data-status='planned'] .rsearch__tag {
+  color: var(--c-amber);
+}
+
+.rsearch__empty,
+.rsearch__note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--color-text-dim);
+}
+
+.rsearch__empty {
+  padding: 12px 4px;
+}
+
+.rsearch__note {
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, #ffffff 8%, transparent);
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
+@media (max-width: 767px) {
+  .rsearch {
+    left: 14px;
+    right: 14px;
+    top: auto;
+    /* Bottom-anchored on a phone: the top of the stage holds the title and stats,
+       and a panel opening over them would hide the page's identity. */
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .rsearch__panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    top: auto;
+    bottom: calc(100% + 10px);
+    transform-origin: bottom left;
+    max-height: 62vh;
+  }
+
+  @keyframes rsearch-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
