@@ -31,7 +31,18 @@
   overflow-x: clip;
 }
 
-.vhome > *:not(.vback) {
+/*
+  Every direct child sits above the backdrop, EXCEPT the two full-bleed layers that
+  ARE the backdrop and position themselves.
+
+  `.cfield` is excluded for a MEASURED reason, not a theoretical one. This rule gave
+  the field `position: relative`, which overrode its own `position: absolute` — and
+  a relative element with `inset: 0` has NO height. The field rendered at 1290 x 0
+  with a 1px-tall canvas drawing buffer: mounted correctly, shader compiled, drew
+  nothing at all. Both full-bleed layers must be listed here, or the next one added
+  to this page hits the same invisible failure.
+*/
+.vhome > *:not(.vback):not(.cfield) {
   position: relative;
   z-index: 1;
 }

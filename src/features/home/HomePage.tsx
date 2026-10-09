@@ -49,6 +49,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { playSfx } from '@/store/useSoundStore';
 import { BrandCore } from './BrandCore';
 import { VisionBackdrop } from './VisionBackdrop';
+import { CursorField } from './CursorField';
 import { CoreWindow } from './CoreWindow';
 import { MiniWindow } from './MiniWindow';
 import { SecretSignal } from './SecretSignal';
@@ -174,6 +175,12 @@ export default function HomePage() {
   return (
     <div className="scene vhome" data-scene="home">
       <VisionBackdrop />
+
+      {/* The spatial particle field. It sits ABOVE the backdrop and BELOW the
+          content, so motes drift BEHIND the glass panes — which is also what gives
+          the material something moving to refract. It is `pointer-events: none`
+          and therefore cannot interfere with either core window. */}
+      <CursorField />
 
       <a className="skip-link" href="#core-windows">
         跳到核心窗口 <span className="skip-link__en">Skip to windows</span>

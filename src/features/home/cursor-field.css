@@ -1,0 +1,87 @@
+/* ==========================================================================
+   CursorField — the home page's spatial particle layer.
+
+   THE ONE HARD REQUIREMENT HERE IS `pointer-events: none`.
+
+   This element spans the viewport and sits above the background but below nothing
+   in particular. Without that declaration it would be an opaque hit target across
+   the whole page, and the two core windows underneath would become unclickable —
+   the same class of defect that made the globe undraggable in an earlier revision.
+
+   The layer is decoration, so it must be invisible to the pointer entirely while
+   still being driven by pointer MOVEMENT. That is why the effect is: the element
+   never receives events (pointer-events: none), and the component instead observes
+   a passive `pointermove` on `window`. Both halves are needed.
+
+   Z-ORDER
+   Above the backdrop (z 0) and below the content (z 1+), so particles drift behind
+   the glass panes rather than over the photograph inside them. Glass that has
+   nothing moving behind it cannot show refraction, so this layer is also what gives
+   the material something to sample.
+   ========================================================================== */
+
+.cfield {
+  position: absolute;
+  inset: 0;
+  display: block;
+
+  /* Load-bearing. See the header. */
+  pointer-events: none;
+
+  /*
+    `contain: strict` would be WRONG here, and it was the first thing tried.
+
+    `strict` expands to size + layout + paint + style containment, and SIZE
+    containment makes the element ignore its own contents when computing its
+    intrinsic size. On an `inset: 0` element that resolves to zero-height, so the
+    canvas rendered into a 1430x1 buffer and the field drew nothing — measured in
+    the browser: `size 1430 x 0`, `lit pixels 0 / 9216`, despite the component
+    mounting and the shader compiling.
+
+    `layout paint` is what is actually wanted: it isolates the canvas painting and
+    keeps a stray paint from escaping, without making the box size-independent of
+    its own box model.
+  */
+  contain: layout paint;
+  overflow: hidden;
+}
+
+.cfield canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Fades in once the first frame is drawn, so the field never pops into place. */
+  opacity: 0;
+  transition: opacity 1200ms var(--ease-standard);
+}
+
+.cfield[data-field-ready] canvas {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------ reduced motion -- */
+
+/*
+  The field stays visible — it is part of the composition, not only an effect — but
+  its drift and pointer response are both driven to zero in the shader. Nothing
+  moves, so nothing animates, which is what the mode is asking for.
+*/
+.cfield[data-reduced] canvas {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfield canvas {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  /* A layer of additive motes over an opaque surface is visual noise with no
+     optical purpose once the glass above it is opaque. */
+  .cfield {
+    display: none;
+  }
+}
