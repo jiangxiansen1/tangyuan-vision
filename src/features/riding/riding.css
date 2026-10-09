@@ -1,0 +1,568 @@
+/* ==========================================================================
+   RidingPage — mechanical register: cold metal, sodium light, precision.
+   ========================================================================== */
+
+/* --------------------------------------------------------------- machine -- */
+
+.riding__machine {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(20px, 2.6vw, 40px);
+  align-items: start;
+}
+
+.riding__machine-card {
+  display: grid;
+  grid-template-rows: 190px auto;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* A drawn engine-block abstraction: concentric rings, a machined grid, and a
+   single warm key light. No photograph is claimed because none was supplied. */
+.riding__machine-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      70% 100% at 24% 12%,
+      color-mix(in srgb, var(--c-cryo-500) 18%, transparent) 0%,
+      transparent 66%
+    ),
+    radial-gradient(
+      60% 90% at 84% 92%,
+      color-mix(in srgb, var(--c-ember) 22%, transparent) 0%,
+      transparent 68%
+    ),
+    linear-gradient(160deg, #1a212a 0%, #0e1319 100%);
+}
+
+.riding__machine-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--c-mist) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--c-mist) 7%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(72% 82% at 50% 50%, #000 10%, transparent 82%);
+  -webkit-mask-image: radial-gradient(72% 82% at 50% 50%, #000 10%, transparent 82%);
+}
+
+.riding__machine-glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--c-mist) 20%, transparent);
+  color: color-mix(in srgb, var(--c-frost) 72%, transparent);
+}
+
+.riding__machine-glyph::before {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--c-mist) 16%, transparent);
+}
+
+.riding__machine-body {
+  display: grid;
+  gap: var(--sp-3);
+  align-content: start;
+  padding: clamp(var(--sp-5), 2vw, var(--sp-8));
+}
+
+.riding__machine-name {
+  font-size: var(--fs-title);
+  letter-spacing: var(--ls-title);
+}
+
+.riding__machine-en {
+  color: var(--scene-accent, var(--color-accent));
+  margin-top: calc(var(--sp-3) * -1 + 2px);
+}
+
+.riding__machine-sub {
+  margin-top: var(--sp-3);
+  color: var(--color-text-dim);
+}
+
+.riding__confirmed {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.riding__confirmed > div {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: var(--sp-3);
+  padding-block: var(--sp-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.riding__confirmed dt {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+}
+
+.riding__confirmed dd {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.riding__machine-note {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  padding-left: var(--sp-4);
+  border-left: 2px solid color-mix(in srgb, var(--scene-accent, var(--color-accent)) 40%, transparent);
+}
+
+/* --------------------------------------------------------------- pending -- */
+
+.riding__pending {
+  display: grid;
+  gap: var(--sp-4);
+  align-content: start;
+  padding: clamp(var(--sp-5), 2vw, var(--sp-8));
+  /* Dashed frame: reads as "not yet filled in" at a glance, which is the point. */
+  border: 1px dashed color-mix(in srgb, var(--c-amber) 34%, transparent);
+}
+
+.riding__pending-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--c-amber);
+}
+
+.riding__pending-note {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.riding__pending-list {
+  display: grid;
+  gap: var(--sp-2);
+  list-style: none;
+}
+
+.riding__pending-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--color-text-dim);
+}
+
+.riding__pending-dot {
+  width: 14px;
+  height: 1px;
+  background: color-mix(in srgb, var(--c-amber) 52%, transparent);
+  flex: none;
+}
+
+.riding__pending-cms {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-dim);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.riding__pending-cms code,
+.riding__empty-body code {
+  font-family: var(--font-mono);
+  font-size: 0.94em;
+  padding: 0.1em 0.34em;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-mist) 9%, transparent);
+  color: var(--c-cryo-100);
+}
+
+/* ---------------------------------------------------------------- routes -- */
+
+.riding__route-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-6);
+}
+
+.riding__route-tab {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  min-height: 52px;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-mist) 4%, transparent);
+  transition:
+    border-color var(--t-base) var(--ease-standard),
+    background-color var(--t-base) var(--ease-standard);
+}
+
+.riding__route-tab:hover {
+  border-color: var(--color-border-strong);
+}
+
+.riding__route-tab[aria-selected='true'] {
+  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 52%, transparent);
+  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 10%, transparent);
+}
+
+.riding__route-tab-name {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.riding__route-tab-status {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  color: var(--color-text-dim);
+}
+
+/* Status is also carried by a dashed left edge, so it is not colour-only. */
+.riding__route-tab[data-status='planned'] {
+  border-left: 2px dashed color-mix(in srgb, var(--c-amber) 50%, transparent);
+}
+
+.riding__route-tab[data-status='ridden'] {
+  border-left: 2px solid color-mix(in srgb, var(--c-aurora) 50%, transparent);
+}
+
+.riding__route-panel:focus-visible {
+  outline: none;
+}
+
+.riding__route-detail {
+  display: grid;
+  gap: clamp(20px, 2.4vw, 36px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* ------------------------------------------------------------ route head -- */
+
+.riding__route-head {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-areas:
+    'main schematic'
+    'facts   facts';
+  gap: clamp(20px, 2.4vw, 40px);
+  align-items: start;
+  padding: clamp(var(--sp-5), 2.2vw, var(--sp-8));
+}
+
+.riding__route-head-main {
+  grid-area: main;
+  display: grid;
+  gap: var(--sp-4);
+  align-content: start;
+}
+
+.riding__route-title {
+  font-size: var(--fs-title);
+  letter-spacing: var(--ls-title);
+}
+
+.riding__route-summary {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: 56ch;
+}
+
+.riding__route-schematic {
+  grid-area: schematic;
+  width: 100%;
+  height: 110px;
+  align-self: center;
+}
+
+.riding__route-facts {
+  grid-area: facts;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.riding__route-facts > div {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.riding__route-facts dd {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+/* ------------------------------------------------------------- timeline -- */
+
+.riding__timeline {
+  display: grid;
+  gap: var(--sp-5);
+  align-content: start;
+}
+
+.riding__timeline-title {
+  color: var(--color-text-dim);
+}
+
+.riding__timeline-list {
+  display: grid;
+  gap: 0;
+  list-style: none;
+}
+
+.riding__timeline-item {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-5);
+}
+
+.riding__timeline-marker {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding-top: 4px;
+}
+
+.riding__timeline-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--scene-accent, var(--color-accent));
+  background: var(--c-void);
+  flex: none;
+}
+
+/* The connecting rail is what turns a list into a route: it shows the points
+   are sequential, which an unordered list cannot express visually. */
+.riding__timeline-rail {
+  position: absolute;
+  top: 15px;
+  bottom: -18px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--scene-accent, var(--color-accent)) 42%, transparent),
+    transparent
+  );
+}
+
+.riding__timeline-body {
+  display: grid;
+  gap: 2px;
+  padding-bottom: var(--sp-2);
+}
+
+.riding__timeline-index {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.14em;
+  color: var(--color-text-dim);
+}
+
+.riding__timeline-name {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.riding__timeline-note {
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  line-height: var(--lh-normal);
+}
+
+.riding__timeline-coords {
+  font-size: var(--fs-micro);
+  color: var(--c-aurora);
+  margin-top: 2px;
+}
+
+.riding__timeline-hint {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px dashed color-mix(in srgb, var(--c-amber) 30%, transparent);
+  background: color-mix(in srgb, var(--c-amber) 6%, transparent);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.riding__timeline-hint svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--c-amber);
+}
+
+/* ------------------------------------------------------------ highlights -- */
+
+.riding__highlights {
+  display: grid;
+  gap: var(--sp-4);
+  align-content: start;
+}
+
+.riding__highlights > .u-label {
+  color: var(--color-text-dim);
+}
+
+.riding__highlights ul {
+  display: grid;
+  gap: var(--sp-3);
+  list-style: none;
+}
+
+.riding__highlights li {
+  display: flex;
+  gap: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  line-height: var(--lh-normal);
+}
+
+.riding__highlights svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--scene-accent, var(--color-accent));
+}
+
+/* ------------------------------------------------------------ empty state -- */
+
+.riding__empty {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+}
+
+.riding__empty > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-text-dim);
+}
+
+.riding__empty-title {
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  margin-block-end: var(--sp-2);
+}
+
+.riding__empty-body {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: 74ch;
+}
+
+/* --------------------------------------------------------------- service -- */
+
+.riding__service {
+  display: grid;
+  gap: var(--sp-4);
+  list-style: none;
+}
+
+.riding__service-item {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+}
+
+.riding__service-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.riding__service-km {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.riding__service-items {
+  display: grid;
+  gap: var(--sp-2);
+  list-style: none;
+}
+
+.riding__service-items li {
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  padding-left: var(--sp-4);
+  position: relative;
+}
+
+.riding__service-items li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 1px;
+  background: var(--color-border-strong);
+}
+
+.riding__service-note {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+}
+
+.riding__back {
+  display: flex;
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--color-border);
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 1023px) {
+  .riding__machine {
+    grid-template-columns: 1fr;
+  }
+
+  .riding__route-head {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'main'
+      'schematic'
+      'facts';
+  }
+
+  .riding__route-detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .riding__machine-card {
+    grid-template-rows: 140px auto;
+  }
+
+  .riding__route-schematic {
+    height: 84px;
+  }
+
+  .riding__confirmed > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

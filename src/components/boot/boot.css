@@ -1,0 +1,345 @@
+/* ==========================================================================
+   BootSequence — brand entrance.
+
+   The reveal is built on the geometry of the supplied mark itself: the logo's
+   dominant gesture is a single long diagonal stroke, so the reveal travels along
+   that same left-to-right diagonal rather than using a generic wipe. The result
+   is that the animation looks authored for this mark instead of applied to it.
+
+   Every animated property here is transform or opacity, plus one mask-position —
+   all compositor-friendly. Nothing animates a filter or a blur.
+   ========================================================================== */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-boot);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  background: var(--boot-ground, var(--color-canvas));
+  /* The overlay must not swallow the page beneath it once leaving. */
+  pointer-events: auto;
+  contain: strict;
+}
+
+.boot[data-leaving] {
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------- L1 — ambient light -- */
+
+.boot__ambient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      62% 48% at 50% 46%,
+      color-mix(in srgb, var(--c-cryo-700) 30%, transparent) 0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      90% 70% at 50% 120%,
+      color-mix(in srgb, var(--c-steel) 26%, transparent) 0%,
+      transparent 70%
+    );
+  opacity: 0;
+  animation: boot-ambient 900ms var(--ease-entrance) 40ms forwards;
+}
+
+@keyframes boot-ambient {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ------------------------------------------------------------- the stage -- */
+
+.boot__stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(18px, 3.4vh, 40px);
+  width: min(78vw, 760px);
+  transform: scale(calc(0.965 + 0.035 * var(--boot-scale, 1)));
+}
+
+.boot__mark-wrap {
+  position: relative;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+/* The mark resolves out of the darkness via an animated mask that sweeps along
+   the artwork's own diagonal. Stops short of 100% edges so the strokes never
+   appear chopped at the very start. */
+.boot__mark {
+  width: 100%;
+  height: auto;
+  /* Deliberately a little dimmer than the live asset: the mark should come up to
+     full brightness as the light sweep passes, not start there. */
+  filter: brightness(0.82) contrast(1.02);
+
+  --boot-sweep: 0%;
+
+  -webkit-mask-image: linear-gradient(
+    104deg,
+    #000 0%,
+    #000 calc(var(--boot-sweep) - 26%),
+    rgb(0 0 0 / 0.12) var(--boot-sweep),
+    transparent calc(var(--boot-sweep) + 20%)
+  );
+  mask-image: linear-gradient(
+    104deg,
+    #000 0%,
+    #000 calc(var(--boot-sweep) - 26%),
+    rgb(0 0 0 / 0.12) var(--boot-sweep),
+    transparent calc(var(--boot-sweep) + 20%)
+  );
+
+  animation:
+    boot-sweep calc(600ms * var(--boot-scale, 1) + 150ms) var(--ease-standard) 150ms forwards,
+    boot-gain calc(600ms * var(--boot-scale, 1) + 150ms) var(--ease-entrance) 150ms forwards;
+}
+
+/* @property lets the browser interpolate the mask position smoothly. Without
+   it the sweep would snap between keyframes. */
+@property --boot-sweep {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+@keyframes boot-sweep {
+  from { --boot-sweep: -6%; }
+  to   { --boot-sweep: 108%; }
+}
+
+@keyframes boot-gain {
+  from { filter: brightness(0.82) contrast(1.02); }
+  to   { filter: brightness(1.12) contrast(1.06); }
+}
+
+/* L3 — a raking highlight that crosses the mark and dissipates. A single pass;
+   never a loop, which would turn the entrance into a loading state. */
+.boot__rake {
+  position: absolute;
+  inset: -8% -4%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    104deg,
+    transparent 40%,
+    rgb(255 255 255 / 0.2) 48%,
+    rgb(199 240 255 / 0.32) 50%,
+    rgb(255 255 255 / 0.16) 52%,
+    transparent 60%
+  );
+  mix-blend-mode: screen;
+  transform: translate3d(-58%, 0, 0);
+  animation: boot-rake calc(360ms * var(--boot-scale, 1) + 120ms) var(--ease-standard) 420ms forwards;
+}
+
+@keyframes boot-rake {
+  0% {
+    opacity: 0;
+    transform: translate3d(-58%, 0, 0);
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(58%, 0, 0);
+  }
+}
+
+/* ------------------------------------------------------- the brand lockup -- */
+
+.boot__lockup {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  opacity: 0;
+  animation: boot-lockup 460ms var(--ease-entrance) 640ms forwards;
+}
+
+@keyframes boot-lockup {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.boot__rule {
+  width: min(34vw, 240px);
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--c-cryo-300) 52%, transparent),
+    transparent
+  );
+  transform: scaleX(0);
+  animation: boot-rule 620ms var(--ease-entrance) 620ms forwards;
+}
+
+.boot__rule--short {
+  width: min(16vw, 110px);
+  animation-delay: 800ms;
+}
+
+@keyframes boot-rule {
+  to { transform: scaleX(1); }
+}
+
+.boot__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.44em;
+  text-indent: 0.44em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  padding-block: 2px;
+}
+
+.boot__cn {
+  font-size: var(--fs-small);
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  color: var(--color-text-dim);
+}
+
+/* The image-failure fallback: the same lockup, typeset instead. */
+.boot__fallback {
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: center;
+  padding-block: clamp(24px, 6vh, 64px);
+}
+
+.boot__fallback-name {
+  font-size: clamp(1.6rem, 5vw, 2.8rem);
+  font-weight: var(--fw-light);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.boot__fallback-line {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--ls-wide);
+  text-indent: var(--ls-wide);
+  color: var(--c-cryo-300);
+}
+
+/* ---------------------------------------------------------------- footer -- */
+
+.boot__footer {
+  width: min(38vw, 260px);
+  padding-block-end: clamp(28px, 7vh, 72px);
+}
+
+/* A progress line with a known duration — an honest indicator rather than an
+   indeterminate spinner, because this sequence genuinely has a fixed length. */
+.boot__progress {
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: color-mix(in srgb, var(--c-mist) 14%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+
+.boot__progress::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--c-cryo-300) 70%, transparent),
+    color-mix(in srgb, var(--c-cryo-100) 90%, transparent)
+  );
+  animation: boot-progress var(--boot-total, 1650ms) linear 60ms forwards;
+}
+
+@keyframes boot-progress {
+  to { transform: scaleX(1); }
+}
+
+/* --------------------------------------------------- reduced motion / short */
+
+/* In reduced-motion mode the sequence is a brief cross-fade: no sweep, no rake,
+   no scale. Everything still resolves to the same end state. */
+@media (prefers-reduced-motion: reduce) {
+  .boot__ambient {
+    animation: none;
+    opacity: 1;
+  }
+
+  .boot__stage {
+    transform: none;
+  }
+
+  .boot__mark {
+    animation: none;
+    --boot-sweep: 120%;
+    filter: brightness(1.12) contrast(1.06);
+  }
+
+  .boot__rake {
+    display: none;
+  }
+
+  .boot__lockup {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  .boot__rule {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+    transform: scaleX(1);
+  }
+
+  .boot__progress::after {
+    animation-duration: 1ms;
+    transform: scaleX(1);
+  }
+}
+
+/* A short mode (repeat visitor) at 45 % duration is handled by --boot-scale on
+   the sweeping elements; this trims the tail timings to match. */
+.boot[data-short] .boot__lockup {
+  animation-delay: 300ms;
+  animation-duration: 260ms;
+}
+
+.boot[data-short] .boot__rule {
+  animation-delay: 280ms;
+  animation-duration: 300ms;
+}
+
+.boot[data-short] .boot__rule--short {
+  animation-delay: 340ms;
+}
+
+@media (max-width: 479px) {
+  .boot__stage {
+    width: 86vw;
+  }
+
+  .boot__name {
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+  }
+}

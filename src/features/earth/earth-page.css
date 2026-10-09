@@ -1,0 +1,481 @@
+/* ==========================================================================
+   EarthPage — 地球 Online 进度.
+
+   GROUND: LIGHT, WITH A DARK GLOBE WELL
+   The brief is explicit that the page around the globe should belong to the rest
+   of the site — light, fog-grey, low-interference — rather than turning the whole
+   route into a black room with dark text. So this scene keeps the SITE's light
+   ground and its normal text tokens, and darkness is contained to one element:
+   the globe well itself, because a lit sphere can only read against an unlit
+   field.
+
+   That is a structural change from V3, where the route declared
+   `data-ground="dark"` and the region list and credits inherited a near-black
+   background they were never designed for. Measured there: the credits read at
+   4.48:1 and the region-list headings at 1:1.
+   ========================================================================== */
+
+.epage {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-text);
+}
+
+/* ------------------------------------------------------------------ stage -- */
+
+/*
+  The globe well. Dark by necessity, and bounded: it frames the planet without
+  becoming the page.
+*/
+.epage__stage {
+  position: relative;
+  height: clamp(460px, 76dvh, 900px);
+  min-height: 460px;
+  overflow: hidden;
+
+  /* A cool, atmospheric field rather than flat black, so the well reads as part
+     of the light product. The radial falloff keeps the globe the brightest thing
+     in it. */
+  background:
+    radial-gradient(120% 88% at 50% 46%, #12203a 0%, #0a1220 46%, #060a12 100%);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+/* ---------------------------------------------------------------- chrome -- */
+
+.epage__chrome {
+  position: absolute;
+  inset: clamp(12px, 2vw, 24px) clamp(12px, 2vw, 24px) auto;
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  pointer-events: none;
+}
+
+/* Individual controls re-enable pointer events; the wrapper does not, so the
+   globe stays draggable between the overlays. */
+.epage__chrome > * {
+  pointer-events: auto;
+}
+
+.epage__chrome-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+/* The globe well is dark, so its chrome is the one place on this page that uses
+   light-on-dark. Anchored to literal white rather than to --color-text, which
+   follows the LIGHT page ground and would be dark ink here. */
+/*
+  GLOBE CHROME CARRIES ITS OWN PLATE.
+
+  These controls are light-on-dark by design — they float over a planet. But they
+  must not DEPEND on the planet being painted behind them: if the WebGL canvas is
+  still initialising, has failed, or is scrolled away, the text lands directly on
+  the light page ground and measured 1.08:1 (invisible).
+
+  So each control supplies its own dark translucent surface. The contrast is then
+  guaranteed by the control itself rather than by whatever happens to be behind
+  it — which is also what a floating control should look like.
+*/
+.epage__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(8 14 26 / 0.72);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  font-size: var(--fs-caption);
+  color: #ffffff;
+  transition: background-color var(--t-fast) var(--ease-standard);
+}
+
+.epage__back:hover {
+  background: rgb(14 22 38 / 0.86);
+}
+
+.epage__back:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #060a12, 0 0 0 4px var(--c-cryo-glow);
+}
+
+.epage__titles {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* The page title sits INSIDE the dark globe well, not on the light page ground.
+   Its colour follows the well rather than the page: var(--color-text) resolved to
+   ink here and rendered at 1.08:1 against the dark stage.
+
+   The shadow is contrast insurance rather than decoration. The well is a GRADIENT,
+   so its value varies across the element, and the title sits near the top-left
+   where the gradient is lighter. A shadow keeps the text legible at every point of
+   the sweep instead of only where it happens to be darkest. */
+.epage__title {
+  font-size: clamp(1.05rem, 0.9rem + 0.7vw, 1.5rem);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgb(4 8 16 / 0.6), 0 4px 18px rgb(4 8 16 / 0.4);
+}
+
+.epage__sub {
+  color: var(--color-accent);
+}
+
+/* ----------------------------------------------------------------- stats -- */
+
+.epage__stats {
+  display: flex;
+  gap: clamp(12px, 1.6vw, 26px);
+  padding: var(--sp-3) clamp(var(--sp-4), 1.4vw, var(--sp-5));
+  border-radius: var(--r-lg);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  /* Its own dark plate, for the same reason as the back control above. */
+  background: rgb(8 14 26 / 0.72);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.epage__stats > div {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.epage__stats dt {
+  color: rgb(255 255 255 / 0.66);
+}
+
+.epage__stats dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, 0.85rem + 0.6vw, 1.3rem);
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------- sun note -- */
+
+/* A note ABOUT the globe, so it sits on the dark well beside it. */
+.epage__sun {
+  position: absolute;
+  left: clamp(12px, 2vw, 24px);
+  bottom: clamp(72px, 9vh, 108px);
+  z-index: 6;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  max-width: min(400px, 46vw);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  /* Opaque enough to be readable even with no globe behind it. */
+  background: rgb(6 10 18 / 0.8);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.epage__sun-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--c-cryo-glow);
+  box-shadow: 0 0 8px var(--c-cryo-glow);
+  flex: none;
+  animation: epage-sun-pulse 3.4s var(--ease-standard) infinite;
+}
+
+@keyframes epage-sun-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+.epage__sun-line {
+  font-size: var(--fs-caption);
+  color: #ffffff;
+}
+
+.epage__sun-line .u-mono {
+  color: var(--c-cryo-glow);
+}
+
+.epage__sun-note {
+  margin-top: 3px;
+  font-size: var(--fs-micro);
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.68);
+}
+
+/* ========================================================== region list == */
+
+/*
+  Below the well the page returns to the site's light ground. These tokens are
+  the normal light ones, unmodified — which is the point of containing the
+  darkness to the well instead of declaring the route dark.
+*/
+.epage__list-section {
+  flex: 1;
+  padding: clamp(28px, 4vh, 56px) var(--shell-pad) clamp(24px, 3vh, 40px);
+}
+
+.epage__list-head {
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  margin-block-end: var(--sp-5);
+}
+
+.epage__list-title {
+  font-size: clamp(1.15rem, 0.95rem + 0.9vw, 1.7rem);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+  color: var(--color-text);
+}
+
+.epage__list-note {
+  margin-top: var(--sp-2);
+  max-width: 74ch;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.epage__list-empty {
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px dashed var(--color-border-strong);
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+}
+
+/* A dense multi-column grid of real buttons — the accessible equivalent of the
+   globe's raycast, and the way the page stays usable when WebGL does not start. */
+.epage__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 2px;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  list-style: none;
+}
+
+.epage__list-item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 var(--sp-2);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  text-align: left;
+  transition: background-color var(--t-fast) var(--ease-standard);
+}
+
+.epage__list-item:hover {
+  background: color-mix(in srgb, var(--c-mist) 6%, transparent);
+}
+
+.epage__list-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-focus);
+}
+
+.epage__list-item[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 34%, transparent);
+}
+
+/* Status is carried by colour AND by the text tag beside it, never colour alone. */
+.epage__list-status {
+  grid-row: 1 / span 2;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-steel-light);
+}
+
+.epage__list-item[data-status='visited'] .epage__list-status {
+  background: #0d6d54;
+}
+
+.epage__list-item[data-status='planned'] .epage__list-status {
+  background: #8a5f1e;
+}
+
+.epage__list-name {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.epage__list-name-en {
+  grid-column: 2;
+  font-size: var(--fs-micro);
+  color: var(--color-text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.epage__list-tag {
+  grid-column: 2;
+  font-size: var(--fs-micro);
+  color: var(--color-text-muted);
+}
+
+/* ============================================================= credits == */
+
+.epage__credits {
+  padding: 0 var(--shell-pad) clamp(32px, 4vh, 56px);
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.epage__credits-title {
+  color: var(--color-text-muted);
+  margin-block-end: var(--sp-3);
+}
+
+.epage__credits ul {
+  display: grid;
+  gap: var(--sp-2);
+  list-style: none;
+  padding: 0;
+}
+
+/* Each credit is written as prose with its licence stated inline, because a
+   credit that says only "NASA" is not a licence, and the brief is explicit that
+   provenance must be verifiable. */
+.epage__credits li {
+  position: relative;
+  padding-left: var(--sp-4);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.epage__credits li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 1px;
+  background: var(--color-accent);
+}
+
+.epage__credits li strong {
+  color: var(--color-text);
+  font-weight: var(--fw-medium);
+}
+
+.epage__credits code {
+  font-family: var(--font-mono);
+  font-size: 0.94em;
+  color: var(--color-accent);
+}
+
+.epage__credits-note {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-micro);
+  color: var(--color-text-dim);
+}
+
+/* ========================================================== footer nav == */
+
+.epage__footer-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: 0 var(--shell-pad) clamp(40px, 6vh, 80px);
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.epage__footer-thumb {
+  width: 30px;
+  height: 20px;
+  border-radius: var(--r-xs);
+  margin-left: var(--sp-1);
+}
+
+/* ========================================================== responsive == */
+
+@media (max-width: 1023px) {
+  .epage__stats > div:nth-child(3) {
+    /* The total is context, not a headline. On a tablet the header has room for
+       the two numbers that matter. */
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .epage__stage {
+    height: clamp(380px, 68dvh, 620px);
+  }
+
+  /* The header stacks, and the stats become a compact row beneath the title —
+     keeping them top-right on a phone would leave them overlapping the globe's
+     controls. */
+  .epage__chrome {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-3);
+  }
+
+  .epage__chrome-left {
+    justify-content: space-between;
+  }
+
+  .epage__stats {
+    justify-content: space-between;
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .epage__stats > div {
+    text-align: left;
+  }
+
+  .epage__stats > div:nth-child(3) {
+    display: grid;
+  }
+
+  /* The solar note is long-form context and would cover the globe on a phone. */
+  .epage__sun {
+    display: none;
+  }
+
+  .epage__list {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .epage__list-name-en {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .epage__sun-dot {
+    animation: none;
+  }
+}

@@ -1,0 +1,11 @@
+/* Layer order is explicit so a later file can never accidentally lose a
+   specificity fight with an earlier one. */
+@layer tokens, reset, base, theme, scenes, glass, motion, components, utilities;
+
+@import './tokens.css' layer(tokens);
+@import './reset.css' layer(reset);
+@import './base.css' layer(base);
+@import './theme.css' layer(theme);
+@import './scenes.css' layer(scenes);
+@import './glass.css' layer(glass);
+@import './motion.css' layer(motion);

@@ -1,0 +1,31 @@
+{
+  "siteTitle": "汤圆Vision",
+  "siteTitleSuffix": "汤圆Vision",
+  "siteDescription": "汤圆Vision · 汤圆视界。以镜头记录世界，以好奇心探索未来。摄影作品、地球 Online 进度、AI 与编程实验、个人项目与随笔。A WORLD BEYOND THE FRAME.",
+  "themeColor": "#F4F6F8",
+  "shellForeground": "#161B22",
+  "shellMuted": "#5C6672",
+  "shellAccent": "#1B83B8",
+  "ogImage": "/assets/brand/logo-light.png",
+  "homeScene": "home",
+  "secretEnabled": true,
+  "bootEnabled": true,
+  "locale": "zh-CN",
+  "homeBackground": {
+    "src": "/assets/photography/sample-caustic-03.jpg",
+    "tone": "#1a2635",
+    "overlay": 0.5,
+    "provenance": "sample",
+    "note": "首页背景。替换成你自己的摄影作品时改这里的 src，并把 provenance 改为 real。未填写时会自动回退为程序绘制的渐变场景，不会出现破图。"
+  },
+  "keywords": [
+    "汤圆Vision",
+    "汤圆视界",
+    "个人网站",
+    "摄影作品集",
+    "地球 Online 进度",
+    "摩旅",
+    "AI 实验",
+    "个人项目"
+  ]
+}

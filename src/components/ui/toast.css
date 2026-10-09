@@ -1,0 +1,90 @@
+/* Toast — bottom-centre status messages. */
+
+.toast-layer {
+  position: fixed;
+  left: 50%;
+  bottom: max(var(--sp-6), env(safe-area-inset-bottom, 0px));
+  translate: -50% 0;
+  z-index: var(--z-toast);
+  width: min(520px, calc(100vw - var(--sp-8)));
+  pointer-events: none;
+  display: grid;
+  /* Above the mobile browser chrome, below the settings sheet. */
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--overlay-solid-border);
+  /* Opaque on purpose: a toast must be readable over anything, so this is the
+     one surface in the product that does not use the glass material. */
+  background: var(--overlay-solid);
+  box-shadow: var(--sh-float);
+  color: var(--overlay-solid-text);
+  animation: toast-in var(--t-base) var(--ease-entrance) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.toast[data-tone='warn'] {
+  border-color: color-mix(in srgb, var(--c-amber) 46%, transparent);
+}
+
+.toast[data-tone='warn'] > svg {
+  color: var(--c-amber);
+  flex: none;
+  margin-top: 1px;
+}
+
+.toast[data-tone='ok'] > svg {
+  color: var(--c-aurora);
+  flex: none;
+  margin-top: 1px;
+}
+
+.toast[data-tone='info'] > svg {
+  color: var(--c-cryo-300);
+  flex: none;
+  margin-top: 1px;
+}
+
+.toast__message {
+  flex: 1;
+  font-size: var(--fs-small);
+  line-height: var(--lh-normal);
+}
+
+.toast__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  color: var(--color-text-dim);
+  transition: color var(--t-fast) var(--ease-standard), background-color var(--t-fast) var(--ease-standard);
+}
+
+.toast__close:hover {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--c-mist) 10%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

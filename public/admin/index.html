@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>内容管理 · 汤圆Vision</title>
+
+    <!--
+      The CMS admin shell.
+
+      This page is NOT part of the public site: it is excluded from search
+      indexes, it is not linked from anywhere, and it renders a working admin UI
+      only when a backend is reachable. When no backend is configured it shows an
+      explanation instead of a login form that cannot succeed — a fake login
+      screen would be exactly the kind of theatre the project brief forbids.
+
+      The Decap CMS script itself is loaded from a CDN, which is how Decap is
+      designed to be used; the version is pinned so the admin cannot change under
+      the site's feet.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: #05070a;
+        color: #e8ecf2;
+        font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+      }
+      #nc-root {
+        min-height: 100dvh;
+      }
+      .cms-fallback {
+        display: grid;
+        place-content: center;
+        gap: 16px;
+        min-height: 100dvh;
+        padding: 32px;
+        text-align: left;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .cms-fallback h1 {
+        font-size: 1.35rem;
+        font-weight: 600;
+        margin: 0;
+        color: #e8ecf2;
+      }
+      .cms-fallback p,
+      .cms-fallback li {
+        font-size: 14px;
+        line-height: 1.75;
+        color: #97a2b0;
+        margin: 0;
+      }
+      .cms-fallback ol {
+        display: grid;
+        gap: 10px;
+        padding-left: 22px;
+      }
+      .cms-fallback code {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 12.5px;
+        background: rgba(232, 236, 242, 0.09);
+        padding: 2px 6px;
+        border-radius: 3px;
+        color: #8fe3ff;
+      }
+      .cms-fallback a {
+        color: #8fe3ff;
+      }
+      .cms-fallback__tag {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #6d7885;
+      }
+      noscript p {
+        color: #ff7a3c;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="nc-root"></div>
+
+    <!--
+      Shown only if the Decap bundle never boots (offline, CSP block, CDN
+      failure). It states what the admin needs and links to the setup doc, so the
+      author is never left staring at a blank page wondering whether the site is
+      broken.
+    -->
+    <noscript>
+      <div class="cms-fallback">
+        <p class="cms-fallback__tag">CONTENT MANAGEMENT</p>
+        <h1>内容管理需要启用 JavaScript</h1>
+        <p>这个页面是 Decap CMS 的管理界面，它完全在浏览器中运行。</p>
+      </div>
+    </noscript>
+
+    <script>
+      /*
+       * Bootstraps Decap CMS, and reports clearly when it cannot start.
+       *
+       * The check below is the honest part: we wait for the Decap bundle to
+       * define a global. If it does not appear within a few seconds, we replace
+       * the empty shell with an explanation that includes the actual next step —
+       * rather than leaving a spinner that never resolves.
+       */
+      window.CMS_MANUAL_INIT = true;
+    </script>
+
+    <script src="https://unpkg.com/decap-cms@3.8.4/dist/decap-cms.js"></script>
+
+    <script>
+      (function () {
+        var booted = false;
+
+        function showHelp(reason) {
+          var root = document.getElementById('nc-root');
+          if (!root || root.dataset.helpShown === 'true') return;
+          root.dataset.helpShown = 'true';
+          root.innerHTML =
+            '<div class="cms-fallback">' +
+            '<p class="cms-fallback__tag">CONTENT MANAGEMENT</p>' +
+            '<h1>内容管理后台尚未完成配置</h1>' +
+            '<p>' +
+            (reason ? '原因：' + reason + '。' : '') +
+            '公开网站不受影响——它是一个静态站点，内容直接来自仓库中的 JSON 文件，' +
+            '与这个后台是否可用完全无关。' +
+            '</p>' +
+            '<ol>' +
+            '<li>当前 <code>public/admin/config.yml</code> 使用的是 <code>local</code> 后端，' +
+            '它只在你自己的电脑上工作。请先在项目根目录运行：<br>' +
+            '<code>pnpm run cms</code>' +
+            '<br>这会启动本地代理，然后重新打开本页面。</li>' +
+            '<li>若要在线上编辑，需要把后端切换为 <code>github</code>，并配置一个免费的 OAuth 中转服务——' +
+            'GitHub Pages 是静态主机，无法自己完成 OAuth 的密钥交换。' +
+            '完整步骤见 <code>docs/CMS.md</code>。</li>' +
+            '<li>也可以直接编辑 <code>src/content/data/*.json</code>，' +
+            '然后提交到仓库——这和 CMS 写入的是同一批文件。</li>' +
+            '</ol>' +
+            '<p>详细说明：<code>docs/CMS.md</code></p>' +
+            '</div>';
+        }
+
+        function init() {
+          if (booted) return;
+          if (typeof window.CMS === 'undefined') {
+            showHelp('Decap CMS 脚本未能加载，可能是网络或内容安全策略阻止了 CDN');
+            return;
+          }
+          booted = true;
+          window.CMS.init();
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          window.setTimeout(init, 0);
+        } else {
+          window.addEventListener('DOMContentLoaded', init);
+        }
+
+        // Backstop: if nothing has booted after 6 s, explain rather than spin.
+        window.setTimeout(function () {
+          if (!booted) showHelp('初始化超时');
+        }, 6000);
+      })();
+    </script>
+  </body>
+</html>

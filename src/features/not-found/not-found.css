@@ -1,0 +1,248 @@
+/* ==========================================================================
+   NotFoundPage — a dead end that still offers a way out.
+   ========================================================================== */
+
+.notfound {
+  min-height: 100dvh;
+}
+
+.notfound__main {
+  position: relative;
+  z-index: var(--z-content);
+  padding-block: var(--page-top) clamp(72px, 12vh, 160px);
+}
+
+.notfound__hero {
+  display: grid;
+  gap: var(--sp-4);
+  max-width: 64ch;
+  margin-block-end: clamp(40px, 6vh, 72px);
+}
+
+/* The status code is set as a typographic element rather than a red badge —
+   large, dim, and marked aria-hidden because it conveys nothing a screen reader
+   needs that the heading does not already say. */
+.notfound__code {
+  font-size: clamp(3rem, 1.5rem + 9vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: color-mix(in srgb, var(--c-mist) 12%, transparent);
+}
+
+.notfound__title {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-light);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+}
+
+.notfound__body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.notfound__body code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.12em 0.4em;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-mist) 10%, transparent);
+  color: var(--c-cryo-100);
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------- search -- */
+
+.notfound__search {
+  display: grid;
+  gap: var(--sp-4);
+  padding: clamp(var(--sp-5), 2.4vw, var(--sp-8));
+  margin-block-end: clamp(40px, 6vh, 72px);
+}
+
+.notfound__search-label {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.notfound__search-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  color: var(--color-text-dim);
+  transition: border-color var(--t-base) var(--ease-standard);
+}
+
+.notfound__search-row:focus-within {
+  border-color: var(--color-focus);
+  box-shadow: var(--sh-focus);
+}
+
+.notfound__search-row input {
+  width: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+/* The platform search affordance is replaced by the icon on the left, so the
+   native clear button would be a second, redundant control. */
+.notfound__search-row input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.notfound__search-hint,
+.notfound__no-hits {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  line-height: var(--lh-normal);
+}
+
+.notfound__hits {
+  display: grid;
+  gap: 0;
+  list-style: none;
+}
+
+.notfound__hit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-3);
+  align-items: start;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  transition: background-color var(--t-fast) var(--ease-standard);
+}
+
+.notfound__hit:hover {
+  background: color-mix(in srgb, var(--c-mist) 7%, transparent);
+}
+
+.notfound__hit-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border);
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.notfound__hit-body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.notfound__hit-label {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.notfound__hit-detail {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+}
+
+/* ---------------------------------------------------------------- index -- */
+
+.notfound__index {
+  margin-block-end: clamp(40px, 6vh, 72px);
+}
+
+.notfound__index > .u-label {
+  color: var(--color-text-dim);
+  margin-block-end: var(--sp-5);
+}
+
+.notfound__index-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: var(--sp-2);
+  list-style: none;
+}
+
+.notfound__index-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-mist) 3%, transparent);
+  color: var(--color-text);
+  font-size: var(--fs-small);
+  transition:
+    border-color var(--t-base) var(--ease-standard),
+    background-color var(--t-base) var(--ease-standard);
+}
+
+.notfound__index-link:hover {
+  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 44%, transparent);
+  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 8%, transparent);
+}
+
+.notfound__index-link > svg {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.notfound__index-en {
+  color: var(--color-text-dim);
+}
+
+/* -------------------------------------------------------------- explain -- */
+
+.notfound__explain {
+  display: grid;
+  gap: var(--sp-4);
+  padding: clamp(var(--sp-5), 2.4vw, var(--sp-8));
+}
+
+.notfound__explain-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-lead);
+  color: var(--c-amber);
+}
+
+.notfound__explain p {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: 82ch;
+}
+
+.notfound__explain code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.36em;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-mist) 10%, transparent);
+  color: var(--c-cryo-100);
+}
+
+.notfound__explain-meta {
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-dim);
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 640px) {
+  .notfound__code {
+    /* The oversized numeral is the first thing to go — it costs more vertical
+       space than the actual message. */
+    font-size: 3.4rem;
+  }
+}

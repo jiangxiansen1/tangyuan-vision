@@ -1,0 +1,449 @@
+# ==============================================================================
+#  Decap CMS — the content management backend.
+#
+#  WHAT THIS IS, STATED PLAINLY
+#  Decap CMS is a real, maintained, open-source (MIT) Git-based CMS. Its admin UI
+#  is served as static files from this project's own /admin/ path, and it writes
+#  directly to this repository through the GitHub API. There is no database and no
+#  server of ours to run or pay for.
+#
+#  WHY IT CANNOT AUTHENTICATE ON ITS OWN
+#  GitHub Pages is a static file host. It cannot run the OAuth code exchange that
+#  turns "user clicked Authorize" into an access token, because that exchange
+#  requires a client secret — and a client secret cannot live in a static site.
+#  So Decap needs ONE of the two backends below. This is not a limitation of this
+#  project; it is how OAuth works against a static host.
+#
+#  OPTION A — github backend + an OAuth relay  (what most people do)
+#    backend.name: github, with base_url pointing at a small free OAuth relay:
+#      • Cloudflare Workers + the open-source sveltia-cms-auth worker  (free tier)
+#      • a Vercel/Netlify Function running the community OAuth provider (free tier)
+#      • Netlify Identity + Git Gateway — Netlify's own hosted auth      (free tier)
+#    You must create a GitHub OAuth App and register its callback URL. The exact
+#    steps, including which scopes are needed, are in docs/CMS.md.
+#
+#  OPTION B — local backend  (works right now, zero setup, zero cost)
+#    `pnpm run cms` opens a local proxy (decap-server) that writes straight to
+#    your working copy. No OAuth, no GitHub App, nothing to pay for. This is what
+#    is enabled below, so nothing in this project is broken out of the box and no
+#    fake login screen is ever shown.
+#
+#  IMPORTANT: the public website NEVER depends on this file. src/content/data/
+#  holds the content, the site imports it at build time, and the site builds and
+#  runs whether or not the CMS is configured or reachable.
+#
+#  HOW THE FILE SHAPES ARE HANDLED
+#  Decap writes a ROOT-LEVEL list widget as { "items": [ ... ] }, so the content
+#  files use that shape. src/content/index.ts accepts both the wrapped form and a
+#  bare array, so a hand-edit cannot silently empty a page. Files that hold
+#  several sibling keys (riding.json) declare one widget per key; Decap merges by
+#  key and leaves the keys it does not know about untouched.
+# ==============================================================================
+
+backend:
+  # 'local' writes to the local working copy through decap-server.
+  # Switch to 'github' once an OAuth relay exists — see docs/CMS.md.
+  name: local
+
+  # ---- To enable the GitHub backend, replace the two lines above with: -------
+  # name: github
+  # repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
+  # branch: main
+  # base_url: https://YOUR-OAUTH-RELAY.workers.dev
+  # auth_endpoint: auth
+  #
+  # DO NOT put a personal access token in this file. It is served publicly.
+
+media_folder: public/assets/uploads
+public_folder: /assets/uploads
+
+publish_mode: simple
+locale: zh_Hans
+
+# A single field definition reused by every list, so the "is this real or an
+# example?" question is asked exactly the same way everywhere.
+_provenance_options: &provenance
+  - { label: '真实内容 / real', value: real }
+  - { label: '示例内容 / sample（界面上会显示示例标记）', value: sample }
+
+collections:
+  # ========================================================= brand & identity
+  - name: brand
+    label: 个人品牌
+    files:
+      - name: identity
+        label: 品牌与宣言
+        file: src/content/data/brand.json
+        fields:
+          - { name: nickname, label: 中文昵称, widget: string, hint: '全站展示用。请勿填写真实姓名。' }
+          - { name: latin, label: 英文标识, widget: string }
+          - { name: logoLine, label: 'Logo 品牌文字', widget: string, hint: '应与 Logo 图片上的文字一致' }
+          - { name: tagline, label: 中文标语, widget: string }
+          - { name: taglineEn, label: 英文标语, widget: string }
+          - { name: statement, label: 个人宣言, widget: text }
+          - { name: statementEn, label: 宣言英文点缀, widget: string, required: false }
+          - name: roles
+            label: 关注方向
+            widget: list
+            field: { name: role, label: 方向, widget: string }
+          - name: provenance
+            label: 内容来源
+            widget: select
+            options: *provenance
+            default: real
+
+      - name: profile
+        label: 四条线索（关于我）
+        file: src/content/data/profile.json
+        fields:
+          - name: items
+            label: 说明段落
+            widget: list
+            summary: '{{fields.title}}'
+            fields:
+              - { name: id, label: '标识（英文小写）', widget: string }
+              - { name: title, label: 标题, widget: string }
+              - { name: titleEn, label: 英文标题, widget: string, required: false }
+              - { name: body, label: 正文, widget: text }
+              - { name: note, label: '补充说明（可选）', widget: text, required: false }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options: *provenance
+                default: sample
+
+  # =================================================================== photos
+  - name: photography
+    label: 摄影作品
+    description: '未填写的可选字段不会在页面上显示空标签。'
+    files:
+      - name: photos
+        label: 作品列表
+        file: src/content/data/photography.json
+        fields:
+          - name: items
+            label: 作品
+            label_singular: 一张作品
+            widget: list
+            summary: '{{fields.title}}'
+            fields:
+              - { name: id, label: '唯一标识（英文小写加连字符）', widget: string }
+              - { name: title, label: 标题, widget: string }
+              - name: category
+                label: 分类
+                widget: select
+                options:
+                  - { label: 风景 landscape, value: landscape }
+                  - { label: 街景 street, value: street }
+                  - { label: 机械 machine, value: machine }
+                  - { label: 天空 sky, value: sky }
+                  - { label: 抽象 abstract, value: abstract }
+              - { name: src, label: 原图, widget: image }
+              - { name: thumb, label: '缩略图（可选，留空则用原图）', widget: image, required: false }
+              - { name: width, label: '宽度（像素）', widget: number, value_type: int, min: 1 }
+              - { name: height, label: '高度（像素）', widget: number, value_type: int, min: 1 }
+              - { name: description, label: 描述, widget: text }
+              - { name: tone, label: 主色调, widget: color, hint: '用于占位背景与灯箱环境色' }
+              - { name: takenAt, label: '拍摄时间（可选）', widget: string, required: false, hint: '未提供请留空，不要填写推测值' }
+              - { name: location, label: '拍摄地点（可选）', widget: string, required: false }
+              - { name: camera, label: '相机（可选）', widget: string, required: false }
+              - { name: lens, label: '镜头（可选）', widget: string, required: false }
+              - { name: feature, label: 使用大幅头条排版, widget: boolean, default: false }
+              - { name: order, label: 排序权重, widget: number, value_type: int, default: 0 }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options:
+                  - { label: '真实拍摄 / real', value: real }
+                  - { label: '示例图像 / sample', value: sample }
+                default: real
+
+  # =================================================================== riding
+  #  NOTE: riding.json holds three sibling keys. Decap merges by key, so all
+  #  three are declared here and any key not listed is left untouched.
+  - name: riding
+    label: 摩旅与骑行
+    description: '请只填写真实信息。计划中的路线不要标记为已完成。'
+    files:
+      - name: motorcycle
+        label: 摩托车档案
+        file: src/content/data/riding.json
+        fields:
+          - name: motorcycle
+            label: 车辆
+            widget: object
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: model, label: 车型, widget: string }
+              - { name: modelEn, label: '英文车型（可选）', widget: string, required: false }
+              - name: confirmedDetails
+                label: 已确认参数
+                widget: list
+                summary: '{{fields.label}}：{{fields.value}}'
+                fields:
+                  - { name: label, label: 项目, widget: string }
+                  - { name: value, label: 数值, widget: string }
+              - name: pendingDetails
+                label: '待补充项（会显示为待填写提示）'
+                widget: list
+                field: { name: item, label: 待补充内容, widget: string }
+              - { name: note, label: 说明, widget: text, required: false }
+              - { name: image, label: '车辆图片（可选）', widget: image, required: false }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options: *provenance
+                default: real
+          - name: routes
+            label: 摩旅路线
+            widget: list
+            summary: '{{fields.name}}（{{fields.status}}）'
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: name, label: 路线名称, widget: string }
+              - { name: nameEn, label: '英文名称（可选）', widget: string, required: false }
+              - { name: origin, label: 出发地, widget: string }
+              - { name: destination, label: 目的地, widget: string }
+              - { name: distanceKm, label: '总里程（公里，可选）', widget: number, required: false, hint: '未实际骑行请留空' }
+              - { name: riddenAt, label: '骑行日期（可选，格式 2026-01-01）', widget: string, required: false }
+              - name: status
+                label: 状态
+                widget: select
+                options:
+                  - { label: '已完成 ridden', value: ridden }
+                  - { label: '计划中 planned', value: planned }
+                default: planned
+              - { name: summary, label: 描述, widget: text }
+              - name: stops
+                label: 路线点位
+                widget: list
+                summary: '{{fields.name}}'
+                fields:
+                  - { name: name, label: 点位名称, widget: string }
+                  - { name: lat, label: '纬度（可选）', widget: number, required: false, value_type: float }
+                  - { name: lng, label: '经度（可选）', widget: number, required: false, value_type: float }
+                  - { name: note, label: 备注, widget: string, required: false }
+              - name: highlights
+                label: '沿途要点（可选）'
+                widget: list
+                required: false
+                field: { name: item, label: 要点, widget: string }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options: *provenance
+                default: sample
+          - name: serviceRecords
+            label: 维护记录
+            widget: list
+            required: false
+            summary: '{{fields.date}}'
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: date, label: '日期（可选）', widget: string, required: false }
+              - { name: odometerKm, label: '里程（公里，可选）', widget: number, required: false }
+              - name: items
+                label: 项目
+                widget: list
+                field: { name: item, label: 项目内容, widget: string }
+              - { name: note, label: 备注, widget: text, required: false }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options: *provenance
+                default: real
+          - { name: serviceRecordNote, label: 维护记录空状态说明, widget: text, required: false }
+
+  # ====================================================================== lab
+  - name: lab
+    label: AI 与编程
+    description: '每条记录都必须填写「结论」，包括没有跑通的结论。'
+    files:
+      - name: notes
+        label: 实验记录列表
+        file: src/content/data/lab.json
+        fields:
+          - name: items
+            label: 记录
+            widget: list
+            summary: '{{fields.title}}'
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: title, label: 标题, widget: string }
+              - { name: titleEn, label: '英文标题（可选）', widget: string, required: false }
+              - { name: date, label: '日期（可选）', widget: string, required: false }
+              - { name: question, label: 问题, widget: text }
+              - { name: approach, label: 方法, widget: text }
+              - { name: outcome, label: 结论, widget: text, hint: '失败或不确定的结论同样有价值，请如实填写。' }
+              - name: tools
+                label: 涉及工具
+                widget: list
+                field: { name: item, label: 工具, widget: string }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options:
+                  - { label: '真实记录 / real', value: real }
+                  - { label: '示例 / sample', value: sample }
+                default: real
+
+  # ================================================================= projects
+  - name: projects
+    label: 个人项目
+    description: '仓库与演示地址没有就留空，页面会显示「待填写」，不会生成假链接。'
+    files:
+      - name: items
+        label: 项目列表
+        file: src/content/data/projects.json
+        fields:
+          - name: items
+            label: 项目
+            widget: list
+            summary: '{{fields.name}}'
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: name, label: 项目名称, widget: string }
+              - { name: nameEn, label: '英文名称（可选）', widget: string, required: false }
+              - name: status
+                label: 状态
+                widget: select
+                options:
+                  - { label: '已完成 shipped', value: shipped }
+                  - { label: '进行中 building', value: building }
+                  - { label: '探索中 exploring', value: exploring }
+                  - { label: '已暂停 paused', value: paused }
+              - { name: summary, label: 简介, widget: text }
+              - { name: detail, label: 项目详情, widget: text }
+              - name: stack
+                label: 使用技术
+                widget: list
+                field: { name: item, label: 技术, widget: string }
+              - { name: cover, label: '封面（可选）', widget: image, required: false }
+              - { name: repoUrl, label: '代码仓库地址（可选）', widget: string, required: false, hint: '留空即显示「待填写」。请勿填写不存在的地址。' }
+              - { name: demoUrl, label: '演示地址（可选）', widget: string, required: false }
+              - name: highlights
+                label: '亮点（可选）'
+                widget: list
+                required: false
+                field: { name: item, label: 亮点, widget: string }
+              - { name: order, label: 排序权重, widget: number, value_type: int, default: 0 }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options: *provenance
+                default: real
+
+  # ================================================================== journal
+  - name: journal
+    label: 随笔与思考
+    files:
+      - name: entries
+        label: 文章列表
+        file: src/content/data/journal.json
+        fields:
+          - name: items
+            label: 文章
+            widget: list
+            summary: '{{fields.title}}'
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: title, label: 标题, widget: string }
+              - { name: titleEn, label: '英文标题（可选）', widget: string, required: false }
+              - name: kind
+                label: 类型
+                widget: select
+                options:
+                  - { label: '随笔 essay', value: essay }
+                  - { label: '宣言 note', value: note }
+                  - { label: '日志 log', value: log }
+              - { name: excerpt, label: 摘要, widget: text }
+              - name: body
+                label: 正文段落
+                widget: list
+                field: { name: paragraph, label: 段落, widget: text }
+              - name: tags
+                label: '标签（可选）'
+                widget: list
+                required: false
+                field: { name: tag, label: 标签, widget: string }
+              - { name: date, label: '日期（可选）', widget: string, required: false }
+              - name: provenance
+                label: 内容来源
+                widget: select
+                options: *provenance
+                default: real
+
+  # ================================================================== contact
+  - name: contact
+    label: 联系方式
+    description: '只填写你确实要公开的账号。留空即显示「待填写」。'
+    files:
+      - name: channels
+        label: 渠道列表
+        file: src/content/data/contact.json
+        fields:
+          - name: channels
+            label: 渠道
+            widget: list
+            summary: '{{fields.label}}'
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: label, label: 中文名称, widget: string }
+              - { name: labelEn, label: 英文名称, widget: string }
+              - { name: handle, label: '账号（可选，留空即显示待填写）', widget: string, required: false }
+              - { name: url, label: '链接（可选）', widget: string, required: false }
+              - { name: confirmed, label: '是否公开', widget: boolean, default: false }
+              - { name: note, label: 备注, widget: text, required: false }
+          - { name: privacyNote, label: 隐私说明, widget: text }
+          - { name: formNote, label: 无留言表单说明, widget: text }
+
+  # ============================================================ site config
+  - name: settings
+    label: 网站设置
+    files:
+      - name: site
+        label: 基础设置
+        file: src/content/data/settings.json
+        fields:
+          - { name: siteTitle, label: 网站名称, widget: string }
+          - { name: siteTitleSuffix, label: 浏览器标题后缀, widget: string }
+          - { name: siteDescription, label: 网站描述, widget: text, hint: '用于搜索引擎与分享预览' }
+          - { name: themeColor, label: 主题色, widget: color, default: '#05070A' }
+          - { name: ogImage, label: 分享预览图, widget: image }
+          - { name: homeScene, label: 首页场景标识, widget: string, default: home }
+          - { name: secretEnabled, label: 启用隐藏空间入口, widget: boolean, default: true }
+          - { name: bootEnabled, label: 启用启动动画, widget: boolean, default: true }
+          - { name: locale, label: 语言, widget: string, default: 'zh-CN' }
+          - name: keywords
+            label: 关键词
+            widget: list
+            field: { name: keyword, label: 关键词, widget: string }
+
+      - name: secret
+        label: 隐藏空间
+        file: src/content/data/secret.json
+        fields:
+          - { name: title, label: 中文标题, widget: string }
+          - { name: titleEn, label: 英文标题, widget: string }
+          - { name: phrase, label: 输入口令, widget: string, hint: '在站内连续输入这段文字即可进入（默认 explore）' }
+          - { name: entryHint, label: '入口提示（可选）', widget: string, required: false }
+          - { name: keyboardHint, label: '键盘提示（可选）', widget: string, required: false }
+          - name: manifesto
+            label: 宣言
+            widget: list
+            field: { name: line, label: 段落, widget: text }
+          - name: artifacts
+            label: 留给以后的位置
+            widget: list
+            summary: '{{fields.label}}'
+            fields:
+              - { name: id, label: 标识, widget: string }
+              - { name: label, label: 名称, widget: string }
+              - { name: body, label: 说明, widget: text }
+              - name: state
+                label: 状态
+                widget: select
+                options:
+                  - { label: '尚未写下 unwritten', value: unwritten }
+                  - { label: '已写下 ready', value: ready }
+                default: unwritten

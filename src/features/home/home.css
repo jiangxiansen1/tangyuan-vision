@@ -1,0 +1,363 @@
+/* ==========================================================================
+   HomePage — the V4 spatial hub.
+
+   ONE ROW, THREE TRACKS
+   =====================
+   The brief is specific: the brand must sit BETWEEN the two core windows, not in
+   a banner above them. That is enforced structurally by the grid below — the
+   brand is the middle track, a SIBLING of the two windows, so it cannot drift
+   above them at any width.
+
+       [ 摄影 ][ 品牌 ][ 地球 ]
+
+   The tracks are deliberately unequal. The windows carry the interaction and get
+   the width; the brand is the anchor and takes the middle. Equal thirds would put
+   the wordmark in direct competition with the things you can click.
+
+   BELOW THE ROW, IN DESCENDING WEIGHT
+     3a  Lab and Projects — compact windows
+     3b  About / Journal / Contact / hidden — text-weight links, no surface
+
+   At <=900px the row stacks: brand first, then the two windows vertically, which
+   is the only arrangement where both remain usable on a phone.
+   ========================================================================== */
+
+.vhome {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  overflow-x: clip;
+}
+
+.vhome > *:not(.vback) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------- chrome -- */
+
+.vhome__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: clamp(14px, 2vh, 24px) var(--shell-pad);
+  flex: none;
+}
+
+.vhome__brand-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.vhome__brand-name {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.01em;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.vhome__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+/* ========================================================= THE ONE ROW == */
+
+/*
+  Three tracks: window, brand, window.
+
+  The side tracks are `1fr` each so the two windows stay equal to EACH OTHER —
+  which is what makes the composition read as balanced around the brand — while
+  the middle track is intrinsically sized by the wordmark. `minmax(0, 1fr)`
+  rather than `1fr` on the sides is load-bearing: a grid track defaults to a
+  minimum of `auto`, so a wide child (the photo stack) can force the row wider
+  than the viewport and produce a horizontal scrollbar.
+*/
+.vhome__row {
+  flex: 1 1 auto;
+  display: grid;
+  /* The middle track is INTRINSIC. A fixed width would fight the lockup’s own
+     fluid font-size — two independent clamps that cannot agree — which is how the
+     first V4 build painted the wordmark across both windows. Sizing the track to
+     its content derives both from the same source. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(14px, 2.2vw, 44px);
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  /* min-width: 0 here plus minmax(0, ...) on the side tracks is what stops a wide
+     child forcing the row past the viewport and creating a scrollbar. */
+  min-width: 0;
+  padding: clamp(12px, 2vh, 30px) var(--shell-pad) clamp(28px, 5vh, 64px);
+}
+
+.vhome__slot {
+  min-width: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+/* ------------------------------------------------ the middle brand track -- */
+
+/*
+  Intrinsically sized, and NOT a card. It gets a comfortable measure so the
+  wordmark and the gloss line have room, but no surface, no border and no shadow —
+  a panel around the brand is exactly what the brief rules out.
+*/
+.vhome__axis {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  /* No fixed width: the track sizes to this element, so the brand defines its own
+     column rather than being poured into a width chosen elsewhere. */
+  width: auto;
+  max-width: 100%;
+  padding-inline: clamp(4px, 1vw, 16px);
+}
+
+/* ------------------------------------------------------------- responsive -- */
+
+/*
+  Tablet and below: the row becomes two columns with the brand spanning both, so
+  the windows stay side by side (which at 900px still gives each a usable width)
+  while the brand is no longer squeezed between them.
+*/
+@media (max-width: 1023px) {
+  .vhome__row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(14px, 2.4vw, 32px);
+  }
+
+  .vhome__axis {
+    /* First in the DOM order would put it between the windows; order moves it to
+       the top row instead, which is the only honest place for it once the windows
+       can no longer flank it. */
+    order: -1;
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: 100%;
+    padding-block-end: clamp(8px, 2vh, 24px);
+  }
+}
+
+/*
+  Phone: a single column throughout. The brand leads, then the two windows stack,
+  then the smaller entries.
+*/
+@media (max-width: 767px) {
+  .vhome__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-5);
+    padding-inline: var(--shell-pad);
+  }
+
+  .vhome__slot {
+    display: block;
+  }
+}
+
+/* ================================================== TIER 3a · compact pair == */
+
+.vhome__mini {
+  flex: none;
+  padding: 0 var(--shell-pad) clamp(28px, 4vh, 52px);
+}
+
+.vhome__section-label {
+  display: block;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  margin-block-end: var(--sp-4);
+  color: var(--color-text-dim);
+}
+
+.vhome__mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.6vw, 22px);
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  list-style: none;
+}
+
+/* ================================================== TIER 3b · quiet links == */
+
+.vhome__quiet {
+  flex: none;
+  padding: 0 var(--shell-pad) clamp(20px, 3vh, 40px);
+}
+
+.vhome__quiet-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding-top: clamp(16px, 2.2vh, 26px);
+  border-top: 1px solid var(--color-border);
+  list-style: none;
+}
+
+/*
+  Text-weight links. These are the lowest tier, so they carry no surface, no
+  shadow and no preview — only a colour shift on hover. Giving them a card would
+  promote them above the compact pair.
+*/
+.vhome__quiet-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.vhome__quiet-link > svg {
+  color: var(--color-text-dim);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.vhome__quiet-link:hover,
+.vhome__quiet-link:focus-visible {
+  color: var(--color-text);
+}
+
+.vhome__quiet-link:hover > svg,
+.vhome__quiet-link:focus-visible > svg {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.vhome__quiet-en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.12em;
+  color: var(--color-text-dim);
+}
+
+/* The hidden entry sits in this row and must not stretch its height. */
+.vhome__quiet .secret-signal {
+  min-height: 0;
+  display: inline-flex;
+}
+
+.vhome__quiet .secret-signal__btn {
+  padding: var(--sp-1) var(--sp-2);
+  gap: var(--sp-2);
+  grid-auto-flow: column;
+}
+
+.vhome__quiet .secret-signal__orb {
+  width: 26px;
+  height: 26px;
+}
+
+.vhome__quiet .secret-signal__ring:nth-child(1) {
+  width: 26px;
+}
+
+.vhome__quiet .secret-signal__ring:nth-child(2) {
+  width: 16px;
+}
+
+.vhome__quiet .secret-signal__text {
+  justify-items: start;
+  text-align: left;
+}
+
+.vhome__quiet .secret-signal__label {
+  font-size: var(--fs-small);
+  letter-spacing: 0.01em;
+  color: var(--color-text-dim);
+}
+
+.vhome__quiet .secret-signal__hint {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- footer -- */
+
+.vhome__footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: var(--sp-4) var(--shell-pad) clamp(18px, 2.6vh, 32px);
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.vhome__index-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.vhome__index-toggle:hover {
+  color: var(--color-text);
+}
+
+.vhome__footer-note {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  text-align: right;
+}
+
+/* ------------------------------------------------------------- phone == */
+
+@media (max-width: 767px) {
+  .vhome__mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vhome__quiet-list {
+    gap: var(--sp-1) var(--sp-3);
+  }
+
+  .vhome__footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+
+  .vhome__footer-note {
+    text-align: left;
+  }
+}
+
+/* ============================================================ overrides == */
+
+[data-transparency='reduced'] .mwin__btn {
+  background: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vhome__quiet-link,
+  .vhome__quiet-link > svg,
+  .vhome__index-toggle {
+    transition: none;
+  }
+}

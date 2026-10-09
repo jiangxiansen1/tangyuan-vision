@@ -1,0 +1,223 @@
+/**
+ * CoreWindow — one of the two windows that carry the site.
+ *
+ * WHAT MAKES THIS DIFFERENT FROM A CARD
+ * Three things, and all three are load-bearing:
+ *
+ *   1. A LIVE PREVIEW, not an icon. The photography window shows a real frame
+ *      from the photo set; the Earth window renders an actual rotating globe.
+ *      A visitor should know what is behind the window before opening it.
+ *   2. SPATIAL BEHAVIOUR. On hover it tilts a few degrees toward the pointer and
+ *      its preview layer parallaxes slightly faster than its frame. That is what
+ *      makes it read as a pane of glass in space rather than a tile.
+ *   3. IT IS BIG. Tier 2 gets the majority of the viewport, because that is the
+ *      hierarchy the brief asks for.
+ *
+ * The Earth preview is imported lazily. It pulls in ~180 KB of three.js, and
+ * paying that on first paint for every visitor — most of whom will look at the
+ * brand first — is the wrong trade. Until it resolves, the drawn preview shows.
+ */
+
+import { lazy, Suspense, useCallback, useRef } from 'react';
+import type { SceneRoute } from '@/app/routes';
+import { Icon, SceneIcon } from '@/components/ui/Icon';
+import { SmartImage } from '@/components/ui/SmartImage';
+import { PHOTOS } from '@/content';
+import { useHasFinePointer } from '@/hooks/useMediaQuery';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { useVisualStore } from '@/store/useVisualStore';
+import './core-window.css';
+
+/** Lazy: the globe is heavy and only one window needs it. */
+const EarthGlobe = lazy(() =>
+  import('@/features/earth/EarthGlobe').then((m) => ({ default: m.EarthGlobe }))
+);
+
+export interface CoreWindowProps {
+  route: SceneRoute;
+  side: 'left' | 'right';
+  onOpen: () => void;
+  onFocus: () => void;
+}
+
+/** The most presentable photograph for a scene, by category preference. */
+function heroPhoto(sceneId: string) {
+  const preferred: Record<string, string[]> = {
+    photography: ['landscape', 'street', 'sky', 'abstract'],
+    earth: ['sky', 'landscape'],
+  };
+  for (const category of preferred[sceneId] ?? []) {
+    const found = PHOTOS.find((p) => p.category === category && p.width >= p.height);
+    if (found) return found;
+  }
+  return PHOTOS.find((p) => p.feature) ?? PHOTOS[0] ?? null;
+}
+
+export function CoreWindow({ route, side, onOpen, onFocus }: CoreWindowProps) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const finePointer = useHasFinePointer();
+  const { reduced } = usePrefersReducedMotion();
+  const glassQuality = useVisualStore((s) => s.glassQuality);
+
+  const isEarth = route.id === 'earth';
+  const photo = isEarth ? null : heroPhoto(route.id);
+  /** Second and third frames for the photography window's stacked preview. */
+  const stack = isEarth ? [] : PHOTOS.filter((p) => p.category === 'landscape').slice(0, 3);
+
+  const tiltEnabled = finePointer && !reduced;
+
+  /**
+   * Tilt and parallax, written straight to CSS custom properties.
+   *
+   * React never re-renders during the gesture: the component writes four
+   * variables and CSS does the rest. A per-move setState here would re-render a
+   * subtree containing a WebGL canvas, which is the fastest way to make a hover
+   * feel broken.
+   */
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top) / rect.height;
+
+      if (tiltEnabled) {
+        // Capped at 3.2° — enough to read as a physical pane, far short of the
+        // seasick tilt that 3D card grids tend to use.
+        el.style.setProperty('--cw-tilt-x', `${((0.5 - py) * 3.2).toFixed(2)}deg`);
+        el.style.setProperty('--cw-tilt-y', `${((px - 0.5) * 3.2).toFixed(2)}deg`);
+      }
+      // Parallax: the preview drifts opposite the tilt, which is what sells depth.
+      el.style.setProperty('--cw-par-x', `${((px - 0.5) * -10).toFixed(1)}px`);
+      el.style.setProperty('--cw-par-y', `${((py - 0.5) * -8).toFixed(1)}px`);
+      el.style.setProperty('--cw-mx', `${(px * 100).toFixed(1)}%`);
+      el.style.setProperty('--cw-my', `${(py * 100).toFixed(1)}%`);
+    },
+    [tiltEnabled]
+  );
+
+  const onPointerLeave = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.setProperty('--cw-tilt-x', '0deg');
+    el.style.setProperty('--cw-tilt-y', '0deg');
+    el.style.setProperty('--cw-par-x', '0px');
+    el.style.setProperty('--cw-par-y', '0px');
+  }, []);
+
+  return (
+    <li className="cwin" data-side={side} data-scene={route.id}>
+      <button
+        ref={ref}
+        type="button"
+        data-window={route.id}
+        className="cwin__btn"
+        onClick={onOpen}
+        onFocus={onFocus}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
+        aria-label={`${route.label} — ${route.blurb}`}
+        // A view cursor over photography, a grab cursor over the globe, because
+        // the two windows genuinely behave differently once opened.
+        data-cursor={isEarth ? 'drag' : 'view'}
+      >
+        {/* ------------------------------------------------ preview layer -- */}
+        <span className="cwin__preview" aria-hidden="true">
+          {isEarth ? (
+            <span className="cwin__globe">
+              {glassQuality === 'off' ? (
+                /* The visitor has asked for the minimum, so the globe preview
+                   stays a drawn composition rather than a WebGL canvas. */
+                <span className="cwin__globe-static" />
+              ) : (
+                <Suspense fallback={<span className="cwin__globe-static" />}>
+                  <EarthGlobe quality={glassQuality === 'balanced' ? 'balanced' : 'high'} />
+                </Suspense>
+              )}
+            </span>
+          ) : photo ? (
+            <>
+              {/* The stack behind the main frame is what makes this read as a
+                  window into a body of work rather than one picture. */}
+              {stack[1] ? (
+                <span className="cwin__stack cwin__stack--b">
+                  <SmartImage
+                    src={stack[1].src}
+                    thumb={stack[1].thumb}
+                    alt=""
+                    width={stack[1].width}
+                    height={stack[1].height}
+                    tone={stack[1].tone}
+                    sizes="30vw"
+                    failureLabel=""
+                  />
+                </span>
+              ) : null}
+              {stack[2] ? (
+                <span className="cwin__stack cwin__stack--c">
+                  <SmartImage
+                    src={stack[2].src}
+                    thumb={stack[2].thumb}
+                    alt=""
+                    width={stack[2].width}
+                    height={stack[2].height}
+                    tone={stack[2].tone}
+                    sizes="30vw"
+                    failureLabel=""
+                  />
+                </span>
+              ) : null}
+
+              <span className="cwin__frame">
+                <SmartImage
+                  src={photo.src}
+                  thumb={photo.thumb}
+                  alt=""
+                  width={photo.width}
+                  height={photo.height}
+                  tone={photo.tone}
+                  sizes="(max-width: 900px) 92vw, 48vw"
+                  className="cwin__image"
+                  failureLabel="预览图未加载"
+                />
+              </span>
+            </>
+          ) : (
+            <span className="cwin__frame cwin__frame--empty" />
+          )}
+
+          <span className="cwin__scrim" />
+          <span className="cwin__specular" />
+        </span>
+
+        {/* ------------------------------------------------------ content -- */}
+        <span className="cwin__body">
+          <span className="cwin__head">
+            <span className="cwin__icon">
+              <SceneIcon scene={route.id} size={18} />
+            </span>
+            <span className="cwin__eyebrow u-label">{route.labelEn}</span>
+          </span>
+
+          <span className="cwin__titles">
+            <span className="cwin__title">{route.label}</span>
+            <span className="cwin__blurb">{route.blurb}</span>
+          </span>
+
+          <span className="cwin__foot">
+            <span className="cwin__enter">
+              {isEarth ? '进入地球' : '进入作品集'}
+              <Icon name="arrow-right" size={15} />
+            </span>
+            {route.key ? (
+              <span className="cwin__key" aria-hidden="true">
+                <kbd>{route.key.toUpperCase()}</kbd>
+              </span>
+            ) : null}
+          </span>
+        </span>
+      </button>
+    </li>
+  );
+}

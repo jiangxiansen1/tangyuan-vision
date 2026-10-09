@@ -1,0 +1,83 @@
+{
+  "generatedBy": "tools/build-earth-textures.cjs",
+  "generatedAt": "2026-10-09T10:58:52.913Z",
+  "honesty": {
+    "liveData": false,
+    "statement": "这些纹理是静态影像，不是实时卫星数据。地球的昼夜分界由本地根据真实太阳位置计算，但地表贴图本身是固定图像。夜间灯光来自 1994–1995 年的 DMSP 合成图，是真实观测结果，但已距今约三十年，不代表当下灯光分布。"
+  },
+  "textures": [
+    {
+      "id": "day",
+      "label": "地球昼面",
+      "file": "earth-day.jpg",
+      "path": "/assets/earth/earth-day.jpg",
+      "width": 4096,
+      "height": 2048,
+      "format": "jpeg",
+      "hasAlpha": false,
+      "bytes": 1095218,
+      "licence": "Public domain (NASA / Goddard Space Flight Center)",
+      "credit": "NASA/Goddard Space Flight Center — \"Whole world - land and oceans\" (Wikimedia Commons)",
+      "note": "Composited satellite mosaic, not a single photograph. Cloud-free land/ocean composite.",
+      "upstream": {
+        "source": "Wikimedia Commons",
+        "file": "Whole world - land and oceans 12000.jpg",
+        "error": "fetch failed"
+      }
+    },
+    {
+      "id": "night",
+      "label": "夜间城市灯光",
+      "file": "earth-night.jpg",
+      "path": "/assets/earth/earth-night.jpg",
+      "width": 2048,
+      "height": 1024,
+      "format": "jpeg",
+      "hasAlpha": false,
+      "bytes": 240254,
+      "licence": "Public domain (NASA GSFC / NOAA NGDC)",
+      "credit": "Data: Marc Imhoff/NASA GSFC, Christopher Elvidge/NOAA NGDC — DMSP 1994-1995",
+      "note": "1994-1995 DMSP composite. Real city light distribution, but NOT current data.",
+      "upstream": {
+        "source": "Wikimedia Commons",
+        "file": "Earth's City Lights by DMSP, 1994-1995 (large).jpg",
+        "error": "fetch failed"
+      }
+    },
+    {
+      "id": "clouds",
+      "label": "云层",
+      "file": "earth-clouds.jpg",
+      "path": "/assets/earth/earth-clouds.jpg",
+      "width": 2048,
+      "height": 1024,
+      "format": "png",
+      "hasAlpha": true,
+      "bytes": 110445,
+      "licence": "three.js example asset (MIT)",
+      "credit": "three.js examples — earth_clouds_1024.png",
+      "note": "Rendered cloud layer, used as an independently rotating overlay.",
+      "upstream": {
+        "source": "https://threejs.org/examples/textures/planets/earth_clouds_1024.png",
+        "derived": false
+      }
+    },
+    {
+      "id": "specular",
+      "label": "海陆遮罩",
+      "file": "earth-specular.jpg",
+      "path": "/assets/earth/earth-specular.jpg",
+      "width": 2048,
+      "height": 1024,
+      "format": "png",
+      "hasAlpha": false,
+      "bytes": 785836,
+      "licence": "Derived from the day texture (Public domain / NASA)",
+      "credit": "Derived from earth-day.jpg by this script",
+      "note": "Ocean/land mask derived from the day composite, used for specular highlights on water.",
+      "upstream": {
+        "derived": true
+      }
+    }
+  ]
+}

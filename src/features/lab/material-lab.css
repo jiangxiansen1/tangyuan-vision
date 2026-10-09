@@ -1,0 +1,321 @@
+/* ==========================================================================
+   MaterialLab — the interactive glass specimen.
+   ========================================================================== */
+
+.mlab {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: clamp(20px, 2.6vw, 44px);
+  align-items: start;
+}
+
+/* ---------------------------------------------------------------- stage -- */
+
+.mlab__stage {
+  position: relative;
+  border-radius: var(--r-2xl);
+  overflow: hidden;
+  min-height: clamp(340px, 48vh, 520px);
+  border: 1px solid var(--color-border);
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 3vw, 48px);
+}
+
+/* A busy backdrop, because glass over a flat colour demonstrates nothing. */
+.mlab__backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, #0d1a24 0%, #131c2b 48%, #0a0d14 100%);
+}
+
+.mlab__backdrop-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--c-mist) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--c-mist) 12%, transparent) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.mlab__backdrop-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+}
+
+/* Two saturated sources so the tint and the blur both have something real to
+   work against. */
+.mlab__backdrop-orb--a {
+  width: 240px;
+  height: 240px;
+  left: 6%;
+  top: 12%;
+  background: radial-gradient(circle, rgba(78, 197, 245, 0.72) 0%, transparent 70%);
+}
+
+.mlab__backdrop-orb--b {
+  width: 300px;
+  height: 300px;
+  right: 4%;
+  bottom: 6%;
+  background: radial-gradient(circle, rgba(255, 122, 60, 0.58) 0%, transparent 70%);
+}
+
+.mlab__backdrop-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4.4vw, 3.2rem);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 0.14);
+}
+
+.mlab__specimen-wrap {
+  position: relative;
+  width: min(440px, 100%);
+}
+
+.mlab__specimen {
+  padding: clamp(20px, 2.6vw, 36px);
+}
+
+.mlab__specimen-content {
+  display: grid;
+  gap: var(--sp-3);
+  justify-items: start;
+}
+
+.mlab__specimen-title {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-medium);
+  color: var(--color-text);
+}
+
+.mlab__specimen-body {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.mlab__specimen-body code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.34em;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-mist) 12%, transparent);
+  color: var(--c-cryo-100);
+}
+
+.mlab__inspect-btn {
+  margin-top: var(--sp-2);
+}
+
+/* ------------------------------------------------------------- controls -- */
+
+.mlab__controls {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+.mlab__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.mlab__preset {
+  min-height: 34px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-mist) 4%, transparent);
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  transition:
+    border-color var(--t-base) var(--ease-standard),
+    background-color var(--t-base) var(--ease-standard),
+    color var(--t-base) var(--ease-standard);
+}
+
+.mlab__preset:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.mlab__preset[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 52%, transparent);
+  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 12%, transparent);
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.mlab__knobs {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.mlab__knob {
+  display: grid;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mlab__knob-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.mlab__knob-label code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--color-text-dim);
+  letter-spacing: 0.02em;
+}
+
+.mlab__knob-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.mlab__knob-row input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mlab__knob-row input[type='range']::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: var(--color-border-strong);
+}
+
+.mlab__knob-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border-radius: 50%;
+  border: none;
+  background: var(--scene-accent, var(--color-accent));
+}
+
+.mlab__knob-row input[type='range']::-moz-range-track {
+  height: 2px;
+  border-radius: var(--r-pill);
+  background: var(--color-border-strong);
+}
+
+.mlab__knob-row input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--scene-accent, var(--color-accent));
+}
+
+.mlab__knob-value {
+  font-size: var(--fs-caption);
+  color: var(--scene-accent, var(--color-accent));
+  min-width: 5ch;
+  text-align: right;
+}
+
+.mlab__knob-note {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-normal);
+  color: var(--color-text-dim);
+}
+
+/* -------------------------------------------------------------- readout -- */
+
+.mlab__readout {
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--c-void) 46%, transparent);
+  padding: var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.mlab__readout-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.mlab__readout-head .u-label {
+  color: var(--color-text-dim);
+}
+
+.mlab__raw-toggle {
+  font-size: var(--fs-micro);
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--scene-accent, var(--color-accent));
+  padding: 4px 2px;
+}
+
+.mlab__readout-empty {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-dim);
+}
+
+.mlab__readout-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-caption);
+  color: var(--c-aurora);
+}
+
+.mlab__readout-list {
+  display: grid;
+  gap: var(--sp-2);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.mlab__readout-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-3);
+  padding-block: var(--sp-2);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-micro);
+}
+
+.mlab__readout-list dt {
+  color: var(--color-text-dim);
+  overflow-wrap: anywhere;
+}
+
+.mlab__readout-list dd {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 1023px) {
+  .mlab {
+    grid-template-columns: 1fr;
+  }
+}

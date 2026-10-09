@@ -1,0 +1,117 @@
+/* ==========================================================================
+   scene-transition.css — route-level transition scaffolding.
+
+   THE ONE JOB HERE: keep the exiting page from affecting the incoming one's
+   layout while it animates out.
+
+   `AnimatePresence` keeps the outgoing element mounted for its exit, which is what
+   makes a real exit possible — but two pages in normal flow at the same time would
+   stack vertically and produce a double-height document that jumps the moment the
+   exit finishes. So during the hand-off the outgoing shell is lifted out of flow.
+
+   `position: absolute` on the EXIT state only. The incoming page stays in normal
+   flow, so its height is what the document measures and there is nothing to jump at
+   the end.
+   ========================================================================== */
+
+.route-shell {
+  min-height: 100dvh;
+  /* Animating opacity every frame; the hint lets the compositor keep it on its
+     own layer rather than re-rasterising the page. */
+  will-change: opacity, transform;
+}
+
+/*
+  Applied by Motion while the element is on its way out.
+
+  Motion writes its own inline opacity/transform during the exit, so this rule only
+  has to remove the element from layout. `pointer-events: none` is load-bearing: an
+  invisible page still sitting over the incoming one would otherwise swallow every
+  click until it is removed — which reads as a frozen app during a fast double
+  navigation.
+*/
+.route-shell[data-exiting='true'] {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* The incoming page sits above the departing one, so the cross-fade reads as a new
+   surface arriving rather than the old one shining through. */
+.route-shell:not([data-exiting='true']) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------------ shared-element continuity --
+   The photography and Earth entrances carry `data-transition="shared"`.
+
+   The destination's lead media starts slightly SMALLER and grows to its resting
+   size while fading up, so the surface reads as the home window expanding rather
+   than as a brand new page appearing.
+
+   BE PRECISE ABOUT WHAT THIS IS
+   It is a scale-and-fade, NOT Motion's `layoutId` geometry interpolation. See
+   RouteTransition's header for why layoutId is the wrong tool for these two
+   routes: the destination is a lazily-mounted page (behind Suspense), so its
+   geometry does not exist when the hand-off would have to begin, and the Earth
+   destination contains a live WebGL canvas that does not want to be scaled
+   mid-flight.
+
+   `.shared-hero` is a class on a real element, never a wildcard, so this cannot
+   accidentally animate a whole page.
+   --------------------------------------------------------------------------- */
+
+.route-shell[data-transition='shared'] .shared-hero {
+  animation: shared-hero-in 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center 38%;
+}
+
+@keyframes shared-hero-in {
+  from {
+    opacity: 0.35;
+    transform: scale(0.955);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The rest of the destination arrives just AFTER its hero, so the surface lands
+   before its labels do. */
+.route-shell[data-transition='shared'] .shared-chrome {
+  animation: shared-chrome-in 380ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+
+@keyframes shared-chrome-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ------------------------------------------------------------- reduced -- */
+
+@media (prefers-reduced-motion: reduce) {
+  .route-shell {
+    will-change: auto;
+  }
+
+  /* Nothing animates, so nothing needs lifting out of flow — and leaving the
+     absolute positioning in place would remove the page's height entirely. */
+  .route-shell[data-exiting='true'] {
+    position: static;
+  }
+
+  /* A scale animation is exactly what this mode is asking to be spared. */
+  .route-shell[data-transition='shared'] .shared-hero,
+  .route-shell[data-transition='shared'] .shared-chrome {
+    animation: none;
+  }
+}

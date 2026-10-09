@@ -1,0 +1,326 @@
+/* ==========================================================================
+   HomePage — the V3 spatial hub.
+
+   Three tiers stacked in one column, sized so the brand and the two core windows
+   always fit together in the first viewport on a desktop, and degrade to a single
+   comfortable column on a phone.
+
+   The measure that matters: the brand core plus the top edge of the two windows
+   must both be visible at 900px of viewport height. That is what makes the page
+   read as one composition instead of a scroll.
+   ========================================================================== */
+
+.vhome {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  /* The backdrop is absolutely positioned; this keeps the content above it
+     without needing a z-index on every section. */
+  isolation: isolate;
+  overflow-x: clip;
+}
+
+.vhome > *:not(.vback) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------- chrome -- */
+
+.vhome__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: clamp(16px, 2.2vh, 28px) var(--shell-pad);
+  flex: none;
+}
+
+.vhome__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* The wordmark beside the logo. Set in the body face rather than the display
+   face so it reads as a signature on the chrome, not as a second hero. */
+.vhome__brand-name {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.01em;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.vhome__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+/* ====================================================== TIER 1 · brand core == */
+
+/*
+  The brand owns the field between the chrome and the windows. `flex: 1` with a
+  min-height means it takes the slack on a tall viewport and never collapses on a
+  short one.
+*/
+.vhome__core {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  min-height: clamp(240px, 34vh, 420px);
+  padding: clamp(8px, 2vh, 32px) var(--shell-pad) clamp(24px, 5vh, 72px);
+}
+
+/* ================================================== TIER 2 · core windows == */
+
+.vhome__windows {
+  flex: none;
+  padding: 0 var(--shell-pad) clamp(40px, 6vh, 88px);
+}
+
+/*
+  Asymmetric but balanced. The photography column is slightly wider because its
+  content is a tall image; the Earth column is narrower and offset downward. The
+  `align-items: start` plus the per-window `--cwin-offset` is what creates the
+  deliberate stagger.
+*/
+.vhome__core-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+  gap: clamp(18px, 2.4vw, 40px);
+  align-items: start;
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  list-style: none;
+}
+
+/* ================================================== TIER 3a · compact pair == */
+
+.vhome__mini {
+  flex: none;
+  padding: 0 var(--shell-pad) clamp(28px, 4vh, 56px);
+}
+
+.vhome__section-label {
+  display: block;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  margin-block-end: var(--sp-4);
+  color: var(--color-text-dim);
+}
+
+.vhome__mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.6vw, 24px);
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  list-style: none;
+}
+
+/* ================================================== TIER 3b · quiet links == */
+
+.vhome__quiet {
+  flex: none;
+  padding: 0 var(--shell-pad) clamp(24px, 3vh, 48px);
+}
+
+.vhome__quiet-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding-top: clamp(18px, 2.4vh, 30px);
+  border-top: 1px solid var(--color-border);
+  list-style: none;
+}
+
+/*
+  A text-weight link row. These are the lowest tier, so they carry no surface, no
+  shadow and no preview — only a hover underline and the accent colour.
+*/
+.vhome__quiet-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.vhome__quiet-link > svg {
+  color: var(--color-text-dim);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.vhome__quiet-link:hover,
+.vhome__quiet-link:focus-visible {
+  color: var(--color-text);
+}
+
+.vhome__quiet-link:hover > svg,
+.vhome__quiet-link:focus-visible > svg {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.vhome__quiet-en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.12em;
+  color: var(--color-text-dim);
+}
+
+/* The hidden entry, when it is present in the quiet row, must not stretch the
+   row's height or introduce its own large block. */
+.vhome__quiet .secret-signal {
+  min-height: 0;
+  display: inline-flex;
+}
+
+.vhome__quiet .secret-signal__btn {
+  padding: var(--sp-1) var(--sp-2);
+  gap: var(--sp-2);
+  grid-auto-flow: column;
+}
+
+.vhome__quiet .secret-signal__orb {
+  width: 26px;
+  height: 26px;
+}
+
+.vhome__quiet .secret-signal__ring:nth-child(1) {
+  width: 26px;
+}
+
+.vhome__quiet .secret-signal__ring:nth-child(2) {
+  width: 16px;
+}
+
+.vhome__quiet .secret-signal__text {
+  justify-items: start;
+  text-align: left;
+}
+
+.vhome__quiet .secret-signal__label {
+  font-size: var(--fs-small);
+  letter-spacing: 0.01em;
+  color: var(--color-text-dim);
+}
+
+.vhome__quiet .secret-signal__hint {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- footer -- */
+
+.vhome__footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: var(--sp-5) var(--shell-pad) clamp(20px, 3vh, 36px);
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.vhome__index-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.vhome__index-toggle:hover {
+  color: var(--color-text);
+}
+
+.vhome__footer-note {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  text-align: right;
+}
+
+/* ============================================================ responsive == */
+
+/*
+  Tablet portrait and below: the two core windows stay side by side down to 768px
+  because at that width two columns still give each window a usable width, and
+  stacking them pushes the Earth window entirely off the first screen.
+*/
+@media (max-width: 900px) {
+  .vhome__core-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-4);
+  }
+}
+
+/*
+  Phone: single column throughout. The brand moves to the top of the flow and the
+  two core windows become full-width banners, which is the only arrangement in
+  which both remain visible without horizontal cramping.
+*/
+@media (max-width: 767px) {
+  .vhome__core {
+    /* The brand no longer needs to fill slack — on a phone the page scrolls by
+       design, so the hero should be sized to its content plus breathing room. */
+    flex: none;
+    min-height: 0;
+    padding: clamp(16px, 4vh, 40px) var(--shell-pad) clamp(28px, 6vh, 56px);
+  }
+
+  .vhome__core-grid {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+  }
+
+  .vhome__mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vhome__quiet-list {
+    gap: var(--sp-1) var(--sp-3);
+  }
+
+  .vhome__footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+
+  .vhome__footer-note {
+    text-align: left;
+  }
+}
+
+/* ============================================================ overrides == */
+
+/* Reduced transparency: the quiet row's glass surfaces flatten. The core
+   windows keep their images (they are content, not material). */
+[data-transparency='reduced'] .mwin__btn {
+  background: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vhome__quiet-link,
+  .vhome__quiet-link > svg {
+    transition: none;
+  }
+}

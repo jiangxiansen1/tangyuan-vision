@@ -1,0 +1,325 @@
+/* ==========================================================================
+   theme.css — ground and scene theming.
+
+   TWO GROUNDS, ONE MATERIAL
+   ---------------------------------------------------------------------------
+   `[data-ground="light"]` (the default) is the public surface: pearl white,
+   mist grey, graphite. Most of the product lives here.
+
+   `[data-ground="dark"]` is the exception, and only two things need it:
+     • the Earth space — a lit globe can only read against a dark field, and
+       city lights are meaningless on a white page;
+     • the photographic lightbox — a bright surround measurably shifts how you
+       perceive an image, so the viewer dims everything but the photograph.
+
+   Every glass variable is declared on BOTH grounds. That is what lets one
+   material component serve both without knowing which it is on, and it is why
+   the light theme is a genuine re-design rather than a filter over the dark one.
+
+   SCENES
+   ---------------------------------------------------------------------------
+   A scene (`data-scene`) may re-point hue and ambient light. It may NOT change
+   legibility: the text variables are never re-pointed per scene, so contrast is
+   verified once, globally.
+   ========================================================================== */
+
+/* ==========================================================================
+   GROUND: LIGHT (default)
+   ========================================================================== */
+
+:root,
+[data-ground='light'] {
+  /* Glass on a light ground.
+     The tint is a faint cool grey rather than a dark blue, because a dark tint
+     over pearl white turns the pane grey and dead. Real separation comes from
+     the hairline and the shadow, not from the fill. */
+  --glass-tint-top: #eef2f6;
+  --glass-tint-bottom: #dfe6ed;
+  --glass-tint-top-pct: 76%;
+  --glass-tint-bottom-pct: 88%;
+
+  --glass-hairline: rgb(255 255 255 / 0.66);
+  --glass-hairline-strong: rgb(255 255 255 / 0.86);
+
+  /* The bright edge is at the BOTTOM on a light ground: the pane's lower bevel
+     faces the light bouncing off the page, and the upper bevel faces away. */
+  --glass-stroke-angle: 145deg;
+  --glass-edge-top: rgb(16 24 40 / 0.07);
+  --glass-edge-mid: rgb(255 255 255 / 0.5);
+  --glass-edge-low: rgb(255 255 255 / 0.85);
+  --glass-edge-end: rgb(16 24 40 / 0.05);
+  --glass-edge-light: 0.5;
+
+  /* A white specular on white is invisible, so the highlight is very weak and
+     screen blending is replaced by normal — on a light ground, "screen" only
+     ever brightens something that is already near white. */
+  --glass-specular-color: rgb(255 255 255 / 0.5);
+  --glass-specular-color-2: rgb(255 255 255 / 0.16);
+  --glass-specular-blend: normal;
+  --glass-specular-size: 260px;
+
+  --glass-ripple-color: rgb(255 255 255 / 0.55);
+  --glass-fallback-bg: color-mix(in srgb, var(--c-pearl) 94%, transparent);
+  --glass-dispersion: 0.34;
+
+  --glass-highlight-soft-alpha: 0.5;
+
+  --overlay-scrim: color-mix(in srgb, #101828 30%, transparent);
+  --overlay-solid: color-mix(in srgb, var(--c-ink-deep) 95%, transparent);
+  --overlay-solid-text: var(--c-frost);
+  --overlay-solid-border: color-mix(in srgb, #ffffff 14%, transparent);
+  --wash-strong: color-mix(in srgb, #0b1220 58%, transparent);
+  --wash-mid: color-mix(in srgb, #0b1220 30%, transparent);
+  --wash-soft: color-mix(in srgb, #0b1220 12%, transparent);
+  --ring-offset: var(--color-canvas);
+
+  color-scheme: light;
+}
+
+/* ==========================================================================
+   GROUND: DARK (Earth space, lightbox, and anything embedded in them)
+   ========================================================================== */
+
+[data-ground='dark'] {
+  --color-canvas: var(--c-obsidian);
+  --color-surface: var(--c-deepspace);
+  --color-surface-raised: var(--c-slate);
+  --color-border: color-mix(in srgb, var(--c-frost) 14%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--c-frost) 26%, transparent);
+  --color-text: var(--c-frost);
+  --color-text-muted: var(--c-silver);
+  --color-text-dim: var(--c-fog);
+  --color-text-invert: var(--c-obsidian);
+  --color-accent: var(--c-cryo-glow);
+  --color-focus: var(--c-cryo-glow);
+
+  /* The overlay token flips back to white on a dark ground. */
+  --c-mist: #ffffff;
+
+  /* Glass on a dark ground — the V2 behaviour, retained. */
+  --glass-tint-top: #16202e;
+  --glass-tint-bottom: #070c13;
+  --glass-tint-top-pct: 62%;
+  --glass-tint-bottom-pct: 74%;
+
+  --glass-hairline: rgb(255 255 255 / 0.08);
+  --glass-hairline-strong: rgb(255 255 255 / 0.16);
+
+  --glass-stroke-angle: 145deg;
+  --glass-edge-top: rgb(255 255 255 / 0.3);
+  --glass-edge-mid: rgb(255 255 255 / 0.04);
+  --glass-edge-low: rgb(0 0 0 / 0.28);
+  --glass-edge-end: rgb(255 255 255 / 0.1);
+  --glass-edge-light: 0.3;
+
+  --glass-specular-color: rgb(255 255 255 / 0.16);
+  --glass-specular-color-2: rgb(255 255 255 / 0.06);
+  --glass-specular-blend: screen;
+  --glass-specular-size: 220px;
+
+  --glass-ripple-color: rgb(255 255 255 / 0.26);
+  --glass-fallback-bg: color-mix(in srgb, var(--c-deepspace) 92%, transparent);
+  --glass-dispersion: 0.5;
+
+  --glass-highlight-soft-alpha: 0.09;
+
+  --overlay-scrim: color-mix(in srgb, var(--c-void) 62%, transparent);
+  --overlay-solid: color-mix(in srgb, var(--c-ink-deep) 96%, black);
+  --overlay-solid-text: var(--c-frost);
+  --overlay-solid-border: color-mix(in srgb, #ffffff 16%, transparent);
+  --wash-strong: color-mix(in srgb, #000000 88%, transparent);
+  --wash-mid: color-mix(in srgb, #000000 58%, transparent);
+  --wash-soft: color-mix(in srgb, #000000 26%, transparent);
+  --ring-offset: var(--c-obsidian);
+
+  /* Shadows return to the dark-ground recipe. */
+  --sh-ambient: 0 1px 2px rgb(0 0 0 / 0.34);
+  --sh-raised: 0 2px 6px rgb(0 0 0 / 0.32), 0 8px 22px -6px rgb(0 0 0 / 0.44);
+  --sh-float: 0 4px 12px rgb(0 0 0 / 0.3), 0 18px 46px -12px rgb(0 0 0 / 0.55),
+    0 42px 90px -40px rgb(3 8 18 / 0.7);
+  --sh-window: 0 2px 4px rgb(0 0 0 / 0.36), 0 22px 60px -18px rgb(0 0 0 / 0.62),
+    0 60px 130px -50px rgb(2 6 14 / 0.82);
+
+  color-scheme: dark;
+}
+
+/* Dark-ground scenes also get their ambient colours from here, so a scene
+   nested inside the dark ground looks like it belongs. */
+[data-ground='dark'][data-scene='earth'] {
+  --scene-light-a: #1a3d6b;
+  --scene-light-b: #0b1a2e;
+  --scene-accent: var(--c-cryo-glow);
+  --ambient-a: 30%;
+  --ambient-b: 22%;
+}
+
+/* ==========================================================================
+   Ambient light — the base for every light-ground scene.
+   Two large, soft radial sources. This is what stops a white page reading flat
+   and what gives the spatial layout its sense of depth.
+   ========================================================================== */
+
+.scene-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-canvas);
+  background:
+    radial-gradient(
+      120% 80% at var(--ambient-x, 22%) var(--ambient-y, 14%),
+      color-mix(in srgb, var(--scene-light-a, #cfe2f2) var(--ambient-a, 34%), transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      90% 70% at 84% 88%,
+      color-mix(in srgb, var(--scene-light-b, #e6ebf1) var(--ambient-b, 40%), transparent) 0%,
+      transparent 62%
+    );
+  transition: background var(--t-scene) var(--ease-standard);
+}
+
+/* -------------------------------------------------------------- scenes -- */
+
+[data-scene='home'] {
+  --scene-light-a: #d7e7f5;
+  --scene-light-b: #eef1f5;
+  --scene-accent: var(--c-cryo-500);
+  --ambient-a: 52%;
+  --ambient-b: 62%;
+}
+
+/* Photography — a light gallery with tungsten spill. */
+[data-scene='photography'] {
+  --scene-light-a: #f6ead8;
+  --scene-light-b: #eaeef3;
+  --scene-accent: var(--c-amber);
+  --ambient-a: 40%;
+  --ambient-b: 50%;
+}
+
+/* Earth — the one dark scene. Its ambient is the nebula alone; no page light. */
+[data-scene='earth'] {
+  --scene-light-a: transparent;
+  --scene-light-b: transparent;
+  --scene-accent: var(--c-cryo-glow);
+  --ambient-a: 0%;
+  --ambient-b: 0%;
+}
+
+/* Riding — sodium road light and cold metal, on a light ground. */
+[data-scene='riding'] {
+  --scene-light-a: #f7e2d5;
+  --scene-light-b: #e8edf2;
+  --scene-accent: var(--c-ember);
+  --ambient-a: 38%;
+  --ambient-b: 48%;
+}
+
+/* Lab — measurement mint, instrument panel. */
+[data-scene='lab'] {
+  --scene-light-a: #d9f0e9;
+  --scene-light-b: #edf1f5;
+  --scene-accent: var(--c-aurora);
+  --ambient-a: 34%;
+  --ambient-b: 44%;
+}
+
+/* Projects — architectural blueprint blue. */
+[data-scene='projects'] {
+  --scene-light-a: #dbe7f5;
+  --scene-light-b: #eceff4;
+  --scene-accent: #2f6ea8;
+  --ambient-a: 40%;
+  --ambient-b: 50%;
+}
+
+/* Journal — ink on paper, the quietest scene. */
+[data-scene='journal'] {
+  --scene-light-a: #e7eaee;
+  --scene-light-b: #f2f4f6;
+  --scene-accent: var(--c-slate-deep);
+  --ambient-a: 30%;
+  --ambient-b: 38%;
+}
+
+/* Contact — forward-facing signal. */
+[data-scene='contact'] {
+  --scene-light-a: #d5e9f6;
+  --scene-light-b: #eef1f5;
+  --scene-accent: var(--c-cryo-500);
+  --ambient-a: 42%;
+  --ambient-b: 52%;
+}
+
+/* Secret space — the light ground with the lights dimmed, not a second theme.
+   It should feel like the same building at night. */
+[data-scene='secret'] {
+  --color-canvas: #0d1220;
+  --scene-light-a: #241b4d;
+  --scene-light-b: #101827;
+  --scene-accent: #b9a6ff;
+  --ambient-a: 26%;
+  --ambient-b: 20%;
+}
+
+/* The secret space is dark, so its tokens follow the dark ground. */
+[data-scene='secret'] {
+  --color-surface: #131a2a;
+  --color-surface-raised: #1a2334;
+  --color-border: color-mix(in srgb, #ffffff 12%, transparent);
+  --color-border-strong: color-mix(in srgb, #ffffff 22%, transparent);
+  --color-text: var(--c-frost);
+  --color-text-muted: var(--c-silver);
+  --color-text-dim: var(--c-fog);
+  --c-mist: #ffffff;
+  --glass-tint-top: #1b2440;
+  --glass-tint-bottom: #0a0f1c;
+  --glass-hairline: rgb(255 255 255 / 0.09);
+  --glass-hairline-strong: rgb(255 255 255 / 0.18);
+  --glass-edge-top: rgb(255 255 255 / 0.26);
+  --glass-edge-low: rgb(0 0 0 / 0.3);
+  --glass-specular-color: rgb(255 255 255 / 0.15);
+  --glass-specular-color-2: rgb(255 255 255 / 0.05);
+  --glass-specular-blend: screen;
+  --glass-fallback-bg: color-mix(in srgb, #131a2a 92%, transparent);
+  --sh-window: 0 2px 4px rgb(0 0 0 / 0.36), 0 22px 60px -18px rgb(0 0 0 / 0.62);
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   Accessible overrides
+   ========================================================================== */
+
+/* Forced high contrast: kill translucency, keep the palette and the hierarchy. */
+[data-contrast='high'] .glass {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+}
+
+[data-contrast='high'] .glass__specular,
+[data-contrast='high'] .glass__dispersion,
+[data-contrast='high'] .glass__chroma {
+  display: none;
+}
+
+[data-contrast='high'] .scene-ambient {
+  opacity: 0.35;
+}
+
+[data-contrast='high'] .glass::before {
+  opacity: 0.5;
+}
+
+/* Reduced transparency, requested by the OS or by the in-app setting. */
+[data-transparency='reduced'] .glass,
+[data-transparency='reduced'] .glass--refract {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: var(--glass-fallback-bg);
+}
+
+[data-transparency='reduced'] .glass__specular {
+  display: none;
+}

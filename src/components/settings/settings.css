@@ -1,0 +1,302 @@
+/* SettingsPanel — a right-hand glass sheet on desktop, a bottom sheet on phone. */
+
+.settings {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+
+.settings__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay-scrim);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: settings-scrim var(--t-base) var(--ease-standard) both;
+}
+
+@keyframes settings-scrim {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.settings__panel {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  border-left: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  animation: settings-in var(--t-slow) var(--ease-entrance) both;
+}
+
+@keyframes settings-in {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.settings__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-6) var(--sp-4);
+  border-bottom: 1px solid var(--color-border);
+  flex: none;
+}
+
+.settings__title {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+}
+
+.settings__sub {
+  margin-top: 2px;
+}
+
+.settings__body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--sp-6);
+  display: grid;
+  gap: var(--sp-8);
+  /* The sheet itself scrolls; the page behind must not. */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------------------------------------------------------------- groups -- */
+
+.settings__group {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.settings__group-title {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--color-text);
+}
+
+.settings__group-note {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-dim);
+}
+
+.settings__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px dashed color-mix(in srgb, var(--c-amber) 40%, transparent);
+  background: color-mix(in srgb, var(--c-amber) 8%, transparent);
+  font-size: var(--fs-caption);
+  color: var(--c-amber);
+}
+
+/* --------------------------------------------------------------- options -- */
+
+.settings__options {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.settings__options--row {
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.settings__option {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-mist) 4%, transparent);
+  transition:
+    border-color var(--t-base) var(--ease-standard),
+    background-color var(--t-base) var(--ease-standard);
+}
+
+.settings__option:hover {
+  border-color: var(--color-border-strong);
+  background: color-mix(in srgb, var(--c-mist) 8%, transparent);
+}
+
+.settings__option[aria-checked='true'] {
+  border-color: color-mix(in srgb, var(--c-cryo-300) 52%, transparent);
+  background: color-mix(in srgb, var(--c-cryo-300) 10%, transparent);
+}
+
+.settings__option-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* The radio mark is a drawn indicator, not a colour change — so the selected
+   option is identifiable without relying on hue. */
+.settings__radio {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-strong);
+  flex: none;
+  position: relative;
+}
+
+.settings__option[aria-checked='true'] .settings__radio {
+  border-color: var(--c-cryo-300);
+}
+
+.settings__option[aria-checked='true'] .settings__radio::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--c-cryo-300);
+}
+
+.settings__option-label {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.settings__option-note {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  line-height: var(--lh-normal);
+  padding-left: calc(14px + var(--sp-3));
+}
+
+.settings__chip {
+  min-height: 36px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-mist) 4%, transparent);
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  transition:
+    border-color var(--t-base) var(--ease-standard),
+    background-color var(--t-base) var(--ease-standard),
+    color var(--t-base) var(--ease-standard);
+}
+
+.settings__chip:hover {
+  color: var(--color-text);
+}
+
+.settings__chip[aria-checked='true'] {
+  border-color: color-mix(in srgb, var(--c-cryo-300) 48%, transparent);
+  background: color-mix(in srgb, var(--c-cryo-300) 12%, transparent);
+  color: var(--c-cryo-100);
+}
+
+/* ------------------------------------------------------------ keyboard -- */
+
+.settings__keys {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.settings__keys > div {
+  display: grid;
+  gap: 2px;
+}
+
+.settings__keys dt {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-caption);
+  color: var(--color-text);
+}
+
+.settings__keys dd {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  line-height: var(--lh-normal);
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border-strong);
+  border-bottom-width: 2px;
+  background: color-mix(in srgb, var(--c-mist) 8%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--color-text);
+}
+
+/* ---------------------------------------------------------- responsive -- */
+
+@media (max-width: 560px) {
+  .settings {
+    align-items: flex-end;
+  }
+
+  .settings__panel {
+    width: 100%;
+    max-height: 88dvh;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+    animation-name: settings-up;
+  }
+
+  @keyframes settings-up {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 32px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* A drag affordance for the sheet, purely visual. */
+  .settings__head::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    translate: -50% 0;
+    width: 36px;
+    height: 3px;
+    border-radius: var(--r-pill);
+    background: var(--color-border-strong);
+  }
+
+  .settings__body {
+    padding-bottom: calc(var(--sp-8) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings__scrim,
+  .settings__panel {
+    animation: none;
+  }
+}

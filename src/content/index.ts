@@ -1,0 +1,344 @@
+/**
+ * index.ts — the content registry.
+ *
+ * The site reads ALL content from src/content/data/*.json. Those same files are
+ * what the CMS writes (see public/admin/config.yml), so there is exactly one
+ * source of truth and no synchronisation step to get wrong.
+ *
+ * JSON imports are untyped at runtime: a hand-edited file can be missing a
+ * required field without the compiler noticing. `validate()` below therefore
+ * checks the shape once at module load and reports problems to the console, and
+ * every accessor applies a defensive default. A broken content file degrades a
+ * section; it never blanks the site.
+ */
+
+import type {
+  BrandIdentity,
+  ContactChannel,
+  JournalEntry,
+  LabNote,
+  Motorcycle,
+  Photo,
+  Project,
+  RideRoute,
+  SecretContent,
+  ServiceRecord,
+  SiteSettings,
+} from './types';
+
+import brandJson from './data/brand.json';
+import profileJson from './data/profile.json';
+import photographyJson from './data/photography.json';
+import ridingJson from './data/riding.json';
+import labJson from './data/lab.json';
+import projectsJson from './data/projects.json';
+import journalJson from './data/journal.json';
+import contactJson from './data/contact.json';
+import settingsJson from './data/settings.json';
+import secretJson from './data/secret.json';
+
+/* ------------------------------------------------------------------ guards */
+
+interface Issue {
+  file: string;
+  path: string;
+  message: string;
+}
+
+const issues: Issue[] = [];
+
+function requireString(file: string, obj: unknown, key: string, path = key): string {
+  const rec = obj as Record<string, unknown> | null;
+  const v = rec?.[key];
+  if (typeof v !== 'string' || v.trim() === '') {
+    issues.push({ file, path, message: `missing or empty string` });
+    return '';
+  }
+  return v;
+}
+
+function optionalString(obj: unknown, key: string): string | undefined {
+  const rec = obj as Record<string, unknown> | null;
+  const v = rec?.[key];
+  return typeof v === 'string' && v.trim() !== '' ? v : undefined;
+}
+
+function optionalNumber(obj: unknown, key: string): number | undefined {
+  const rec = obj as Record<string, unknown> | null;
+  const v = rec?.[key];
+  return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+}
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+/**
+ * Unwrap a `{ items: [...] }` document.
+ *
+ * The CMS edits these files through a root-level list widget, which Decap writes
+ * as an object with a single `items` key. Reading through this helper means the
+ * site accepts BOTH shapes: the wrapped form the CMS produces, and a bare array
+ * that a person might hand-write. Accepting both is what keeps a hand-edit from
+ * silently emptying a page.
+ */
+function itemsOf(value: unknown, file: string): Array<Record<string, unknown>> {
+  if (Array.isArray(value)) return value as Array<Record<string, unknown>>;
+  const wrapped = (value as { items?: unknown } | null)?.items;
+  if (Array.isArray(wrapped)) {
+    if (value !== null && typeof value === 'object' && !('items' in (value as object))) {
+      issues.push({ file, path: 'items', message: 'document has no "items" array' });
+    }
+    return wrapped as Array<Record<string, unknown>>;
+  }
+  issues.push({ file, path: 'items', message: 'expected an array or an { items: [] } document' });
+  return [];
+}
+
+/* ------------------------------------------------------------- collections */
+
+export const BRAND: BrandIdentity = (() => {
+  const b = brandJson as unknown as Partial<BrandIdentity> & { latin?: string };
+  const nickname = requireString('brand.json', b, 'nickname');
+
+  // `latin` was V2's field and held the romanisation "TangyuanVision". If an
+  // older content file is still in place, it is migrated here rather than being
+  // rendered as the brand name — V3 explicitly forbids the romanisation.
+  const brandLatin = b.brandLatin ?? b.latin ?? 'Vision';
+  const brandFull = b.brandFull ?? `${nickname || '汤圆'}${brandLatin}`;
+
+  return {
+    nickname: nickname || '汤圆',
+    brandLatin,
+    brandFull,
+    brandGloss: b.brandGloss ?? '汤圆视界',
+    logoLine: b.logoLine ?? 'CAPTURE MOMENTS',
+    tagline: b.tagline ?? '',
+    taglineEn: b.taglineEn ?? '',
+    statement: b.statement ?? '',
+    statementEn: b.statementEn ?? '',
+    location: b.location,
+    roles: asArray<string>(b.roles),
+  };
+})();
+
+export const PROFILE = itemsOf(profileJson, 'profile.json').map((raw, i) => ({
+  id: requireString('profile.json', raw, 'id', `[${i}].id`) || `profile-${i}`,
+  title: requireString('profile.json', raw, 'title', `[${i}].title`),
+  titleEn: optionalString(raw, 'titleEn') ?? '',
+  body: optionalString(raw, 'body') ?? '',
+  note: optionalString(raw, 'note'),
+  provenance: (optionalString(raw, 'provenance') === 'real' ? 'real' : 'sample') as 'real' | 'sample',
+}));
+
+const PHOTO_CATEGORIES = ['landscape', 'street', 'machine', 'sky', 'abstract'] as const;
+
+/** A photo record that failed validation is dropped rather than rendered broken. */
+function toPhoto(raw: Record<string, unknown>, i: number): Photo | null {
+  const id = optionalString(raw, 'id');
+  const src = optionalString(raw, 'src');
+  // Without an id or a source there is nothing renderable, so the record is
+  // skipped and reported instead of producing an empty tile.
+  if (!id || !src) {
+    issues.push({
+      file: 'photography.json',
+      path: `[${i}]`,
+      message: !id ? 'missing "id"' : 'missing "src"',
+    });
+    return null;
+  }
+
+  const cat = optionalString(raw, 'category');
+  const category: Photo['category'] = (PHOTO_CATEGORIES as readonly string[]).includes(cat ?? '')
+    ? (cat as Photo['category'])
+    : 'abstract';
+
+  return {
+    id,
+    title: optionalString(raw, 'title') ?? id,
+    category,
+    src,
+    thumb: optionalString(raw, 'thumb'),
+    width: optionalNumber(raw, 'width') ?? 1600,
+    height: optionalNumber(raw, 'height') ?? 1067,
+    description: optionalString(raw, 'description') ?? '',
+    tone: optionalString(raw, 'tone') ?? '#101820',
+    takenAt: optionalString(raw, 'takenAt'),
+    location: optionalString(raw, 'location'),
+    camera: optionalString(raw, 'camera'),
+    lens: optionalString(raw, 'lens'),
+    exif: undefined,
+    feature: raw.feature === true,
+    order: optionalNumber(raw, 'order') ?? i,
+    provenance: optionalString(raw, 'provenance') === 'real' ? 'real' : 'sample',
+  };
+}
+
+export const PHOTOS: Photo[] = itemsOf(photographyJson, 'photography.json')
+  .map(toPhoto)
+  .filter((p): p is Photo => p !== null)
+  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+export const PHOTO_CATEGORY_LABELS: Record<Photo['category'], string> = {
+  landscape: '风景 / Landscape',
+  street: '街景 / Street',
+  machine: '机械 / Machine',
+  sky: '天空 / Sky',
+  abstract: '抽象 / Abstract',
+};
+
+const riding = ridingJson as unknown as {
+  motorcycle?: Partial<Motorcycle>;
+  routes?: RideRoute[];
+  serviceRecords?: ServiceRecord[];
+  serviceRecordNote?: string;
+};
+
+export const MOTORCYCLE: Motorcycle = (() => {
+  const m = riding.motorcycle ?? {};
+  return {
+    id: m.id ?? 'motorcycle',
+    model: m.model ?? '待填写',
+    modelEn: m.modelEn ?? '',
+    confirmedDetails: asArray(m.confirmedDetails),
+    pendingDetails: asArray<string>(m.pendingDetails),
+    note: m.note,
+    image: m.image,
+    provenance: (m.provenance === 'real' ? 'real' : 'sample') as 'real' | 'sample',
+  };
+})();
+
+export const ROUTES: RideRoute[] = asArray<RideRoute>(riding.routes).map((r, i) => ({
+  ...r,
+  id: r.id || `route-${i}`,
+  stops: asArray(r.stops),
+  status: r.status === 'ridden' ? 'ridden' : 'planned',
+  provenance: r.provenance === 'real' ? 'real' : 'sample',
+}));
+
+export const SERVICE_RECORDS: ServiceRecord[] = asArray<ServiceRecord>(riding.serviceRecords);
+
+export const SERVICE_RECORD_NOTE: string = riding.serviceRecordNote ?? '';
+
+export const LAB_NOTES: LabNote[] = itemsOf(labJson, 'lab.json')
+  .map((raw, i) => ({
+    id: optionalString(raw, 'id') ?? `lab-${i}`,
+    title: optionalString(raw, 'title') ?? '(未命名)',
+    titleEn: optionalString(raw, 'titleEn'),
+    date: optionalString(raw, 'date'),
+    question: optionalString(raw, 'question') ?? '',
+    approach: optionalString(raw, 'approach') ?? '',
+    outcome: optionalString(raw, 'outcome') ?? '',
+    tools: asArray<string>(raw.tools),
+    snippet: undefined,
+    demo: optionalString(raw, 'demo'),
+    provenance: (optionalString(raw, 'provenance') === 'real' ? 'real' : 'sample') as 'real' | 'sample',
+  }))
+  .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+
+export const PROJECTS: Project[] = itemsOf(projectsJson, 'projects.json')
+  .map((raw, i) => {
+    const status = optionalString(raw, 'status');
+    const allowed = ['shipped', 'building', 'exploring', 'paused'];
+    return {
+      id: optionalString(raw, 'id') ?? `project-${i}`,
+      name: optionalString(raw, 'name') ?? '(未命名项目)',
+      nameEn: optionalString(raw, 'nameEn'),
+      status: (allowed.includes(status ?? '') ? status : 'exploring') as Project['status'],
+      summary: optionalString(raw, 'summary') ?? '',
+      detail: optionalString(raw, 'detail') ?? '',
+      stack: asArray<string>(raw.stack),
+      cover: optionalString(raw, 'cover'),
+      repoUrl: optionalString(raw, 'repoUrl') ?? null,
+      demoUrl: optionalString(raw, 'demoUrl') ?? null,
+      highlights: asArray<string>(raw.highlights),
+      order: optionalNumber(raw, 'order') ?? i,
+      provenance: (optionalString(raw, 'provenance') === 'real' ? 'real' : 'sample') as 'real' | 'sample',
+    } satisfies Project;
+  })
+  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+export const JOURNAL: JournalEntry[] = itemsOf(journalJson, 'journal.json').map((raw, i) => ({
+  id: optionalString(raw, 'id') ?? `journal-${i}`,
+  title: optionalString(raw, 'title') ?? '(未命名)',
+  titleEn: optionalString(raw, 'titleEn'),
+  date: optionalString(raw, 'date'),
+  kind: (['essay', 'note', 'log'].includes(optionalString(raw, 'kind') ?? '')
+    ? optionalString(raw, 'kind')
+    : 'note') as JournalEntry['kind'],
+  excerpt: optionalString(raw, 'excerpt') ?? '',
+  body: asArray<string>(raw.body),
+  tags: asArray<string>(raw.tags),
+  provenance: (optionalString(raw, 'provenance') === 'real' ? 'real' : 'sample') as 'real' | 'sample',
+}));
+
+const contact = contactJson as unknown as {
+  channels?: ContactChannel[];
+  privacyNote?: string;
+  formNote?: string;
+};
+
+export const CONTACT_CHANNELS: ContactChannel[] = asArray<ContactChannel>(contact.channels);
+export const CONTACT_PRIVACY_NOTE: string = contact.privacyNote ?? '';
+export const CONTACT_FORM_NOTE: string = contact.formNote ?? '';
+
+export const SETTINGS: SiteSettings = (() => {
+  const s = settingsJson as unknown as Partial<SiteSettings> & {
+    siteTitleSuffix?: string;
+    locale?: string;
+    keywords?: string[];
+  };
+  return {
+    siteTitle: s.siteTitle ?? BRAND.nickname,
+    siteDescription: s.siteDescription ?? '',
+    ogImage: s.ogImage ?? '/assets/brand/logo-light.png',
+    themeColor: s.themeColor ?? '#05070A',
+    homeScene: s.homeScene ?? 'home',
+    secretEnabled: s.secretEnabled !== false,
+    bootEnabled: s.bootEnabled !== false,
+  };
+})();
+
+export const SITE_TITLE_SUFFIX: string =
+  (settingsJson as unknown as { siteTitleSuffix?: string }).siteTitleSuffix ?? BRAND.nickname;
+
+export const SITE_LOCALE: string =
+  (settingsJson as unknown as { locale?: string }).locale ?? 'zh-CN';
+
+export const SITE_KEYWORDS: string[] = asArray<string>(
+  (settingsJson as unknown as { keywords?: unknown }).keywords
+);
+
+export const SECRET: SecretContent = (() => {
+  const s = secretJson as unknown as Partial<SecretContent>;
+  return {
+    title: s.title ?? '静默空间',
+    titleEn: s.titleEn ?? 'THE QUIET SPACE',
+    phrase: s.phrase ?? 'explore beyond',
+    manifesto: asArray<string>(s.manifesto),
+    artifacts: asArray(s.artifacts),
+  };
+})();
+
+/* -------------------------------------------------------------- reporting */
+
+/** Content problems found at load. Surfaced in the console, never thrown. */
+export const contentIssues: readonly Issue[] = issues;
+
+if (issues.length > 0 && import.meta.env.DEV) {
+  console.warn(
+    `[content] ${issues.length} content problem(s) detected. The site still renders; ` +
+      `fix these in src/content/data/ or via the CMS:\n` +
+      issues.map((i) => `  • ${i.file} → ${i.path}: ${i.message}`).join('\n')
+  );
+}
+
+/** Counts used by the hub and by the delivery documentation. */
+export const CONTENT_COUNTS = {
+  photos: PHOTOS.length,
+  routes: ROUTES.length,
+  labNotes: LAB_NOTES.length,
+  projects: PROJECTS.length,
+  journal: JOURNAL.length,
+  contactChannels: CONTACT_CHANNELS.filter((c) => c.confirmed).length,
+} as const;

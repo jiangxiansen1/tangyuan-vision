@@ -1,0 +1,62 @@
+/* Logo — the mark is optically weak by nature (fine line-art), so on the dark
+   surfaces where it appears at small sizes it gets a subtle luminance lift via
+   a filter. This changes nothing about the artwork's geometry; it compensates
+   for the fact that thin white strokes lose apparent weight when scaled down.
+   The filter is dropped entirely under forced high contrast, where the raw asset
+   gives better edge definition. */
+
+.logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.logo--light {
+  /* 1.06 rather than a large boost: above ~1.12 the hand-drawn edge quality
+     starts to look like a hard-edged vector, which would misrepresent it. */
+  filter: brightness(1.06) contrast(1.04);
+}
+
+.logo--dark {
+  /* No lift needed — dark ink on a light field already has ample contrast. */
+  filter: none;
+}
+
+.logo--fluid {
+  width: 100%;
+  height: auto;
+}
+
+[data-contrast='high'] .logo--light,
+[data-contrast='high'] .logo--dark {
+  filter: none;
+}
+
+/* ------------------------------------------------------------ fallback -- */
+
+.logo--fallback {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1em;
+  font-family: var(--font-display);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.logo__fallback-name {
+  font-size: calc(var(--logo-fallback-size, 16px) * 1.05);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.logo__fallback-line {
+  font-family: var(--font-mono);
+  font-size: calc(var(--logo-fallback-size, 16px) * 0.5);
+  letter-spacing: var(--ls-wide);
+  color: var(--color-text-dim);
+}

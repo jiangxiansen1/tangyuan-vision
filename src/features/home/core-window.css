@@ -1,0 +1,464 @@
+/* ==========================================================================
+   CoreWindow — tier 2, the two windows that carry the site.
+
+   V4: THE SURFACE IS NOW REAL GLASS
+   =================================
+   V3 drew a button with a dark scrim, a border and a shadow. An OPAQUE preview
+   image covered the whole surface, which meant `backdrop-filter` had nothing to
+   sample and the material could not appear regardless of the CSS. So this version
+   makes three structural changes, all of which are necessary:
+
+     1. `.cwin__surface` is a `GlassSurface` (see the component), so the six
+        layers come from the design system rather than being re-invented here.
+     2. The preview is held at PARTIAL OPACITY and the scrim is a tint over the
+        lower third only — never an opaque wash across the pane.
+     3. The ambient backdrop sits behind the pane in the same stacking context, so
+        the blur has structured content to sample instead of flat colour.
+
+   COMPOSITION
+   The two windows are deliberately unequal — the photography window leads with a
+   tall image stack, the Earth window sits lower and carries a live globe. The
+   shared material and type scale keep them obviously a set.
+   ========================================================================== */
+
+.cwin {
+  list-style: none;
+  min-width: 0;
+  flex: 1 1 auto;
+  /* `display: flex` would make the pane a flex item with a content-derived
+     width; `block` lets the pane's own `width: 100%` drive it. */
+  display: block;
+}
+
+.cwin[data-side='right'] {
+  /* A small vertical offset keeps the pair from reading as two equal columns.
+     Applied to the list item rather than the pane so the grid row keeps its own
+     height and the two can never overlap on a narrow tablet. */
+  padding-block-start: clamp(0px, 3.5vw, 48px);
+}
+
+/* ------------------------------------------------------------------ pane -- */
+
+/* ------------------------------------------------------------------ pane -- */
+
+/*
+  FORM-CONTROL RESETS ARE LOAD-BEARING HERE.
+
+  The pane is a <button>, and a button is not a plain block box: its default
+  width is intrinsic (it shrink-wraps its content), and `aspect-ratio` on an
+  intrinsic-width box resolves to almost nothing. In the first V4 build the two
+  core windows therefore collapsed to roughly zero area and were INVISIBLE in the
+  browser while every stylesheet and every class was present.
+
+  Stating `display: block; width: 100%; max-width: none; box-sizing: border-box`
+  is what makes the pane a normal block that fills its grid track. */
+.cwin__surface {
+  --cw-tilt-x: 0deg;
+  --cw-tilt-y: 0deg;
+  --cw-par-x: 0px;
+  --cw-par-y: 0px;
+
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  text-align: left;
+  overflow: hidden;
+  /* `isolation` keeps the preview's own stacking inside the pane, so it cannot
+     composite against the page behind the glass. */
+  isolation: isolate;
+  perspective: 1300px;
+  transform: translateZ(0);
+  /* No border and no box-shadow here: the material supplies its own hairline and
+     its own depth. Adding a second rim is what produced the "white card edge"
+     look the brief calls out. */
+  transition: transform var(--t-slow) var(--ease-entrance);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cwin[data-scene='photography'] .cwin__surface {
+  aspect-ratio: 4 / 5;
+  max-height: min(70vh, 760px);
+}
+
+.cwin[data-scene='earth'] .cwin__surface {
+  aspect-ratio: 4 / 4.5;
+  max-height: min(66vh, 700px);
+}
+
+/* Focus must be unmistakable on a surface this large. The ring replaces the
+   material's own edge rather than stacking on top of it. */
+.cwin__surface:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-canvas),
+    0 0 0 4px var(--color-focus);
+}
+
+/* ------------------------------------------------------------- preview --
+   The preview is the BACKDROP the glass refracts. It must be translucent, or the
+   material has nothing to work with. */
+.cwin__preview {
+  position: absolute;
+  inset: 0;
+  display: block;
+  z-index: 0;
+  /* These are the values that make glass possible: under 1 so the pane's own
+     blur and tint visibly composite over the image. */
+  opacity: 0.62;
+  transform: translate3d(var(--cw-par-x), var(--cw-par-y), 0);
+  transition: transform var(--t-slow) var(--ease-entrance), opacity var(--t-base) var(--ease-standard);
+}
+
+.cwin__surface:hover .cwin__preview {
+  opacity: 0.76;
+}
+
+/* The framed image. Inset on the photography window so the stack behind is
+   visible, which is the point of a stack. */
+.cwin__frameframe {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+}
+
+.cwin[data-scene='photography'] .cwin__frameframe {
+  inset: 7% 7% 22% 7%;
+  rotate: -0.6deg;
+}
+
+.cwin[data-scene='earth'] .cwin__frameframe {
+  inset: 0;
+  border-radius: 0;
+}
+
+.cwin__frameframe--empty {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent);
+}
+
+.cwin__image {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.cwin__stack {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  transition: transform var(--t-slow) var(--ease-entrance), opacity var(--t-base) var(--ease-standard);
+}
+
+.cwin__stack--b {
+  inset: 4% 12% 26% 3%;
+  rotate: -3.4deg;
+  opacity: 0.7;
+}
+
+.cwin__stack--c {
+  inset: 10% 3% 21% 12%;
+  rotate: 2.9deg;
+  opacity: 0.48;
+}
+
+.cwin__stack > * {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.cwin__surface:hover .cwin__stack--b {
+  transform: translate3d(-2%, -1.4%, 0);
+  opacity: 0.84;
+}
+
+.cwin__surface:hover .cwin__stack--c {
+  transform: translate3d(2%, -1%, 0);
+  opacity: 0.6;
+}
+
+/* The Earth window's globe fills its frame. */
+.cwin__globe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+}
+
+/*
+  A preview shows the GLOBE, not the globe page's interface.
+
+  These elements belong to EarthPage and were rendering inside the thumbnail,
+  which read as duplicated controls floating on the home page. A preview is the
+  subject only — chrome is what you get after you open it.
+*/
+.cwin__globe .eglobe__hint,
+.cwin__globe .eglobe__sun,
+.cwin__globe .eglobe__controls,
+.cwin__globe .eglobe__fallback,
+.cwin__globe .eglobe__tip,
+.cwin__globe .eglobe__keys {
+  display: none;
+}
+
+.cwin__globe .eglobe {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  /* The preview is decorative here: real interaction happens on the Earth page,
+     and a nested canvas that also accepted drags would fight the window's own
+     click-to-open. */
+  pointer-events: none;
+  /* The globe is drawn on its own dark field; held back slightly so it reads as
+     something seen THROUGH the pane rather than pasted onto it. */
+  opacity: 0.9;
+}
+
+.cwin__globe-static {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background:
+    radial-gradient(38% 38% at 50% 46%, rgb(64 132 198 / 0.5) 0%, transparent 70%),
+    radial-gradient(26% 26% at 50% 46%, rgb(18 52 96 / 0.9) 0%, transparent 68%),
+    radial-gradient(120% 90% at 50% 50%, #0e1a2c 0%, #08101c 70%);
+}
+
+.cwin__globe-static::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  translate: -50% -50%;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow:
+    inset -16px -12px 44px rgb(0 0 0 / 0.62),
+    inset 12px 10px 32px rgb(90 160 230 / 0.2),
+    0 0 70px rgb(40 110 180 / 0.26);
+}
+
+/* THE SCRIM COVERS THE LOWER THIRD ONLY.
+   This is the difference between readable glass and an opaque card: the text sits
+   where the gradient is dark, and the upper two thirds stay genuinely translucent
+   so the material is visible. */
+.cwin__scrim {
+  position: absolute;
+  inset: 42% 0 0 0;
+  display: block;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, #08111f 84%, transparent) 0%,
+    color-mix(in srgb, #08111f 58%, transparent) 38%,
+    color-mix(in srgb, #08111f 22%, transparent) 72%,
+    transparent 100%
+  );
+}
+
+/* -------------------------------------------------------------- content -- */
+
+.cwin__body {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  display: grid;
+  gap: var(--sp-3);
+  padding: clamp(var(--sp-5), 2.2vw, var(--sp-7));
+  /* Text sits on the scrim, which is dark, so it is light-on-dark here. This is
+     the one place on the light page where that is correct — and it is measured:
+     #ffffff on the scrim's #08111f is well above AA. */
+  color: #ffffff;
+}
+
+.cwin__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.cwin__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.12);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #ffffff;
+  flex: none;
+}
+
+.cwin__eyebrow {
+  color: rgb(255 255 255 / 0.8);
+}
+
+.cwin__titles {
+  display: grid;
+  gap: 4px;
+}
+
+.cwin__title {
+  font-size: clamp(1.5rem, 1.1rem + 1.7vw, 2.3rem);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+  line-height: 1.1;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.5);
+}
+
+.cwin__blurb {
+  font-size: var(--fs-small);
+  line-height: var(--lh-normal);
+  color: rgb(255 255 255 / 0.82);
+  max-width: 32ch;
+}
+
+.cwin__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  /* A hairline on the text block only. The pane itself has no decorative rules. */
+  border-top: 1px solid rgb(255 255 255 / 0.18);
+  margin-top: var(--sp-1);
+}
+
+.cwin__enter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.cwin__enter svg {
+  transition: transform var(--t-base) var(--ease-standard);
+}
+
+.cwin__surface:hover .cwin__enter svg,
+.cwin__surface:focus-visible .cwin__enter svg {
+  transform: translateX(4px);
+}
+
+.cwin__key {
+  opacity: 0.55;
+  transition: opacity var(--t-base) var(--ease-standard);
+}
+
+.cwin__surface:hover .cwin__key,
+.cwin__surface:focus-visible .cwin__key {
+  opacity: 1;
+}
+
+.cwin__key kbd {
+  border-color: rgb(255 255 255 / 0.26);
+  background: rgb(255 255 255 / 0.15);
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
+/* Tablet: the pair becomes two equal tracks and the offset is dropped, so neither
+   window is pushed into a shorter row than the other. */
+@media (max-width: 1023px) {
+  .cwin[data-side='right'] {
+    padding-block-start: 0;
+  }
+
+  .cwin[data-scene='photography'] .cwin__surface,
+  .cwin[data-scene='earth'] .cwin__surface {
+    aspect-ratio: 4 / 4.6;
+    max-height: none;
+  }
+}
+
+/* Phone: a single column, and each window becomes a wide banner rather than a
+   tall card — a tall card would push its own text below the fold. */
+@media (max-width: 767px) {
+  .cwin__surface,
+  .cwin[data-scene='photography'] .cwin__surface,
+  .cwin[data-scene='earth'] .cwin__surface {
+    aspect-ratio: 3 / 3.4;
+    max-height: 76vh;
+    /* No tilt on touch: there is no hover, and a 3D transform on a phone makes
+       the text inside feel unsteady. */
+    perspective: none;
+  }
+
+  .cwin__preview {
+    transform: none;
+    /* On a phone the pane is small, so slightly more of the image shows through
+       to keep the preview legible at this size. */
+    opacity: 0.7;
+  }
+
+  .cwin__body {
+    padding: var(--sp-5);
+    gap: var(--sp-2);
+  }
+
+  .cwin__title {
+    font-size: 1.5rem;
+  }
+
+  .cwin__blurb {
+    font-size: var(--fs-caption);
+  }
+
+  /* The stack is decorative and costs horizontal room a phone does not have. */
+  .cwin__stack {
+    display: none;
+  }
+
+  .cwin[data-scene='photography'] .cwin__frameframe {
+    inset: 5% 5% 32% 5%;
+    rotate: 0deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cwin__surface,
+  .cwin__preview,
+  .cwin__frameframe,
+  .cwin__stack,
+  .cwin__enter svg {
+    transition: none;
+  }
+
+  .cwin__preview {
+    transform: none;
+  }
+}
+
+/* Reduced transparency: the material is replaced by an opaque surface, so the
+   preview has to carry the whole visual again. */
+[data-transparency='reduced'] .cwin__preview {
+  opacity: 1;
+}
+
+[data-transparency='reduced'] .cwin__scrim {
+  inset: 30% 0 0 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, #08111f 92%, transparent) 0%,
+    color-mix(in srgb, #08111f 66%, transparent) 46%,
+    transparent 100%
+  );
+}
+
+/* High contrast: same reasoning, and the material's decorative layers are off. */
+[data-contrast='high'] .cwin__preview {
+  opacity: 0.9;
+}
+
+[data-contrast='high'] .cwin__scrim {
+  background: color-mix(in srgb, #05070d 90%, transparent);
+  inset: 30% 0 0 0;
+}

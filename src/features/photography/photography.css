@@ -1,0 +1,389 @@
+/* ==========================================================================
+   PhotographyPage — an asymmetric editorial layout, not a card grid.
+   ========================================================================== */
+
+.photography {
+  position: relative;
+}
+
+/* A scene-wide tone wash taken from the active category's first photo. It sits
+   under everything and is what makes the space respond to the work. */
+.photography__tone {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    100% 60% at 50% 0%,
+    color-mix(in srgb, var(--tone, #101820) 26%, transparent) 0%,
+    transparent 68%
+  );
+  transition: background var(--t-scene) var(--ease-standard);
+}
+
+.photography > *:not(.photography__tone):not(.scene-ambient):not(.scene__grain) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------- sample note -- */
+
+.photography__notice {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  margin-block-end: var(--sp-8);
+}
+
+.photography__notice > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--c-amber);
+}
+
+.photography__notice-title {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  color: var(--c-amber);
+  margin-block-end: var(--sp-2);
+}
+
+.photography__notice-body {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: 82ch;
+}
+
+.photography__notice-body code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.36em;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-mist) 10%, transparent);
+  color: var(--c-cryo-100);
+}
+
+/* ----------------------------------------------------------------- filters -- */
+
+.photography__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-8);
+}
+
+.photography__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 36px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-mist) 4%, transparent);
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  transition:
+    border-color var(--t-base) var(--ease-standard),
+    background-color var(--t-base) var(--ease-standard),
+    color var(--t-base) var(--ease-standard);
+}
+
+.photography__filter:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+/* Selected state carries a border + background + weight change, so it is not
+   signalled by hue alone. */
+.photography__filter[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 56%, transparent);
+  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 12%, transparent);
+  color: var(--scene-accent, var(--color-accent));
+  font-weight: var(--fw-medium);
+}
+
+.photography__filter:disabled {
+  opacity: 0.38;
+}
+
+.photography__filter-count {
+  font-size: var(--fs-micro);
+  opacity: 0.7;
+}
+
+/* ==========================================================================
+   Feature band — full width, large image, caption beside it.
+   ========================================================================== */
+
+.photography__feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: clamp(20px, 3vw, 48px);
+  align-items: center;
+  margin-block-end: clamp(64px, 10vh, 132px);
+}
+
+/* Alternating: every second feature band mirrors, which is what stops the page
+   reading as a vertical list of the same module. */
+.photography__feature:nth-of-type(even) {
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+}
+
+.photography__feature:nth-of-type(even) .photography__feature-button {
+  order: 2;
+}
+
+.photography__feature-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  cursor: zoom-in;
+  transition: transform var(--t-slow) var(--ease-entrance);
+}
+
+.photography__feature-button:hover {
+  transform: scale(1.006);
+}
+
+.photography__feature-image {
+  border-radius: var(--r-xl);
+  /* A subtle inner edge so the image reads as a framed print, not a screenshot. */
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--c-mist) 10%, transparent),
+    var(--sh-float);
+}
+
+.photography__feature-caption {
+  display: grid;
+  gap: var(--sp-4);
+  align-content: center;
+}
+
+.photography__feature-title {
+  font-size: var(--fs-title);
+  letter-spacing: var(--ls-title);
+  line-height: var(--lh-snug);
+}
+
+.photography__feature-desc {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: 40ch;
+}
+
+.photography__feature-dim {
+  font-size: var(--fs-micro);
+  color: var(--color-text-dim);
+  letter-spacing: 0.1em;
+}
+
+/* The zoom affordance: a small glass square that fades in on hover/focus. */
+.photography__zoom {
+  position: absolute;
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: color-mix(in srgb, var(--c-void) 52%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--c-frost);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--t-base) var(--ease-standard), transform var(--t-base) var(--ease-entrance);
+}
+
+.photography__zoom--sm {
+  width: 30px;
+  height: 30px;
+  right: var(--sp-3);
+  bottom: var(--sp-3);
+}
+
+.photography__feature-button:hover .photography__zoom,
+.photography__feature-button:focus-visible .photography__zoom,
+.photography__flow-button:hover .photography__zoom,
+.photography__flow-button:focus-visible .photography__zoom {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==========================================================================
+   Flow layout — each tile keeps its own aspect ratio.
+
+   CSS columns are used rather than a grid because they let each image stay at
+   its natural ratio and flow, which is the whole point: a 4:5 portrait must not
+   be cropped into a 3:2 landscape's box.
+   ========================================================================== */
+
+.photography__flow {
+  columns: 3;
+  column-gap: clamp(14px, 1.4vw, 22px);
+  list-style: none;
+}
+
+.photography__flow-item {
+  break-inside: avoid;
+  margin-block-end: clamp(14px, 1.4vw, 22px);
+  position: relative;
+}
+
+.photography__flow-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.photography__flow-image {
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-mist) 8%, transparent);
+  transition: transform var(--t-slow) var(--ease-entrance);
+}
+
+.photography__flow-button:hover .photography__flow-image,
+.photography__flow-button:focus-visible .photography__flow-image {
+  transform: scale(1.012);
+}
+
+/* The caption is revealed on hover / focus. It is also present in the DOM for
+   screen readers at all times, and the lightbox always shows it — so nothing is
+   discoverable only through hover. */
+.photography__flow-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--c-void) 90%, transparent) 0%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--t-base) var(--ease-standard), transform var(--t-base) var(--ease-entrance);
+  pointer-events: none;
+}
+
+.photography__flow-button:hover .photography__flow-overlay,
+.photography__flow-button:focus-visible .photography__flow-overlay {
+  opacity: 1;
+  transform: none;
+}
+
+.photography__flow-title {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.photography__flow-meta {
+  color: var(--color-text-muted) !important;
+  font-size: var(--fs-micro);
+}
+
+/* The sample marker stays permanently visible on the tile — it must not depend
+   on hovering to be seen. */
+.photography__flow-badge {
+  position: absolute;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Implementation notes
+   ========================================================================== */
+
+.photography__impl {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: start;
+}
+
+.photography__impl .spec-table {
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.photography__impl .spec-table th,
+.photography__impl .spec-table td {
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.photography__impl-notes {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.photography__impl-notes p {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.photography__impl-notes b {
+  color: var(--color-text);
+  font-weight: var(--fw-medium);
+}
+
+.photography__back {
+  display: flex;
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--color-border);
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 1023px) {
+  .photography__flow {
+    columns: 2;
+  }
+}
+
+/* Tablet and below: the feature band stacks, and the mirrored variant is undone
+   so the image always leads. */
+@media (max-width: 900px) {
+  .photography__feature,
+  .photography__feature:nth-of-type(even) {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+  }
+
+  .photography__feature:nth-of-type(even) .photography__feature-button {
+    order: 0;
+  }
+
+  .photography__impl {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .photography__flow {
+    columns: 1;
+  }
+
+  /* Hover-revealed captions are useless on touch, so they are shown always. */
+  .photography__flow-overlay {
+    opacity: 1;
+    transform: none;
+  }
+
+  .photography__zoom {
+    display: none;
+  }
+}

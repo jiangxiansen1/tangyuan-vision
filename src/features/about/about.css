@@ -1,0 +1,321 @@
+/* AboutPage — statement, four threads, honest inventory, brand provenance. */
+
+.about__statement {
+  display: grid;
+  gap: var(--sp-5);
+  max-width: 76ch;
+  margin-block-end: clamp(56px, 9vh, 112px);
+}
+
+.about__lead {
+  font-size: var(--fs-lead);
+  line-height: var(--lh-relaxed);
+  font-weight: var(--fw-light);
+  color: var(--color-text);
+}
+
+.about__lead-en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.about__tagline {
+  display: grid;
+  gap: var(--sp-2);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.about__tagline-rule {
+  width: 44px;
+  height: 1px;
+  background: var(--scene-accent, var(--color-accent));
+}
+
+.about__tagline p {
+  font-size: var(--fs-body);
+  color: var(--color-text-muted);
+}
+
+.about__tagline-en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption) !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--scene-accent, var(--color-accent)) !important;
+}
+
+.about__note {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: var(--measure);
+  margin-block-end: var(--sp-6);
+}
+
+/* ------------------------------------------------------------ the threads -- */
+
+.about__threads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: var(--sp-5);
+  list-style: none;
+}
+
+.about__thread {
+  min-width: 0;
+}
+
+.about__thread-glass {
+  display: grid;
+  gap: var(--sp-3);
+  align-content: start;
+  height: 100%;
+  padding: clamp(var(--sp-5), 2vw, var(--sp-8));
+}
+
+.about__thread-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.about__thread-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--scene-accent, var(--color-accent)) 32%, transparent);
+  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 10%, transparent);
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.about__thread-index {
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-label);
+  color: var(--color-text-dim);
+}
+
+.about__thread-title {
+  font-size: var(--fs-title);
+  letter-spacing: var(--ls-title);
+  margin-top: var(--sp-2);
+}
+
+.about__thread-en {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.about__thread-body {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* The note is where the honesty statement lives, so it is styled to be read,
+   not skipped: a left rule and a slightly different tone. */
+.about__thread-note {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-dim);
+  padding-left: var(--sp-4);
+  border-left: 2px solid color-mix(in srgb, var(--c-amber) 40%, transparent);
+}
+
+/* --------------------------------------------------------------- inventory -- */
+
+.about__inventory {
+  list-style: none;
+  padding: var(--sp-2);
+  display: grid;
+}
+
+.about__inventory-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-md);
+  transition: background-color var(--t-base) var(--ease-standard);
+}
+
+.about__inventory-item + .about__inventory-item {
+  border-top: 1px solid var(--color-border);
+}
+
+.about__inventory-item:hover {
+  background: color-mix(in srgb, var(--c-mist) 5%, transparent);
+}
+
+.about__inventory-icon {
+  color: var(--scene-accent, var(--color-accent));
+  display: grid;
+  place-items: center;
+}
+
+.about__inventory-label {
+  font-size: var(--fs-small);
+}
+
+.about__inventory-link {
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--t-fast) var(--ease-standard);
+}
+
+.about__inventory-link:hover {
+  border-bottom-color: currentColor;
+}
+
+.about__inventory-count {
+  font-size: var(--fs-body);
+  color: var(--color-text);
+  min-width: 2ch;
+  text-align: right;
+}
+
+/* ------------------------------------------------------------ logo origin -- */
+
+.about__logo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: var(--sp-4);
+  margin-block-end: var(--sp-6);
+}
+
+.about__logo-demo {
+  display: grid;
+  gap: var(--sp-4);
+  justify-items: center;
+  align-content: center;
+  padding: var(--sp-8);
+  min-height: 150px;
+}
+
+.about__logo-demo--light {
+  background: var(--c-frost);
+}
+
+.about__logo-demo--light .u-label {
+  color: #5b6673;
+}
+
+.about__logo-notes {
+  display: grid;
+  gap: var(--sp-4);
+  max-width: 78ch;
+  margin-block-end: var(--sp-6);
+}
+
+.about__logo-notes p {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.about__logo-notes code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.36em;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-mist) 10%, transparent);
+  color: var(--c-cryo-100);
+}
+
+.about__logo-notes b {
+  color: var(--color-text);
+  font-weight: var(--fw-medium);
+}
+
+.about__warning {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--c-amber) 38%, transparent);
+  background: color-mix(in srgb, var(--c-amber) 8%, transparent);
+  color: var(--c-amber) !important;
+}
+
+.about__warning svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.about__warning b {
+  display: block;
+  margin-block-end: var(--sp-2);
+  color: var(--c-amber);
+}
+
+.about__warning code {
+  background: color-mix(in srgb, var(--c-amber) 16%, transparent);
+  color: var(--c-amber);
+}
+
+.about__specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: var(--sp-5);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.about__specs > div {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.about__specs dd {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+/* -------------------------------------------------------------- principles -- */
+
+.about__principles {
+  display: grid;
+  gap: var(--sp-4);
+  list-style: none;
+  max-width: 78ch;
+}
+
+.about__principles li {
+  display: flex;
+  gap: var(--sp-3);
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+.about__principles svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--c-aurora);
+}
+
+.about__back {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--color-border);
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 640px) {
+  .about__inventory-item {
+    grid-template-columns: auto 1fr auto;
+    gap: var(--sp-3);
+  }
+
+  /* The status badge wraps to its own line rather than being squeezed. */
+  .about__inventory-item .badge {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+}

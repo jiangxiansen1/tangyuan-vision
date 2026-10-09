@@ -1,0 +1,11 @@
+# pnpm configuration.
+#
+# esbuild ships a platform-specific native binary and unpacks it in a postinstall
+# step. pnpm 11 blocks build scripts by default, so it must be allowed explicitly
+# here — without this, `vite` fails to start with "esbuild binary not found".
+# This is the only dependency in the project that needs a build script.
+allowBuilds:
+  esbuild: true
+
+# Keep the lockfile deterministic across machines.
+resolutionMode: highest

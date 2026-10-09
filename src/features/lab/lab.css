@@ -1,0 +1,265 @@
+/* ==========================================================================
+   LabPage — instrument panel. Cold, precise, measured.
+   ========================================================================== */
+
+.lab {
+  position: relative;
+}
+
+.lab > *:not(.scene-ambient):not(.scene__grain):not(.scene__grid) {
+  position: relative;
+  z-index: 1;
+}
+
+/* The grid layer sits behind everything and is masked at the edges. */
+.lab .scene__grid {
+  z-index: 0;
+}
+
+/* ---------------------------------------------------------------- stats -- */
+
+.lab__stats {
+  display: grid;
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-6);
+  margin-block-end: var(--sp-10);
+}
+
+.lab__stats dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr));
+  gap: var(--sp-5);
+}
+
+.lab__stats dl > div {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.lab__stats dd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-title);
+  color: var(--scene-accent, var(--color-accent));
+  line-height: 1;
+}
+
+.lab__stats-note {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-dim);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--color-border);
+  max-width: 84ch;
+}
+
+/* ---------------------------------------------------------------- list -- */
+
+.lab__list {
+  display: grid;
+  gap: var(--sp-4);
+  list-style: none;
+}
+
+.lab__entry {
+  min-width: 0;
+}
+
+.lab__entry-glass {
+  overflow: hidden;
+}
+
+.lab__entry-heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.lab__entry-trigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  text-align: left;
+  padding: var(--sp-5);
+  transition: background-color var(--t-base) var(--ease-standard);
+}
+
+.lab__entry-trigger:hover {
+  background: color-mix(in srgb, var(--c-mist) 5%, transparent);
+}
+
+.lab__entry-index {
+  font-size: var(--fs-caption);
+  color: var(--scene-accent, var(--color-accent));
+  letter-spacing: 0.1em;
+}
+
+.lab__entry-titles {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lab__entry-title {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+  color: var(--color-text);
+}
+
+.lab__entry-en {
+  color: var(--color-text-dim);
+}
+
+.lab__entry-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.lab__entry-date {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+}
+
+.lab__entry-chevron {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-dim);
+  transition: transform var(--t-base) var(--ease-standard);
+  flex: none;
+}
+
+.lab__entry-trigger[aria-expanded='true'] .lab__entry-chevron {
+  color: var(--scene-accent, var(--color-accent));
+  transform: rotate(90deg);
+}
+
+/* ---------------------------------------------------------------- body -- */
+
+.lab__entry-body {
+  display: grid;
+  gap: var(--sp-6);
+  padding: 0 var(--sp-5) var(--sp-6);
+  animation: lab-body-in var(--t-base) var(--ease-entrance) both;
+}
+
+@keyframes lab-body-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lab__qa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: var(--sp-5);
+}
+
+.lab__qa-item {
+  display: grid;
+  gap: var(--sp-3);
+  align-content: start;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.lab__qa-label {
+  color: var(--color-text-dim);
+}
+
+.lab__qa-item p {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* The outcome is the field that must never be omitted, so it gets its own
+   accent rule rather than being one more equal column. */
+.lab__qa-item--outcome {
+  border-top-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 44%, transparent);
+}
+
+.lab__qa-item--outcome .lab__qa-label {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+/* -------------------------------------------------------------- snippet -- */
+
+.lab__snippet {
+  display: grid;
+  gap: var(--sp-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--overlay-solid);
+}
+
+.lab__snippet figcaption {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-dim);
+  background: color-mix(in srgb, var(--c-mist) 4%, transparent);
+}
+
+.lab__snippet pre {
+  margin: 0;
+  padding: var(--sp-4);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: 1.7;
+  color: var(--overlay-solid-text);
+  tab-size: 2;
+}
+
+.lab__entry-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  list-style: none;
+}
+
+/* ---------------------------------------------------------------- tools -- */
+
+.lab__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  list-style: none;
+}
+
+.lab__back {
+  display: flex;
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--color-border);
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 767px) {
+  .lab__entry-trigger {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+  }
+
+  /* The date and marker wrap below the title on a phone rather than squeezing
+     the title down to two characters per line. */
+  .lab__entry-meta {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+
+  .lab__entry-chevron {
+    grid-row: 1;
+    grid-column: 3;
+  }
+}

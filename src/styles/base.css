@@ -1,0 +1,264 @@
+/* ==========================================================================
+   base.css — document shell, typography primitives, focus, scrollbar, a11y
+   utilities. Everything here is global and scene-agnostic.
+   ========================================================================== */
+
+html,
+body {
+  background: var(--color-canvas);
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-body);
+  color: var(--color-text);
+  /* The ground decides the UA colour scheme. Declared on :root by theme.css and
+     inherited here, so form controls and scrollbars match the actual ground. */
+  overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100dvh;
+  isolation: isolate;
+}
+
+/* --------------------------------------------------------------- typography */
+
+.u-hero {
+  font-size: var(--fs-hero);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-hero);
+  font-weight: var(--fw-light);
+}
+
+.u-display {
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: var(--fw-light);
+}
+
+.u-title {
+  font-size: var(--fs-title);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-title);
+  font-weight: var(--fw-medium);
+}
+
+.u-lead {
+  font-size: var(--fs-lead);
+  line-height: var(--lh-normal);
+  font-weight: var(--fw-light);
+  color: var(--color-text-muted);
+  max-width: var(--measure);
+}
+
+.u-body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: var(--measure);
+}
+
+.u-caption {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-normal);
+  color: var(--color-text-dim);
+}
+
+/* Instrumentation label — uppercase mono microtext. Used for metadata, never
+   for content the user must read to understand the page. */
+.u-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  font-weight: var(--fw-medium);
+}
+
+.u-mono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: var(--fs-small);
+}
+
+.u-balance {
+  text-wrap: balance;
+}
+
+.u-nowrap {
+  white-space: nowrap;
+}
+
+/* Vertical rhythm between stacked prose blocks. */
+.u-prose > * + * {
+  margin-top: 1.15em;
+}
+
+.u-prose h2 {
+  font-size: var(--fs-title);
+  letter-spacing: var(--ls-title);
+  margin-top: 2.2em;
+  color: var(--color-text);
+}
+
+.u-prose h3 {
+  font-size: var(--fs-lead);
+  margin-top: 1.9em;
+  color: var(--color-text);
+}
+
+.u-prose p,
+.u-prose li {
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: var(--measure);
+}
+
+.u-prose ul,
+.u-prose ol {
+  padding-left: 1.35em;
+}
+
+.u-prose a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  transition: text-decoration-color var(--t-fast) var(--ease-standard);
+}
+
+.u-prose a:hover {
+  text-decoration-color: currentColor;
+}
+
+.u-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 0.12em 0.38em;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--c-mist) 10%, transparent);
+  color: var(--c-cryo-100);
+}
+
+/* ----------------------------------------------------------------- layout */
+
+.u-shell {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding-inline: var(--shell-pad);
+}
+
+/* ------------------------------------------------------------------ focus */
+
+/* One focus treatment for every interactive element in the product. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--sh-focus);
+  border-radius: var(--r-sm);
+}
+
+/* Remove the pointer-only default so mouse users never see a stray ring. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --------------------------------------------------------------- scrollbar */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-steel) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--c-steel) 80%, transparent);
+  border-radius: var(--r-pill);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--c-ash);
+  background-clip: content-box;
+}
+
+/* ------------------------------------------------------------- selection */
+
+::selection {
+  background: color-mix(in srgb, var(--c-cryo-300) 34%, transparent);
+  color: var(--c-paper);
+}
+
+/* ----------------------------------------------------------- a11y helpers */
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip target — revealed only on keyboard focus. */
+.skip-link {
+  position: fixed;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  z-index: var(--z-toast);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-md);
+  background: var(--c-frost);
+  color: var(--c-obsidian);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+  transform: translateY(calc(-100% - var(--sp-6)));
+  transition: transform var(--t-base) var(--ease-entrance);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* Visible only to assistive tech until focused. */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------- print */
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

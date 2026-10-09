@@ -1,0 +1,92 @@
+/**
+ * SceneTransition — route-level motion.
+ *
+ * DESIGN DECISIONS, AND WHY
+ *   • The incoming scene fades and lifts in; the outgoing scene is NOT held for
+ *     an exit animation. Holding it with AnimatePresence(mode="wait") makes every
+ *     navigation feel a beat too slow, and it breaks the back button's
+ *     responsiveness. Because both routes share one background colour, there is
+ *     no flash to cover — so the cheaper transition is also the better-looking
+ *     one.
+ *   • The opacity floor is 0.08 rather than 0. Fading from true zero reads as a
+ *     screen flash on OLED; starting near-black and moving up does not.
+ *   • Duration is 420ms, inside the 250–800ms band the brief specifies, and it is
+ *     interruptible: a second navigation simply restarts the animation on the new
+ *     key, so rapid clicks cannot wedge the state.
+ *   • Scroll is restored explicitly on path change, because a client-side route
+ *     change otherwise leaves the visitor halfway down the new page.
+ */
+
+import { useEffect, useRef, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
+
+export interface SceneTransitionProps {
+  children: ReactNode;
+}
+
+export function SceneTransition({ children }: SceneTransitionProps) {
+  const { pathname } = useLocation();
+  const prefersReduced = useReducedMotion();
+  const previousPath = useRef<string | null>(null);
+
+  useEffect(() => {
+    const isFirst = previousPath.current === null;
+    const changed = previousPath.current !== null && previousPath.current !== pathname;
+    previousPath.current = pathname;
+    if (isFirst || !changed) return;
+
+    // Restore scroll for the new scene. `instant` is required: with
+    // scroll-behavior: smooth in base.css, a plain scrollTo would animate an
+    // entire page length and look broken.
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+  }, [pathname]);
+
+  const variants = prefersReduced
+    ? {
+        initial: { opacity: 1 },
+        animate: { opacity: 1 },
+      }
+    : {
+        initial: { opacity: 0.08, y: 10, scale: 0.996 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+      };
+
+  return (
+    <motion.div
+      key={pathname}
+      className="route-shell"
+      variants={variants}
+      initial="initial"
+      animate="animate"
+      transition={
+        prefersReduced
+          ? { duration: 0 }
+          : { duration: 0.42, ease: [0.16, 1, 0.3, 1] }
+      }
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/**
+ * ImmersiveTransition — the variant used when entering or leaving the hidden
+ * space: a camera push rather than a slide, with the background expanding.
+ */
+export function ImmersiveTransition({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const prefersReduced = useReducedMotion();
+
+  return (
+    <motion.div
+      key={pathname}
+      className="route-shell route-shell--immersive"
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, scale: 1.045, filter: 'blur(6px)' }}
+      animate={prefersReduced ? { opacity: 1 } : { opacity: 1, scale: 1, filter: 'blur(0px)' }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.78, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}

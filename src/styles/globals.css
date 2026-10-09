@@ -1,0 +1,139 @@
+/**
+ * globals.css — the last stylesheet, for rules that must not live in a
+ * component and are genuinely global.
+ */
+
+/* The reduced-motion notice is a persistent, quiet statement rather than a
+   transient toast: the visitor should be able to find out why the site feels
+   different at any point, not just in the moment it changed. */
+.reduced-motion-note {
+  position: fixed;
+  right: max(var(--sp-4), env(safe-area-inset-right, 0px));
+  bottom: max(var(--sp-4), env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-toast);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-slate) 92%, black);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+  pointer-events: none;
+}
+
+/* Any element that wants the tilt/parallax custom properties applied must opt
+   in explicitly — this is what keeps a stray transform from appearing on
+   something that only happens to have the variables set. */
+.parallax-target {
+  transform: translate3d(var(--par-x, 0px), var(--par-y, 0px), 0);
+  will-change: transform;
+}
+
+/* A generic scroller used by the photography strip and the lab log list. */
+.h-scroll {
+  display: grid;
+  grid-auto-flow: column;
+  gap: var(--sp-4);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-block-end: var(--sp-3);
+  /* Prevent the last item's focus ring from being clipped by the scroller. */
+  padding-inline: 2px;
+  margin-inline: -2px;
+}
+
+.h-scroll > * {
+  scroll-snap-align: start;
+}
+
+/* The narrow-window case: text needs more room, so the horizontal scroller
+   becomes a plain column rather than a cramped strip. */
+@media (max-width: 640px) {
+  .h-scroll {
+    grid-auto-flow: row;
+    overflow-x: visible;
+  }
+}
+
+/* ------------------------------------------------------------ data table -- */
+
+.spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+}
+
+.spec-table caption {
+  text-align: left;
+  padding-block-end: var(--sp-3);
+  color: var(--color-text-dim);
+  font-size: var(--fs-caption);
+}
+
+.spec-table th,
+.spec-table td {
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.spec-table th {
+  width: min(34%, 220px);
+  font-weight: var(--fw-regular);
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.04em;
+}
+
+.spec-table td {
+  color: var(--color-text);
+}
+
+/* ------------------------------------------------------------- utilities -- */
+
+.stack {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+.stack--tight {
+  gap: var(--sp-3);
+}
+
+.stack--loose {
+  gap: var(--sp-12);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: var(--sp-5);
+}
+
+.text-dim {
+  color: var(--color-text-dim);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-accent {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.divider {
+  height: 1px;
+  border: none;
+  background: var(--color-border);
+}

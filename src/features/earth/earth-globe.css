@@ -1,0 +1,293 @@
+/* ==========================================================================
+   EarthGlobe — the interactive 3D globe.
+
+   The canvas is a pure render target: pointer events are bound in the component,
+   and the visual chrome around it (tip, controls, fallback) is normal DOM so it
+   is reachable by keyboard and announced by assistive tech.
+   ========================================================================== */
+
+.eglobe {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  /* The globe is the one element on the site allowed to be pure black beneath,
+     because a lit planet needs an unlit field to read against. */
+  background: radial-gradient(120% 90% at 50% 42%, #0b1220 0%, #05070d 62%, #03050a 100%);
+  border-radius: inherit;
+  /* Contain the canvas so a stray WebGL paint cannot bleed over the layout. */
+  contain: layout paint;
+  /* The cursor belongs to the host because the host is what receives the pointer
+     events (the canvas and the keyboard layer are both non-interactive). */
+  cursor: grab;
+}
+
+.eglobe__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* All pointer and wheel listeners are attached to the host, so the canvas is a
+     pure render target. Leaving it interactive would make the wheel scroll the
+     page instead of zooming the globe. */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 900ms var(--ease-standard);
+  /* The globe owns its own gesture handling; the browser must not also try to
+     scroll or pinch-zoom, or a drag turns into a page scroll mid-rotation. */
+  touch-action: none;
+}
+
+.eglobe[data-ready] .eglobe__canvas {
+  opacity: 1;
+}
+
+.eglobe:active {
+  cursor: grabbing;
+}
+
+/* Loading shimmer while the textures and shader compile. Uses the product's
+   existing shimmer so the Earth space does not invent its own loading idiom. */
+.eglobe__loading {
+  position: absolute;
+  inset: 0;
+  background-color: #070b12;
+}
+
+/* ---------------------------------------------------------------- keyboard -- */
+
+/* A transparent focus surface over the canvas. The canvas itself is aria-hidden
+   and not focusable, so this element carries both the role and the focus ring —
+   which is why it must be visible when focused even though it has no content. */
+.eglobe__keys {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  outline: none;
+  /*
+    THE FIX FOR A REAL BUG.
+
+    This overlay exists so keyboard users have a focus target over the canvas, and
+    it spans the whole globe. Without this line it was an opaque hit target that
+    swallowed every pointerdown, drag and wheel event before they reached the
+    globe — so dragging and zooming did not work at all, in any browser.
+
+    `pointer-events: none` keeps the element FOCUSABLE (pointer-events does not
+    affect tab order) while letting the mouse through to the host beneath. The
+    pointer listeners live on the host for exactly this reason.
+  */
+  pointer-events: none;
+}
+
+.eglobe__keys:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--c-cryo-glow),
+    inset 0 0 0 5px rgb(143 227 255 / 0.16);
+}
+
+/* ------------------------------------------------------------------- tip -- */
+
+/* Follows the pointer. `translate(-50%, -140%)` puts it above the cursor so it
+   never covers the country being identified. */
+.eglobe__tip {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -140%);
+  display: grid;
+  gap: 1px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  /* Opaque, not glass: it must be readable over the brightest part of the globe
+     at any moment, and a translucent tip over the day-lit limb is unreadable. */
+  background: rgb(8 12 20 / 0.92);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--sh-on-dark);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.eglobe__tip-name {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  color: var(--c-frost);
+}
+
+.eglobe__tip-coord {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  color: var(--c-fog);
+}
+
+/* Status is carried by a word AND a colour, never by colour alone. */
+.eglobe__tip-status {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.eglobe__tip-status[data-status='visited'] {
+  color: #7fe0bd;
+}
+
+.eglobe__tip-status[data-status='planned'] {
+  color: #f0c07a;
+}
+
+.eglobe__tip-status[data-status='unrecorded'] {
+  color: var(--c-fog);
+}
+
+/* ------------------------------------------------------------------ hint --
+   Replaces the V3 button cluster.
+
+   The brief asks for the zoom and rotate buttons to go, and it is right: drag and
+   the wheel are the interactions, and a row of buttons sitting on the planet
+   competes with the planet. What remains is the one affordance that is hard to
+   discover without being told (restore the opening view) plus a short legend that
+   says drag and wheel work. Neither covers the globe's centre. */
+
+.eglobe__hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-3);
+  translate: -50% 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(6 10 18 / 0.52);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  /* Low-opacity chrome: present when looked for, invisible when watching the
+     globe. It never intercepts a drag because only the button is interactive. */
+  pointer-events: none;
+  font-size: var(--fs-micro);
+  color: rgb(255 255 255 / 0.82);
+  white-space: nowrap;
+}
+
+.eglobe__hint-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.eglobe__hint-sep {
+  width: 1px;
+  height: 12px;
+  background: rgb(255 255 255 / 0.2);
+}
+
+.eglobe__reset {
+  /* Re-enables pointer events on itself only, so the hint bar as a whole still
+     cannot swallow a drag that starts on top of it. */
+  pointer-events: auto;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+  color: #ffffff;
+  font-size: var(--fs-micro);
+  transition: background-color var(--t-fast) var(--ease-standard);
+}
+
+.eglobe__reset:hover {
+  background: rgb(255 255 255 / 0.2);
+}
+
+.eglobe__reset:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #060a12, 0 0 0 4px var(--c-cryo-glow);
+}
+
+/* -------------------------------------------------------------- fallback -- */
+
+/* Shown when WebGL cannot start. Deliberately a composed panel rather than a
+   bare error string: the region list below stays usable, so this explains the
+   degradation instead of apologising for a broken page. */
+.eglobe__fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8);
+  text-align: center;
+  /* A drawn globe rather than a blank box: a static fallback is part of the
+     design, not the absence of one. */
+  background:
+    radial-gradient(42% 42% at 50% 46%, rgb(48 110 172 / 0.34) 0%, transparent 70%),
+    radial-gradient(30% 30% at 50% 46%, rgb(20 60 110 / 0.9) 0%, transparent 68%),
+    linear-gradient(180deg, #0a1220 0%, #05070d 100%);
+}
+
+.eglobe__fallback::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  translate: -50% -50%;
+  width: min(46%, 220px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgb(143 227 255 / 0.18);
+  box-shadow:
+    inset -14px -10px 40px rgb(0 0 0 / 0.6),
+    inset 10px 8px 30px rgb(80 150 220 / 0.16),
+    0 0 60px rgb(40 110 180 / 0.22);
+}
+
+.eglobe__fallback-title {
+  position: relative;
+  font-size: var(--fs-body);
+  color: var(--c-frost);
+}
+
+.eglobe__fallback-body {
+  position: relative;
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+  color: var(--c-silver);
+  max-width: 44ch;
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
+@media (max-width: 767px) {
+  .eglobe {
+    min-height: 300px;
+  }
+
+  /* Three legend items overflow a phone's width, and the gestures are discoverable
+     by touch regardless. The reset button is the part worth keeping. */
+  .eglobe__hint-item,
+  .eglobe__hint-sep {
+    display: none;
+  }
+
+  /* Touch has no hover, so the pointer tip would only ever appear mid-drag and
+     would sit under the finger. */
+  .eglobe__tip {
+    display: none;
+  }
+
+  .eglobe__hint {
+    bottom: var(--sp-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eglobe__canvas {
+    transition: none;
+  }
+}

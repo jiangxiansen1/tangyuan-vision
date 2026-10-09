@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!--
+      The double-brace markers below are substituted at build time by a small Vite
+      plugin in vite.config.ts, which reads src/content/data/settings.json. They
+      exist so that the static shell still carries correct metadata for crawlers
+      that do not execute JavaScript. Per-route metadata is applied at runtime by
+      useDocumentTitle — see docs/DEPLOYMENT.md for what that does and does not
+      achieve.
+
+      NOTE: no <base> element. Routes are real paths and the Vite `base` handles
+      asset prefixing; adding <base> would break relative hash links and the
+      404.html deep-link fallback.
+    -->
+
+    <title>{{SITE_TITLE}}</title>
+    <meta name="description" content="{{SITE_DESCRIPTION}}" />
+    <meta name="theme-color" content="{{THEME_COLOR}}" />
+    <meta name="color-scheme" content="light" />
+    <meta name="keywords" content="{{SITE_KEYWORDS}}" />
+
+    <meta name="robots" content="index, follow" />
+    <meta name="generator" content="Vite + React" />
+
+    <!-- Open Graph / social preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="{{SITE_TITLE}}" />
+    <meta property="og:title" content="{{SITE_TITLE}}" />
+    <meta property="og:description" content="{{SITE_DESCRIPTION}}" />
+    <meta property="og:image" content="{{OG_IMAGE}}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{SITE_TITLE}}" />
+    <meta name="twitter:description" content="{{SITE_DESCRIPTION}}" />
+    <meta name="twitter:image" content="{{OG_IMAGE}}" />
+
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link rel="apple-touch-icon" href="./favicon.png" />
+
+    <!--
+      A single early style reset. Inlined so the very first paint is already the
+      correct background colour: without it a slow network shows a white flash
+      before the stylesheet arrives, which is exactly the flash the brief rules
+      out. This is not a substitute for the real stylesheet — it is 12 declarations
+      that only need to be correct for a few hundred milliseconds.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        /* V3 is a light-first product. The inline shell uses the light canvas so
+           the very first paint is already the correct ground — the dark values
+           V2 used here would have produced a black flash before the stylesheet
+           arrived, which is exactly what this block exists to prevent. */
+        background: {{SHELL_BG}};
+        color: {{SHELL_FG}};
+        color-scheme: light;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #root {
+        min-height: 100dvh;
+      }
+      /* Visible to anyone whose JavaScript never runs. */
+      .no-script {
+        display: grid;
+        place-content: center;
+        min-height: 100dvh;
+        padding: 32px;
+        text-align: center;
+        gap: 12px;
+      }
+      .no-script h1 {
+        font-size: 1.5rem;
+        font-weight: 500;
+        margin: 0;
+      }
+      .no-script p {
+        max-width: 46ch;
+        margin: 0 auto;
+        line-height: 1.7;
+        color: {{SHELL_MUTED}};
+      }
+      .no-script code {
+        font-family: ui-monospace, Consolas, monospace;
+        color: {{SHELL_ACCENT}};
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!--
+        The noscript content is inside #root so a visitor without JavaScript sees
+        an explanation instead of a blank dark rectangle. React replaces it on
+        mount. This is the honest fallback: an interactive WebGL/glass experience
+        genuinely cannot run without JavaScript, and pretending otherwise would be
+        worse than saying so.
+      -->
+      <noscript>
+        <div class="no-script">
+          <h1>需要启用 JavaScript</h1>
+          <p>
+            汤圆Vision 是一个使用 SVG 折射滤镜、WebGL 景深层与实时玻璃材质构建的交互空间，
+            这些能力需要 JavaScript 才能运行。
+          </p>
+          <p>
+            本项目为纯静态站点，没有服务端渲染版本。若你在浏览时禁用了脚本，
+            可以查看仓库中的 <code>docs/</code> 目录获取全部文字内容。
+          </p>
+        </div>
+      </noscript>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

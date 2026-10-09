@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Vite
+.vite/
+node_modules/.tmp/
+
+# Verification artifacts produced by tools/ — regenerated on demand, never shipped.
+tools/_verify/
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Local environment overrides
+.env
+.env.*
+!.env.example
+
+# TypeScript incremental build state
+*.tsbuildinfo
+
+# NOTE: dist/ is ignored because GitHub Actions builds it. If you prefer to commit
+# the built site instead (for a branch-based Pages deploy), remove that line.
+#
+# NOTE: public/assets/audio/ambient.wav is ~2.2 MB of generated audio. It IS
+# committed so the music toggle works out of the box. If you would rather not
+# carry it, delete the file and add it here — the site handles its absence and
+# reports it in the UI rather than failing.
+
+# Texture download cache for tools/build-earth-textures.cjs. Re-fetchable, so it
+# is not part of the source tree.
+tools/_earth-src/
+
+# Local Supabase CLI state (created if the operator runs `supabase start`).
+supabase/.temp/
+supabase/.branches/

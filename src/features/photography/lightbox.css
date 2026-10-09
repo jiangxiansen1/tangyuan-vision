@@ -1,0 +1,302 @@
+/* ==========================================================================
+   Lightbox — full-screen photo viewer.
+
+   Layout is a three-row grid (header / stage / caption) so the stage always has
+   a definite height to size the image against, and the caption can never push
+   the image off screen.
+   ========================================================================== */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+  padding: clamp(8px, 2vh, 28px);
+}
+
+/* The backdrop is tinted from the photo's own dominant colour. It deliberately
+   does NOT use a live backdrop-filter: a full-screen animated blur is the single
+   most reliable way to drop frames on integrated graphics, and a composited tint
+   renders identically for a fraction of the cost. */
+.lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      120% 80% at 50% 0%,
+      color-mix(in srgb, var(--photo-tone, #101820) 46%, transparent) 0%,
+      transparent 62%
+    ),
+    color-mix(in srgb, var(--c-void) 92%, transparent);
+  animation: lightbox-backdrop var(--t-base) var(--ease-standard) both;
+}
+
+@keyframes lightbox-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lightbox__panel {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(1500px, 100%);
+  height: min(100%, calc(100dvh - clamp(16px, 4vh, 56px)));
+  overflow: hidden;
+  animation: lightbox-panel var(--t-slow) var(--ease-entrance) both;
+}
+
+@keyframes lightbox-panel {
+  from {
+    opacity: 0;
+    /* Grows from slightly below full size — the "expands from where it was"
+       feel the brief asks for, without needing a FLIP measurement. */
+    transform: scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------- header -- */
+
+.lightbox__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-6);
+  border-bottom: 1px solid var(--color-border);
+  flex: none;
+}
+
+.lightbox__head-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.lightbox__counter {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  letter-spacing: 0.1em;
+}
+
+.lightbox__category {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-family: var(--font-body);
+}
+
+.lightbox__head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+/* ----------------------------------------------------------------- stage -- */
+
+.lightbox__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: clamp(8px, 1.6vh, 20px);
+  /* Touch: horizontal panning is handled by the gesture code, so the browser
+     must not also try to scroll or zoom this area. */
+  touch-action: pan-y pinch-zoom;
+}
+
+.lightbox__image-button {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: var(--r-lg);
+  cursor: zoom-in;
+  overflow: auto;
+}
+
+.lightbox__image-button[data-zoomed] {
+  cursor: zoom-out;
+  /* At full size the image may exceed the stage, so it becomes scrollable. */
+  align-items: start;
+  justify-items: center;
+}
+
+.lightbox__image {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: var(--r-md);
+}
+
+.lightbox__image[data-state='loaded'] > img {
+  /* `contain` is set inline; this only adds the motion. */
+  animation: lightbox-image var(--t-slow) var(--ease-entrance) both;
+}
+
+@keyframes lightbox-image {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Zoomed: let the image exceed the box at natural size. */
+.lightbox__image-button[data-zoomed] .lightbox__image {
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+}
+
+.lightbox__image-button[data-zoomed] .lightbox__image > img {
+  width: auto;
+  height: auto;
+  max-height: 78dvh;
+}
+
+/* ------------------------------------------------------------- navigation -- */
+
+.lightbox__nav {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 2;
+  opacity: 0.86;
+  transition: opacity var(--t-base) var(--ease-standard), transform var(--t-base) var(--ease-entrance);
+}
+
+.lightbox__nav:hover {
+  opacity: 1;
+}
+
+.lightbox__nav--prev {
+  left: clamp(6px, 1.4vw, 20px);
+}
+
+.lightbox__nav--next {
+  right: clamp(6px, 1.4vw, 20px);
+}
+
+/* --------------------------------------------------------------- caption -- */
+
+.lightbox__caption {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--sp-3) var(--sp-8);
+  padding: var(--sp-5) var(--sp-6) var(--sp-4);
+  border-top: 1px solid var(--color-border);
+  flex: none;
+  max-height: 38dvh;
+  overflow-y: auto;
+}
+
+.lightbox__caption-main {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.lightbox__title {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+}
+
+.lightbox__desc {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--color-text-muted);
+  max-width: var(--measure);
+}
+
+.lightbox__meta {
+  display: flex;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.lightbox__meta > div {
+  display: grid;
+  gap: 2px;
+}
+
+.lightbox__meta dd {
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.lightbox__meta-empty {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  align-self: start;
+  max-width: 34ch;
+  line-height: var(--lh-normal);
+}
+
+.lightbox__keys {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--color-text-dim);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--color-border);
+}
+
+/* -------------------------------------------------------------- responsive */
+
+/* Phone: the caption moves under the image as a compact block, the arrows are
+   dropped because swiping is the native gesture, and the chrome shrinks so the
+   image keeps the space. */
+@media (max-width: 767px) {
+  .lightbox {
+    padding: 0;
+  }
+
+  .lightbox__panel {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .lightbox__nav {
+    display: none;
+  }
+
+  .lightbox__head {
+    padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+    padding-top: max(var(--sp-3), env(safe-area-inset-top, 0px));
+  }
+
+  .lightbox__caption {
+    grid-template-columns: 1fr;
+    padding: var(--sp-4) var(--sp-4) max(var(--sp-4), env(safe-area-inset-bottom, 0px));
+    max-height: 42dvh;
+  }
+
+  .lightbox__keys {
+    /* The gesture hints are redundant on a touch device. */
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox__backdrop,
+  .lightbox__panel,
+  .lightbox__image[data-state='loaded'] > img {
+    animation: none;
+  }
+}

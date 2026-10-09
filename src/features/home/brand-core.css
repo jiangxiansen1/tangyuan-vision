@@ -1,0 +1,175 @@
+/* ==========================================================================
+   BrandCore — the home page wordmark.
+
+   The lockup is one line of two faces that must not break apart: 汤圆Vision.
+   Everything here exists to keep that line intact and legible at every width.
+   ========================================================================== */
+
+.bcore {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0;
+}
+
+/* ----------------------------------------------------------------- lockup -- */
+
+.bcore__lockup {
+  margin: 0;
+  font-weight: inherit;
+  /* `nowrap` is load-bearing: if 汤圆 and Vision ever wrap onto separate lines the
+     brand stops reading as one name. The fluid scale below is sized so that
+     cannot happen at any realistic viewport. */
+  white-space: nowrap;
+  line-height: 0.92;
+  letter-spacing: var(--ls-hero);
+}
+
+.bcore__pair {
+  display: inline-flex;
+  align-items: baseline;
+  /* No gap. A space between the halves would make them two words. The visual
+     separation is carried by the weight and width difference instead. */
+  gap: 0;
+}
+
+/*
+  Scale: 2.2rem at a 360px phone → 7.5rem at 1600px+.
+  The clamp's preferred term is tuned so the line fills roughly 78% of the
+  viewport until the max is reached, which is what keeps the mark dominant
+  without ever touching the screen edges.
+*/
+.bcore__cn,
+.bcore__latin {
+  font-family: var(--font-display);
+  /* Capped by an explicit space bound, not only by the fluid clamp: on a wide
+     desktop the brand owns about a third of the row, and a lockup larger than that
+     paints over the two windows. min() takes whichever is smaller, so the type
+     only shrinks when there genuinely is not room. */
+  font-size: min(clamp(2.2rem, 1.05rem + 7.4vw, 7.5rem), 12.5vw);
+  line-height: 0.92;
+}
+
+/* The Chinese half is the anchor: heavier, so the mark reads as solid. */
+.bcore__cn {
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.03em;
+  color: var(--bcore-ink, var(--color-text));
+}
+
+/* The Latin half is the air beside it. Slightly lighter and wider than a normal
+   light weight would be, so the pair reads as deliberately asymmetric rather
+   than as an accident of two different fonts. */
+.bcore__latin {
+  font-weight: var(--fw-light);
+  letter-spacing: -0.045em;
+  color: var(--bcore-ink-soft, var(--color-text));
+}
+
+/* Over a photograph the lockup needs its own contrast insurance. This is a very
+   tight, very soft shadow — not a glow, not an outline — which lifts the strokes
+   off a mid-tone image without becoming visible as an effect. */
+.bcore--over-image .bcore__cn,
+.bcore--over-image .bcore__latin {
+  text-shadow:
+    0 1px 2px rgb(4 10 20 / 0.28),
+    0 8px 30px rgb(4 10 20 / 0.22);
+}
+
+/* ------------------------------------------------------------------ gloss -- */
+
+.bcore__gloss {
+  display: grid;
+  justify-items: center;
+  gap: clamp(8px, 1.4vh, 16px);
+  margin: clamp(14px, 2.4vh, 30px) 0 0;
+}
+
+/* A short rule above the gloss gives it a place to sit, so it reads as part of
+   the lockup rather than as a stray caption. */
+.bcore__gloss-rule {
+  width: clamp(28px, 5vw, 56px);
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--bcore-accent, var(--color-accent)),
+    transparent
+  );
+  opacity: 0.7;
+}
+
+.bcore__gloss-text {
+  font-family: var(--font-display);
+  font-size: min(clamp(0.95rem, 0.78rem + 0.85vw, 1.6rem), 2.6vw);
+  font-weight: var(--fw-medium);
+  /* Wide tracking is what makes four Chinese characters read as a secondary mark
+     instead of as a phrase. */
+  letter-spacing: 0.34em;
+  /* Trailing tracking would push the text off-centre; this puts it back. */
+  text-indent: 0.34em;
+  color: var(--bcore-ink-soft, var(--color-text-muted));
+}
+
+/* ---------------------------------------------------------------- taglines -- */
+
+/* The English line is the primary strap: uppercase, wide, and in the accent
+   colour, which is the only place on the page the cryo blue is used at size. */
+.bcore__tagline-en {
+  margin: clamp(14px, 2.2vh, 26px) 0 0;
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.52rem + 0.4vw, 0.86rem);
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: var(--bcore-accent, var(--color-accent));
+  white-space: nowrap;
+}
+
+/* The Chinese line is the sentence, so it gets reading typography — normal
+   tracking, a measure, and the muted ink. */
+.bcore__tagline {
+  margin: clamp(8px, 1.2vh, 14px) 0 0;
+  font-size: clamp(0.85rem, 0.78rem + 0.34vw, 1.08rem);
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+  color: var(--bcore-ink-soft, var(--color-text-muted));
+  max-width: 34ch;
+}
+
+/* ----------------------------------------------------------------- compact -- */
+
+/* Used in the boot hand-off, where the lockup appears without the full set of
+   supporting lines. */
+.bcore--compact .bcore__cn,
+.bcore--compact .bcore__latin {
+  font-size: clamp(1.6rem, 1rem + 3.4vw, 3.2rem);
+}
+
+.bcore--compact .bcore__tagline {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- responsive -- */
+
+/* Below 480px the wide English tracking starts consuming the full line width,
+   so it tightens rather than wrapping. */
+@media (max-width: 480px) {
+  .bcore__gloss-text {
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
+  }
+
+  .bcore__tagline-en {
+    letter-spacing: 0.26em;
+    text-indent: 0.26em;
+    font-size: 0.58rem;
+  }
+}
+
+/* Forced high contrast: the shadow is an optical nicety and interferes with the
+   crispness the mode is asking for. */
+[data-contrast='high'] .bcore__cn,
+[data-contrast='high'] .bcore__latin {
+  text-shadow: none;
+}

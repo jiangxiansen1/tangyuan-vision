@@ -1,0 +1,62 @@
+{
+  "motorcycle": {
+    "id": "wuji-250rr",
+    "model": "无极 250RR",
+    "modelEn": "Wuji 250RR",
+    "confirmedDetails": [
+      { "label": "车型", "value": "无极 250RR" },
+      { "label": "确认状态", "value": "由本人在项目需求中提及" }
+    ],
+    "pendingDetails": [
+      "年份与具体版本",
+      "累计里程",
+      "改装与加装配件",
+      "保养与维修历史",
+      "油耗与骑行感受",
+      "实拍车辆照片"
+    ],
+    "note": "我只把「无极 250RR」这一条作为已确认信息呈现。其余车辆参数、里程、改装、保养记录全部保留为待填写项——我不会替你把它们补全，因为它们必须是真实的。请在后台 CMS 的「摩托车档案」中填写，填写的字段会自动出现在页面上，未填写的字段不会显示。",
+    "provenance": "real"
+  },
+  "routes": [
+    {
+      "id": "route-template-01",
+      "name": "示例路线 · 沿海公路",
+      "nameEn": "Sample Route — Coastal Highway",
+      "origin": "示例起点 A",
+      "destination": "示例终点 B",
+      "status": "planned",
+      "summary": "这是一条示例路线，仅用于展示路线卡片、点位列表与时间线的呈现方式。它不是我已经完成的旅行，也没有对应的真实里程与日期——我不虚构未完成的旅程。",
+      "stops": [
+        { "name": "示例点位 1 · 出发点", "note": "集合、检查胎压与链条" },
+        { "name": "示例点位 2 · 途中补给", "note": "加油站与短暂休整" },
+        { "name": "示例点位 3 · 制高点", "note": "沿线视野开阔的位置" },
+        { "name": "示例点位 4 · 终点", "note": "落脚与记录" }
+      ],
+      "highlights": [
+        "沿线路段的连续弯道",
+        "海侧方向的低角度侧光",
+        "夜间返程的照明测试"
+      ],
+      "provenance": "sample"
+    },
+    {
+      "id": "route-template-02",
+      "name": "示例路线 · 山地往返",
+      "nameEn": "Sample Route — Mountain Loop",
+      "origin": "示例起点 C",
+      "destination": "示例终点 D",
+      "status": "planned",
+      "summary": "第二条示例路线，用于展示多条路线并存时的列表与筛选逻辑，以及「计划中」状态与「已完成」状态在视觉上的区分。",
+      "stops": [
+        { "name": "示例点位 5 · 进山口", "note": "检查制动与灯光" },
+        { "name": "示例点位 6 · 垭口", "note": "气温下降，注意路面" },
+        { "name": "示例点位 7 · 下山段", "note": "长下坡，控制车速" }
+      ],
+      "highlights": ["高海拔路段的温差", "云层与山脊的层次"],
+      "provenance": "sample"
+    }
+  ],
+  "serviceRecords": [],
+  "serviceRecordNote": "维护记录为空。这个板块只有在真实记录存在时才有意义，所以它现在显示为空状态提示，而不是填充伪造的保养条目。"
+}

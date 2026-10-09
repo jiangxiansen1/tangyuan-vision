@@ -1,0 +1,204 @@
+/* ==========================================================================
+   scenes.css — shared scene scaffolding.
+
+   Every top-level route renders the same skeleton so the product feels like one
+   continuous space rather than seven separate mini-sites:
+
+     <div class="scene" data-scene="photography">
+       <div class="scene-ambient" />        ambient light
+       <div class="scene__grain" />         film grain (static, cheap)
+       <main class="scene__body"> ... </main>
+     </div>
+   ========================================================================== */
+
+.scene {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  isolation: isolate;
+  background: var(--color-canvas);
+  /* Contain the ambient gradients so they never cause a horizontal scrollbar. */
+  overflow-x: clip;
+}
+
+.scene__body {
+  position: relative;
+  z-index: var(--z-content);
+  padding-block: var(--page-top) clamp(72px, 12vh, 160px);
+}
+
+/* Static grain. A CSS-only texture — no image request, no animation cost.
+   It is what keeps large dark gradients from banding. */
+.scene__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.32;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* A faint horizontal grid — the "precision" motif. Used on lab/projects only. */
+.scene__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--c-mist) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--c-mist) 5%, transparent) 1px, transparent 1px);
+  background-size: 88px 88px;
+  mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 78%);
+}
+
+/* ----------------------------------------------------------- scene header */
+
+.scene-header {
+  display: grid;
+  gap: var(--sp-5);
+  padding-block-end: var(--sp-10);
+  border-bottom: 1px solid var(--color-border);
+  margin-block-end: var(--sp-12);
+}
+
+.scene-header__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.scene-header__eyebrow::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--scene-accent, var(--color-accent)) 44%, transparent),
+    transparent
+  );
+}
+
+.scene-header__title {
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  font-weight: var(--fw-light);
+}
+
+.scene-header__title em {
+  font-style: normal;
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.scene-header__sub {
+  font-size: var(--fs-lead);
+  color: var(--color-text-muted);
+  max-width: var(--measure);
+  font-weight: var(--fw-light);
+}
+
+.scene-header__cn {
+  color: var(--color-text-dim);
+  font-size: var(--fs-small);
+  letter-spacing: var(--ls-body);
+}
+
+/* ---------------------------------------------------------------- section */
+
+.section {
+  margin-block-end: clamp(64px, 10vh, 128px);
+}
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+  margin-block-end: var(--sp-7);
+}
+
+.section__title {
+  font-size: var(--fs-title);
+  letter-spacing: var(--ls-title);
+}
+
+/* --------------------------------------------------------------- badges */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 3px var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-mist) 6%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.badge--accent {
+  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 42%, transparent);
+  color: var(--scene-accent, var(--color-accent));
+  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 12%, transparent);
+}
+
+.badge--warn {
+  border-color: color-mix(in srgb, var(--c-amber) 46%, transparent);
+  color: var(--c-amber);
+  background: color-mix(in srgb, var(--c-amber) 10%, transparent);
+}
+
+.badge--muted {
+  opacity: 0.75;
+}
+
+/* Status dot doubles as the non-colour carrier of the same meaning, so the
+   badge never relies on hue alone. */
+.badge__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+/* ------------------------------------------------------------- panels */
+
+.panel {
+  padding: clamp(var(--sp-5), 2.4vw, var(--sp-10));
+}
+
+.panel__title {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+  margin-block-end: var(--sp-3);
+}
+
+/* --------------------------------------------------------- empty / error */
+
+.placeholder {
+  display: grid;
+  place-content: center;
+  gap: var(--sp-3);
+  text-align: center;
+  padding: var(--sp-10) var(--sp-6);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--r-lg);
+  color: var(--color-text-dim);
+  min-height: 180px;
+}
+
+.placeholder__title {
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+}

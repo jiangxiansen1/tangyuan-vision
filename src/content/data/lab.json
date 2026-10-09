@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "id": "lab-000",
+      "title": "关于这个空间的技术说明",
+      "titleEn": "On how this space is built",
+      "question": "一个纯静态的个人网站，能不能同时拥有电影级的视觉表现和真实可用的内容管理能力？",
+      "approach": "用 Vite + React + TypeScript 构建，把液态玻璃材质做成一套统一的 CSS 变量体系，用 Motion 负责路由转场，用 Three.js 只负责真正需要景深的那一层。内容全部以 JSON 形式存放在仓库里，由 Decap CMS 通过 GitHub 的 Git 工作流写入，而不是引入一个需要付费和运维的数据库。",
+      "outcome": "可以。公开站点是纯静态产物，托管在 GitHub Pages 上；内容管理通过 OAuth 授权后由 CMS 直接提交到仓库，触发重新构建。公开站点的访问从不依赖 CMS 是否在线。",
+      "tools": ["Vite", "React", "TypeScript", "Motion", "Three.js", "Decap CMS", "GitHub Actions"],
+      "date": "2026-01-01",
+      "provenance": "real"
+    },
+    {
+      "id": "lab-001",
+      "title": "液态玻璃：从 backdrop-filter 到真实折射",
+      "titleEn": "Liquid Glass, beyond backdrop-filter",
+      "question": "只加一个 backdrop-filter 就叫做液态玻璃，是不是不够？",
+      "approach": "把材质拆成六层：背景模糊、体色渐变、内侧描边、边缘辉光、指针跟随高光、曲率色散。真正带位移的折射用 SVG feDisplacementMap 实现，但它对每个元素都是独立的 GPU 合成开销，所以只授权给不参与连续动画的静态表面，其余场景走降级路径。",
+      "outcome": "视觉层次明显提升，代价被限制在可接受的范围内。在 767px 以下的视口、以及用户的 reduce-motion / 降低透明度设置下，折射层会自动关闭——这是刻意的降级，而不是让滤镜静默失效。",
+      "tools": ["CSS backdrop-filter", "SVG feTurbulence", "SVG feDisplacementMap", "prefers-reduced-motion"],
+      "date": "2026-01-02",
+      "provenance": "real"
+    },
+    {
+      "id": "lab-002",
+      "title": "用亮度通道还原一张没有透明通道的标识",
+      "titleEn": "Recovering an alpha channel from luminance",
+      "question": "只拿到一张 JPEG，白色笔触落在纯白背景上，怎么把它做成可以叠在深色界面上的资源？",
+      "approach": "不重绘、不描边，而是把亮度当成覆盖率：alpha = (白 − 亮度) / (白 − 最暗)。先统计整张图的亮度分布——实测最暗 151、均值 254.45、99.5% 的像素落在 224–255——再据此确定映射区间，最后做一次 gamma 校正把细线在小尺寸下的可辨度补回来。",
+      "outcome": "笔画几何、手绘边缘抖动与原有抗锯齿全部保留，只重新确定了墨色。实测覆盖率均值仅 24.6/255，直接使用在深色背景上几乎不可见，所以选择了 γ=0.40：均值提升到约 78，同时 alpha=0 仍然保持为 0，背景完全透明。",
+      "tools": ["sharp", "luminance-to-alpha", "gamma calibration"],
+      "date": "2026-01-03",
+      "provenance": "real"
+    },
+    {
+      "id": "lab-003",
+      "title": "待补充：下一组实验记录",
+      "titleEn": "Next experiment — to be written",
+      "question": "（这一条是空的占位，用来展示实验记录在没有正文时的呈现方式。）",
+      "approach": "在后台 CMS 里新建一条实验记录，填写问句、方法和结论即可。字段留空的部分不会显示任何空标签。",
+      "outcome": "尚未填写。",
+      "tools": [],
+      "provenance": "sample"
+    }
+  ]
+}

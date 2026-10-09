@@ -1,0 +1,285 @@
+/**
+ * HomePage — the spatial hub, restructured for V3.
+ *
+ * THE THREE-TIER STRUCTURE (and why each tier is sized the way it is)
+ *
+ *   TIER 1  the brand core
+ *     「汤圆Vision」 / 「汤圆视界」 / A WORLD BEYOND THE FRAME, centred, over a
+ *     cinematic photograph. Nothing competes with it: it owns the whole upper
+ *     field, and the two main windows only begin below it.
+ *
+ *   TIER 2  the two core windows
+ *     Photography (left) and Earth Online (right). These are the two things the
+ *     site is actually about, so they get the dominant share of the viewport.
+ *     They are deliberately NOT equal: the photography window is taller and the
+ *     Earth window is set lower, which is what keeps the composition from reading
+ *     as a two-column grid while still balancing optically.
+ *
+ *   TIER 3  everything else, in descending weight
+ *     Lab and Projects as compact windows; About / Journal / Contact and the
+ *     hidden space as a quiet link row. Nothing here may pull attention from
+ *     tier 2, so they are text-weight and small.
+ *
+ * WHAT WAS REMOVED FROM V2, ON PURPOSE
+ *   The statistics strip (window count, item count, version, "online" status),
+ *   the decorative index numerals on every tile, and the seven-window uniform
+ *   grid. The brief calls those out as noise, and they were: a version number is
+ *   not information a visitor needs, and 01/02/03 on equal cards is decoration
+ *   pretending to be structure.
+ *
+ * ACCESSIBILITY
+ *   • The core window field is a real list of real buttons; arrow keys rove
+ *     across it, and the roving focus follows the same order Tab gives.
+ *   • A plain list of every destination is always present, because the brief is
+ *     explicit that immersion must not cost orientation.
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BRAND, SETTINGS } from '@/content';
+import { NAVIGABLE_ROUTES, routeByKey, type SceneRoute, type SceneId } from '@/app/routes';
+import { Logo } from '@/components/brand/Logo';
+import { SceneIcon } from '@/components/ui/Icon';
+import { SoundControls } from '@/components/audio/SoundControls';
+import { SettingsTrigger } from '@/components/settings/SettingsTrigger';
+import { useSecretEntry } from '@/hooks/useSecretEntry';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useSceneStore } from '@/store/useSceneStore';
+import { useUIStore } from '@/store/useUIStore';
+import { playSfx } from '@/store/useSoundStore';
+import { BrandCore } from './BrandCore';
+import { VisionBackdrop } from './VisionBackdrop';
+import { CoreWindow } from './CoreWindow';
+import { MiniWindow } from './MiniWindow';
+import { SecretSignal } from './SecretSignal';
+import './home.css';
+
+/** The two windows that carry the site. Everything else is secondary. */
+const CORE_IDS = ['photography', 'earth'] as const;
+
+/** Compact windows, tier 3a. */
+const MINI_IDS = ['lab', 'projects'] as const;
+
+/** Quiet links, tier 3b. */
+const QUIET_IDS = ['about', 'journal', 'contact'] as const;
+
+export default function HomePage() {
+  const navigate = useNavigate();
+  const { focusIndex, setFocusIndex, setWindowCount, moveFocus, reset } = useSceneStore();
+  const pushToast = useUIStore((s) => s.pushToast);
+  const interacted = useUIStore((s) => s.interacted);
+  const markInteracted = useUIStore((s) => s.markInteracted);
+  const { enter: enterSecret } = useSecretEntry();
+
+  const gridRef = useRef<HTMLUListElement>(null);
+  const [columns, setColumns] = useState(2);
+
+  useDocumentTitle({
+    title: '',
+    description: SETTINGS.siteDescription,
+    image: SETTINGS.ogImage,
+    path: '/',
+  });
+
+  /* The three tiers are resolved from the single route registry, so adding a
+     scene in one place is enough — there is no second list to keep in step. */
+  const { core: coreWindows, mini: miniWindows, quiet: quietWindows } = useMemo(() => {
+    const byId = new Map<string, SceneRoute>(NAVIGABLE_ROUTES.map((r) => [r.id as string, r]));
+    const pick = (ids: readonly SceneId[]) =>
+      ids.map((id) => byId.get(id)).filter((r): r is SceneRoute => Boolean(r));
+    return { core: pick(CORE_IDS), mini: pick(MINI_IDS), quiet: pick(QUIET_IDS) };
+  }, []);
+
+  /**
+   * The roving-focus ring spans only the two core windows.
+   *
+   * Including the quieter entries would make arrow-key navigation walk through
+   * ten stops of unequal weight, which is worse than letting Tab handle the
+   * smaller links naturally. Spatial navigation exists for the core pair.
+   */
+  useEffect(() => {
+    setWindowCount(coreWindows.length);
+    return () => reset();
+  }, [coreWindows.length, setWindowCount, reset]);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = gridRef.current;
+      if (!el) return;
+      const cols = getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length;
+      setColumns(Math.max(1, cols));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  useEffect(() => {
+    if (interacted) return;
+    const once = () => markInteracted();
+    window.addEventListener('pointerdown', once, { once: true, passive: true });
+    window.addEventListener('keydown', once, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', once);
+      window.removeEventListener('keydown', once);
+    };
+  }, [interacted, markInteracted]);
+
+  const open = useCallback(
+    (route: SceneRoute) => {
+      playSfx('open');
+      navigate(route.path);
+    },
+    [navigate]
+  );
+
+  const onFieldKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLUListElement>) => {
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault();
+          moveFocus(1, columns);
+          return;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault();
+          moveFocus(-1, columns);
+          return;
+        case 'Home':
+          e.preventDefault();
+          setFocusIndex(0);
+          return;
+        case 'End':
+          e.preventDefault();
+          setFocusIndex(coreWindows.length - 1);
+          return;
+        default:
+          break;
+      }
+
+      // A single letter opens its scene directly. Tab order already covers every
+      // destination, so these are accelerators rather than the only way in.
+      if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const route = routeByKey(e.key);
+        if (route) {
+          e.preventDefault();
+          open(route);
+        }
+      }
+    },
+    [columns, coreWindows.length, moveFocus, open, setFocusIndex]
+  );
+
+  // Follow the roving index with real DOM focus, but only after engagement.
+  useEffect(() => {
+    if (focusIndex < 0) return;
+    const nodes = gridRef.current?.querySelectorAll<HTMLElement>('[data-window]');
+    nodes?.[focusIndex]?.focus({ preventScroll: false });
+  }, [focusIndex]);
+
+  return (
+    <div className="scene vhome" data-scene="home">
+      {/* The cinematic layer: a photograph when one is configured, a drawn
+          composition when it is not. See VisionBackdrop for why it is never
+          simply "no background". */}
+      <VisionBackdrop />
+
+      <a className="skip-link" href="#core-windows">
+        跳到核心窗口 <span className="skip-link__en">Skip to windows</span>
+      </a>
+
+      {/* ------------------------------------------------------------ chrome -- */}
+      <header className="vhome__chrome no-print">
+        <div className="vhome__brand">
+          <Logo height={28} decorative />
+          <span className="vhome__brand-name">{BRAND.brandFull}</span>
+        </div>
+        <div className="vhome__tools">
+          <SoundControls compact />
+          <SettingsTrigger compact />
+        </div>
+      </header>
+
+      {/* ============================================== TIER 1 · brand core -- */}
+      <section className="vhome__core" aria-label="品牌">
+        <BrandCore variant="full" />
+      </section>
+
+      {/* ================================================ TIER 2 · the two -- */}
+      <section className="vhome__windows" id="core-windows" aria-labelledby="core-windows-label">
+        <h2 id="core-windows-label" className="visually-hidden">
+          核心空间
+        </h2>
+
+        <ul className="vhome__core-grid" ref={gridRef} onKeyDown={onFieldKeyDown}>
+          {coreWindows.map((route, i) => (
+            <CoreWindow
+              key={route.id}
+              route={route}
+              side={i === 0 ? 'left' : 'right'}
+              onOpen={() => open(route)}
+              onFocus={() => setFocusIndex(i)}
+            />
+          ))}
+        </ul>
+
+        {/* Announces the focused window, which the spatial focus ring cannot do
+            for a screen reader. */}
+        <p className="visually-hidden" role="status" aria-live="polite">
+          {focusIndex >= 0 && focusIndex < coreWindows.length
+            ? `当前窗口：${coreWindows[focusIndex].label}。按回车打开。`
+            : ''}
+        </p>
+      </section>
+
+      {/* =========================================== TIER 3a · compact pair -- */}
+      <section className="vhome__mini" aria-labelledby="mini-label">
+        <h2 id="mini-label" className="u-label vhome__section-label">
+          继续探索 / EXPLORE FURTHER
+        </h2>
+        <ul className="vhome__mini-grid">
+          {miniWindows.map((route) => (
+            <MiniWindow key={route.id} route={route} onOpen={() => open(route)} />
+          ))}
+        </ul>
+      </section>
+
+      {/* =========================================== TIER 3b · quiet links -- */}
+      <nav className="vhome__quiet" aria-label="更多入口">
+        <ul className="vhome__quiet-list">
+          {quietWindows.map((route) => (
+            <li key={route.id}>
+              <button type="button" className="vhome__quiet-link" onClick={() => open(route)}>
+                <SceneIcon scene={route.id} size={15} />
+                <span>{route.label}</span>
+                <span className="vhome__quiet-en">{route.labelEn}</span>
+              </button>
+            </li>
+          ))}
+
+          {/* The hidden entry lives in the quiet row rather than among the core
+              windows: it must be reachable by Tab, but must not be advertised. */}
+          {SETTINGS.secretEnabled ? (
+            <SecretSignal onEnter={() => enterSecret('signal')} onFocus={() => undefined} />
+          ) : null}
+        </ul>
+      </nav>
+
+      {/* ----------------------------------------------------------- footer -- */}
+      <footer className="vhome__footer no-print">
+        <button
+          type="button"
+          className="vhome__index-toggle"
+          onClick={() =>
+            pushToast('这个页面本身就是完整的索引：上方每个入口都对应一个专题页。', 'info')
+          }
+        >
+          <SceneIcon scene="projects" size={14} />
+          <span>空间索引</span>
+        </button>
+        <span className="vhome__footer-note">{BRAND.logoLine} · 示例内容均已标注</span>
+      </footer>
+    </div>
+  );
+}

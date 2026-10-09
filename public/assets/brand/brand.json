@@ -1,0 +1,134 @@
+{
+  "generatedBy": "tools/build-brand-assets.cjs",
+  "generatedAt": "2026-10-09T08:58:59.398Z",
+  "sharp": "0.35.3",
+  "provenance": {
+    "source": "C:\\Users\\pc\\Pictures\\水印白.jpg",
+    "sourceFormat": "jpeg",
+    "sourceSize": "2508x1672",
+    "sourceHasAlpha": false,
+    "sourceLuminance": {
+      "min": 150.72320000000002,
+      "max": 254.99999999999997,
+      "mean": 254.45
+    },
+    "sourceContentBox": {
+      "x": 375,
+      "y": 378,
+      "width": 1814,
+      "height": 862
+    },
+    "method": "Coverage mask recovered from the source luminance channel: alpha = (white - luma) / (white - black), giving alpha 0 on the white field and alpha 1 on the darkest ink. Stroke geometry, hand-drawn edge jitter and anti-aliasing are preserved exactly as supplied; only ink colour is re-asserted.",
+    "opticalCalibration": {
+      "reason": "Measured ink coverage averaged only 24.6/255 with 0.85% of pixels at alpha >= 128, so the mark is effectively invisible at face value on a dark hero field.",
+      "curve": "alpha_out = 255 * (alpha_in / 255) ^ gamma",
+      "gammaLight": 0.4,
+      "gammaDark": 0.45,
+      "geometryUnchanged": true,
+      "note": "alpha 0 remains 0, so the background stays perfectly transparent. logo-light-raw.png carries the unmodified coverage."
+    },
+    "whiteVersion": {
+      "file": "水印白.jpg",
+      "present": true,
+      "location": "C:\\Users\\pc\\Pictures\\水印白.jpg"
+    },
+    "blackVersion": {
+      "file": "水印黑.png",
+      "present": false,
+      "searched": [
+        "C:\\Users\\pc\\Pictures",
+        "C:\\Users\\pc\\Downloads",
+        "C:\\Users\\pc\\Desktop",
+        "C:\\Users\\pc\\Documents\\deepseek-harness",
+        "C:\\Users\\pc\\.dsh\\attachments"
+      ],
+      "note": "NOT SUPPLIED on this machine. logo-dark.png / logo-dark.svg are DERIVED by recolouring the same coverage mask. Replace them by dropping a real 水印黑.png into /public/assets/brand/ and re-running the build script with --source."
+    }
+  },
+  "assets": {
+    "logoLight": {
+      "file": "logo-light.png",
+      "path": "/assets/brand/logo-light.png",
+      "width": 1926,
+      "height": 913,
+      "aspect": 2.109529,
+      "bytes": 165552,
+      "ink": "light",
+      "note": "PRIMARY — light ink, dark surfaces"
+    },
+    "logoLightRaw": {
+      "file": "logo-light-raw.png",
+      "path": "/assets/brand/logo-light-raw.png",
+      "width": 1926,
+      "height": 913,
+      "aspect": 2.109529,
+      "bytes": 165776,
+      "ink": "light",
+      "note": "UNMODIFIED source coverage, no tone lift"
+    },
+    "logoDark": {
+      "file": "logo-dark.png",
+      "path": "/assets/brand/logo-dark.png",
+      "width": 1926,
+      "height": 913,
+      "aspect": 2.109529,
+      "bytes": 165772,
+      "ink": "dark",
+      "note": "DERIVED tint, light surfaces"
+    },
+    "logoMark": {
+      "file": "logo-mark.png",
+      "path": "/assets/brand/logo-mark.png",
+      "width": 493,
+      "height": 473,
+      "aspect": 1.042283,
+      "bytes": 27961,
+      "ink": "light",
+      "note": "camera glyph slot / compact UI"
+    },
+    "wordmark": {
+      "file": "wordmark.png",
+      "path": "/assets/brand/wordmark.png",
+      "width": 1165,
+      "height": 291,
+      "aspect": 4.003436,
+      "bytes": 64960,
+      "ink": "light",
+      "note": "CAPTURE MOMENTS lockup"
+    },
+    "logoMask": {
+      "file": "logo-mask-light.png",
+      "path": "/assets/brand/logo-mask-light.png",
+      "width": 1886,
+      "height": 934,
+      "note": "8-bit coverage mask, unmodified"
+    },
+    "favicon": {
+      "file": "favicon.png",
+      "path": "/favicon.png",
+      "width": 512,
+      "height": 512
+    },
+    "logoLightSvg": {
+      "file": "logo-light.svg",
+      "path": "/assets/brand/logo-light.svg",
+      "width": 1926,
+      "height": 913,
+      "note": "SVG wrapper, embedded raster"
+    },
+    "logoDarkSvg": {
+      "file": "logo-dark.svg",
+      "path": "/assets/brand/logo-dark.svg",
+      "width": 1926,
+      "height": 913,
+      "note": "SVG wrapper, embedded raster"
+    },
+    "logoMarkSvg": {
+      "file": "logo-mark.svg",
+      "path": "/assets/brand/logo-mark.svg",
+      "width": 493,
+      "height": 473,
+      "note": "SVG wrapper, embedded raster"
+    }
+  }
+}

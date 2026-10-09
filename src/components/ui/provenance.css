@@ -1,0 +1,52 @@
+/* ProvenanceBadge / PendingMarker — the content-honesty markers. */
+
+.provenance,
+.pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  /* Never rely on colour alone: both markers carry an icon and a text label. */
+}
+
+.provenance {
+  border: 1px solid color-mix(in srgb, var(--c-amber) 44%, transparent);
+  background: color-mix(in srgb, var(--c-amber) 12%, transparent);
+  color: var(--c-amber);
+}
+
+.provenance--compact {
+  padding: 1px var(--sp-2);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.provenance--compact svg {
+  display: none;
+}
+
+.pending {
+  border: 1px dashed color-mix(in srgb, var(--c-mist) 34%, transparent);
+  background: color-mix(in srgb, var(--c-mist) 5%, transparent);
+  color: var(--color-text-dim);
+}
+
+/* In the forced high-contrast mode the amber tint is dropped in favour of a
+   solid outline, so the marker stays legible without colour. */
+[data-contrast='high'] .provenance {
+  background: transparent;
+  border-color: var(--c-amber);
+  border-style: solid;
+  border-width: 2px;
+  color: var(--color-text);
+}
+
+[data-contrast='high'] .pending {
+  border-color: var(--color-text-muted);
+  color: var(--color-text-muted);
+}

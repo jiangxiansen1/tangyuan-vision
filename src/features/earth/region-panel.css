@@ -1,0 +1,434 @@
+/* ==========================================================================
+   RegionPanel — the country detail panel in the Earth space.
+
+   Renders three genuinely different states (visited / planned / unrecorded) and
+   an explicit fourth for "the backend is not available". The styling has to keep
+   those visually distinct, because the failure this component guards against is a
+   panel that looks equally full for a country the author has never visited.
+   ========================================================================== */
+
+.rpanel {
+  position: absolute;
+  top: clamp(12px, 2vw, 24px);
+  right: clamp(12px, 2vw, 24px);
+  bottom: clamp(12px, 2vw, 24px);
+  z-index: 8;
+  width: min(420px, calc(100vw - 48px));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--r-2xl);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(9 13 21 / 0.9);
+  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+  backdrop-filter: blur(26px) saturate(1.5);
+  box-shadow: var(--sh-on-dark);
+  animation: rpanel-in var(--t-slow) var(--ease-entrance) both;
+}
+
+@keyframes rpanel-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.rpanel:focus-visible {
+  outline: none;
+  box-shadow: var(--sh-on-dark), 0 0 0 2px #05070d, 0 0 0 4px var(--c-cryo-glow);
+}
+
+/* The accent edge encodes the visit status, so the panel's state is readable
+   before you read a word of it. */
+.rpanel::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--r-2xl);
+  bottom: var(--r-2xl);
+  width: 2px;
+  border-radius: 2px;
+  background: var(--c-ash);
+}
+
+.rpanel[data-status='visited']::before { background: #6fd8b4; }
+.rpanel[data-status='planned']::before { background: #e0a556; }
+
+/* ------------------------------------------------------------------ head -- */
+
+.rpanel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.rpanel__head-main {
+  min-width: 0;
+}
+
+.rpanel__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-fog);
+}
+
+.rpanel__title {
+  margin-top: var(--sp-1);
+  font-size: clamp(1.35rem, 1.1rem + 1vw, 1.9rem);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+  line-height: 1.15;
+  color: var(--c-frost);
+}
+
+.rpanel__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--r-md);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  color: var(--c-silver);
+  transition: background-color var(--t-fast) var(--ease-standard), color var(--t-fast) var(--ease-standard);
+}
+
+.rpanel__close:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+.rpanel__close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #05070d, 0 0 0 4px var(--c-cryo-glow);
+}
+
+/* ---------------------------------------------------------------- status -- */
+
+.rpanel__status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.04);
+  align-self: flex-start;
+}
+
+.rpanel__status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-ash);
+}
+
+.rpanel__status[data-tone='visited'] .rpanel__status-dot { background: #6fd8b4; }
+.rpanel__status[data-tone='planned'] .rpanel__status-dot { background: #e0a556; }
+
+.rpanel__status-label {
+  font-size: var(--fs-caption);
+  color: var(--c-frost);
+}
+
+.rpanel__status-date {
+  font-size: var(--fs-micro);
+  color: var(--c-fog);
+}
+
+/* ----------------------------------------------------------------- facts -- */
+
+.rpanel__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.rpanel__facts dt {
+  color: var(--c-fog);
+}
+
+.rpanel__facts dd {
+  margin: 3px 0 0;
+  font-size: var(--fs-small);
+  color: var(--c-mist-dark);
+}
+
+/* Stated because mean solar time is not civil time, and the panel shows it. */
+.rpanel__fact-note {
+  margin-top: calc(-1 * var(--sp-2));
+  font-size: var(--fs-micro);
+  line-height: 1.6;
+  color: var(--c-fog);
+}
+
+/* -------------------------------------------------------------- sections -- */
+
+.rpanel__section {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.rpanel__entry-title {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--c-frost);
+}
+
+.rpanel__story {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--c-mist-dark);
+}
+
+.rpanel__story > p + p {
+  margin-top: var(--sp-3);
+}
+
+.rpanel__body {
+  font-size: var(--fs-small);
+  line-height: var(--lh-relaxed);
+  color: var(--c-mist-dark);
+}
+
+/* The unrecorded branch is the one that must not look like filler, so it gets a
+   quiet bordered treatment instead of open prose — it is a deliberate absence,
+   not a paragraph. */
+.rpanel__body--empty {
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px dashed rgb(255 255 255 / 0.16);
+  color: var(--c-silver);
+}
+
+.rpanel__missing {
+  font-size: var(--fs-caption);
+  color: var(--c-fog);
+  font-style: normal;
+}
+
+.rpanel__coord {
+  font-size: var(--fs-micro);
+  color: var(--c-fog);
+}
+
+/* ---------------------------------------------------------------- photos -- */
+
+.rpanel__photos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: var(--sp-1);
+  list-style: none;
+}
+
+.rpanel__photos img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  display: block;
+}
+
+/* ------------------------------------------------------------------ vote -- */
+
+.rpanel__vote-body {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.rpanel__vote-count {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.rpanel__vote-number {
+  font-family: var(--font-mono);
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--c-cryo-glow);
+}
+
+.rpanel__vote-unit {
+  font-size: var(--fs-caption);
+  color: var(--c-fog);
+}
+
+.rpanel__vote-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-pill);
+  border: 1px solid rgb(143 227 255 / 0.36);
+  background: rgb(143 227 255 / 0.12);
+  color: var(--c-cryo-glow);
+  font-size: var(--fs-small);
+  transition:
+    background-color var(--t-fast) var(--ease-standard),
+    transform var(--t-fast) var(--ease-standard);
+}
+
+.rpanel__vote-btn:hover:not(:disabled) {
+  background: rgb(143 227 255 / 0.2);
+  transform: translateY(-1px);
+}
+
+.rpanel__vote-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #05070d, 0 0 0 4px var(--c-cryo-glow);
+}
+
+.rpanel__vote-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Already voted: filled and calmer, since the action is spent. */
+.rpanel__vote-btn[data-voted] {
+  background: rgb(111 216 180 / 0.16);
+  border-color: rgb(111 216 180 / 0.4);
+  color: #8fe6c6;
+  transform: none;
+}
+
+.rpanel__vote-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid rgb(255 138 120 / 0.34);
+  background: rgb(255 138 120 / 0.1);
+  font-size: var(--fs-caption);
+  line-height: 1.6;
+  color: #ffb3a3;
+}
+
+.rpanel__vote-error svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* A DEMO banner must be impossible to miss, because the numbers beneath it are
+   not real shared data. */
+.rpanel__vote-demo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-micro);
+  line-height: 1.6;
+  color: var(--c-silver);
+}
+
+.rpanel__vote-note {
+  font-size: var(--fs-micro);
+  line-height: 1.65;
+  color: var(--c-fog);
+}
+
+/* The unavailable state is a real explanatory panel, not a disabled button with
+   no reason given. It also carries the reason no count is shown. */
+.rpanel__vote-unavailable {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px dashed rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.03);
+}
+
+.rpanel__vote-unavailable > svg {
+  flex: none;
+  margin-top: 2px;
+  color: #f0c07a;
+}
+
+.rpanel__vote-unavailable-title {
+  font-size: var(--fs-small);
+  color: var(--c-frost);
+}
+
+.rpanel__vote-unavailable-body {
+  margin-top: 4px;
+  font-size: var(--fs-micro);
+  line-height: 1.68;
+  color: var(--c-silver);
+}
+
+/* ------------------------------------------------------------------ foot -- */
+
+.rpanel__foot {
+  display: grid;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.rpanel__foot-note {
+  font-size: var(--fs-micro);
+  line-height: 1.6;
+  color: var(--c-fog);
+}
+
+/* ========================================================== responsive == */
+
+/*
+  Phone: the panel becomes a bottom sheet. A right-hand side panel at 420px is
+  wider than most phones after the page padding, and a sheet is the idiom touch
+  users already expect for "details about the thing I tapped".
+*/
+@media (max-width: 767px) {
+  .rpanel {
+    inset: auto 0 0 0;
+    width: 100%;
+    /* Capped so the globe stays partly visible behind the sheet — the context of
+       which country this is should not disappear. */
+    max-height: 72dvh;
+    border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+    border-bottom: none;
+    animation: rpanel-sheet-in var(--t-slow) var(--ease-entrance) both;
+  }
+
+  @keyframes rpanel-sheet-in {
+    from { opacity: 0; transform: translateY(22px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .rpanel::before {
+    top: 0;
+    bottom: auto;
+    left: var(--r-2xl);
+    right: var(--r-2xl);
+    width: auto;
+    height: 2px;
+  }
+
+  .rpanel__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rpanel__photos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpanel {
+    animation: none;
+  }
+
+  .rpanel__vote-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}

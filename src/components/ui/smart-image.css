@@ -1,0 +1,103 @@
+/* SmartImage — placeholder, loading and failure states. */
+
+.smart-image {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  background: color-mix(in srgb, var(--tone, #101820) 62%, var(--c-void));
+  border-radius: inherit;
+  isolation: isolate;
+}
+
+.smart-image > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity var(--t-slower) var(--ease-standard);
+}
+
+.smart-image[data-state='loaded'] > img {
+  opacity: 1;
+}
+
+/* While loading or after a failure the element itself must stay out of the
+   way, so the placeholder/failure layer reads as the content. */
+.smart-image[data-state='error'] > img {
+  visibility: hidden;
+}
+
+.smart-image__placeholder {
+  position: absolute;
+  inset: 0;
+  /* Tint the shimmer with the photo's own dominant colour so the loading state
+     belongs to the image rather than looking like generic UI chrome. */
+  background-color: color-mix(in srgb, var(--tone, #101820) 70%, var(--c-void));
+  background-blend-mode: overlay;
+}
+
+.smart-image__failure {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: var(--sp-3);
+  justify-items: center;
+  text-align: center;
+  padding: var(--sp-6);
+  background:
+    repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--c-mist) 4%, transparent) 0 8px,
+      transparent 8px 16px
+    ),
+    color-mix(in srgb, var(--tone, #101820) 46%, var(--c-void));
+}
+
+.smart-image__failure-mark {
+  width: 26px;
+  height: 26px;
+  border: 1px solid color-mix(in srgb, var(--c-mist) 34%, transparent);
+  border-radius: var(--r-sm);
+  position: relative;
+}
+
+/* A struck-through frame — reads as "this image is missing" without a caption. */
+.smart-image__failure-mark::before,
+.smart-image__failure-mark::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.5px),
+    color-mix(in srgb, var(--c-mist) 44%, transparent) calc(50% - 0.5px),
+    color-mix(in srgb, var(--c-mist) 44%, transparent) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+
+.smart-image__failure-text {
+  display: grid;
+  gap: 2px;
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+}
+
+.smart-image__failure-hint {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-label);
+  color: var(--color-text-dim);
+}
+
+/* Contain mode — for logos and diagrams that must not be cropped. */
+.smart-image--contain {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smart-image > img {
+    transition: none;
+  }
+}

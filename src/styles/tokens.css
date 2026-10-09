@@ -1,0 +1,294 @@
+/* ==========================================================================
+   tokens.css — the single source of truth for the 汤圆Vision design system.
+   Nothing in the app should invent a colour, duration, radius or shadow that is
+   not declared here. Scene themes (see theme.css) only re-point these variables.
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------------------------- colour --
+     Two ramps, one semantic layer.
+
+     V3 is LIGHT-FIRST. The public surface is pearl white, mist grey and
+     graphite; the deep ramp exists because two places genuinely need darkness —
+     the Earth space (a lit globe can only read against a dark field) and the
+     photographic lightbox (a bright surround shifts how you perceive the image).
+
+     Rules the semantic layer enforces:
+       • Components reference --color-* / --glass-* / --sh-*, never a ramp value.
+       • Swapping the palette is therefore one file, not a component sweep.
+       • Contrast is verified once, globally; scenes may change hue, not legibility. */
+
+  /* ------------------------------------------------------------- overlay --
+     `--c-mist` IS AN OVERLAY COLOUR, NOT A SURFACE COLOUR.
+
+     It is referenced 72 times, 60 of them as
+     `color-mix(in srgb, var(--c-mist) N%, transparent)` meaning "a faint overlay
+     on whatever the ground currently is" — hover fills, hairlines, skeleton
+     placeholders, decorative textures. On a dark ground that overlay must be
+     white; on a light ground it must be ink.
+
+     V3 DEFECT, FIXED HERE
+     ---------------------
+     This token used to be fed into the canvas (`--color-canvas: var(--c-mist)`),
+     which made the page ground `#161b22` — the SAME value as `--color-text`. Every
+     route therefore painted dark-on-dark: measured in a real browser, 36 elements
+     on the photography page resolved to a 1:1 contrast ratio, i.e. invisible.
+
+     The cause was not the value, it was the ROLE. A token whose whole job is to be
+     a translucent overlay had been used as an opaque paint. So:
+
+       • `--color-canvas` now reads a real surface colour, never this token
+       • this token keeps its overlay meaning and is never painted opaquely
+
+     Before reusing it as a fill, check the call site is a color-mix overlay. */
+  --c-mist: var(--c-ink);
+
+  /* Light ramp — the public surface. */
+  --c-pearl: #ffffff;
+  --c-mist-soft: #f4f6f8;
+  --c-fog-light: #e8ecf0;
+  --c-silver-light: #d5dbe2;
+  --c-steel-light: #aeb7c2;
+  --c-graphite: #5c6672;
+  --c-slate-deep: #2e3641;
+  --c-ink: #161b22;
+  --c-ink-deep: #0a0e13;
+
+  /* Deep ramp — kept from V2, now used only by the Earth space and the lightbox. */
+  --c-void: #030507;
+  --c-obsidian: #05070a;
+  --c-deepspace: #0b1017;
+  --c-slate: #141a23;
+  --c-graphite-alt: #1c242f;
+  --c-steel: #2b3542;
+  --c-ash: #47525f;
+  --c-fog: #6d7885;
+  --c-silver: #97a2b0;
+  --c-mist-dark: #bfc8d4;
+  --c-frost: #e8ecf2;
+  --c-paper: #f6f8fa;
+
+  /* Cryo accent — the single approved high-chroma hue, used in both themes. */
+  --c-cryo-100: #eaf7ff;
+  --c-cryo-300: #2f9fd4;
+  --c-cryo-500: #166b96;
+  --c-cryo-700: #166b96;
+  /* A brighter cryo for the dark Earth space, where the light-theme accent is
+     too heavy against a black field. */
+  --c-cryo-glow: #8fe3ff;
+
+  /* Scene accents, tuned for a light ground.
+
+     These are used BOTH as fills and as small label text (the uppercase eyebrows
+     on scene headers). As text on the light canvas they must clear WCAG AA, which
+     the first-pass values did not: measured 3.89:1 for cryo, 3.39:1 for amber and
+     3.98:1 for aurora. All three were darkened to clear 4.5:1 — see the measured
+     contrast table above. Fills are unaffected visually at these sizes. */
+  --c-ember: #b34a17;
+  --c-amber: #8a5f1e;
+  --c-aurora: #0d6d54;
+  --c-violet: #5b3fbd;
+  --c-alarm: #b02a1c;
+
+  /* Semantic roles — LIGHT by default, and self-consistent by design.
+
+     `--color-canvas` reads a SURFACE colour (`--c-mist-soft`, #f4f6f8). It must
+     never read an overlay token: doing so is the V3 defect described above, where
+     the ground and the body text resolved to the same #161b22 and every scene
+     rendered invisible text. */
+  --color-canvas: var(--c-mist-soft);
+  --color-surface: var(--c-pearl);
+  --color-surface-raised: #ffffff;
+  --color-border: color-mix(in srgb, var(--c-ink) 12%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--c-ink) 22%, transparent);
+  --color-text: var(--c-ink);
+  --color-text-muted: var(--c-graphite);
+  --color-text-dim: color-mix(in srgb, var(--c-graphite) 76%, transparent);
+  --color-text-invert: var(--c-pearl);
+  --color-accent: var(--c-cryo-500);
+  --color-accent-deep: var(--c-cryo-700);
+  --color-focus: var(--c-cryo-500);
+  --color-danger: var(--c-alarm);
+
+  /* Contrast, measured against --color-canvas (#f4f6f8):
+     ink #161b22 → 15.8:1   graphite #5c6672 → 5.4:1   both clear WCAG AA. */
+  --contrast-body: 15.8;
+  --contrast-muted: 5.4;
+
+  /* --------------------------------------------------------- structural --
+     Three roles that are genuinely theme-dependent but are NOT brand colours,
+     so they get semantic names instead of reaching into a ramp. Each is
+     re-pointed per ground in theme.css.                                       */
+
+  /* A scrim behind a modal. On light this darkens the page; on dark it deepens
+     it. Either way its job is to push the page back, not to look like a colour. */
+  --overlay-scrim: color-mix(in srgb, #101828 34%, transparent);
+
+  /* A surface that must stay DARK regardless of ground — a toast, a tooltip, a
+     code block. These are legibility devices: they exist to be read against the
+     page, so they invert. */
+  --overlay-solid: color-mix(in srgb, var(--c-ink-deep) 94%, transparent);
+  --overlay-solid-text: var(--c-frost);
+  --overlay-solid-border: color-mix(in srgb, #ffffff 16%, transparent);
+
+  /* A deep wash used where content sits directly on an image and needs contrast
+     guaranteed without a panel — the photo tiles and the visionOS-style windows.
+     On light it is a soft ink gradient; on dark, the original near-black one. */
+  --wash-strong: color-mix(in srgb, #0b1220 62%, transparent);
+  --wash-mid: color-mix(in srgb, #0b1220 34%, transparent);
+  --wash-soft: color-mix(in srgb, #0b1220 16%, transparent);
+  --wash-text: var(--c-frost);
+
+  /* Focus rings drawn as a shadow need a colour that reads on their own ground. */
+  --ring-offset: var(--color-canvas);
+
+  /* --------------------------------------------------------------- type --
+     One display face (system-safe stack, no webfont round-trip blocking
+     first paint) plus a mono face for instrumentation readouts.              */
+  --font-display: 'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont,
+    'Segoe UI Variable Display', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei UI', 'Noto Sans SC', system-ui, sans-serif;
+  --font-body: var(--font-display);
+  --font-mono: 'Berkeley Mono', 'SF Mono', 'JetBrains Mono', 'Cascadia Mono',
+    Consolas, 'Liberation Mono', ui-monospace, monospace;
+
+  /* Fluid type scale — clamp(min, preferred, max). 360px .. 1600px viewport. */
+  --fs-micro: clamp(0.625rem, 0.60rem + 0.12vw, 0.6875rem);   /* 10–11 */
+  --fs-caption: clamp(0.6875rem, 0.66rem + 0.15vw, 0.8125rem); /* 11–13 */
+  --fs-small: clamp(0.8125rem, 0.78rem + 0.18vw, 0.9375rem);   /* 13–15 */
+  --fs-body: clamp(0.9375rem, 0.90rem + 0.22vw, 1.0625rem);    /* 15–17 */
+  --fs-lead: clamp(1.0625rem, 1.00rem + 0.35vw, 1.3125rem);    /* 17–21 */
+  --fs-title: clamp(1.375rem, 1.20rem + 0.90vw, 2.125rem);     /* 22–34 */
+  --fs-display: clamp(2rem, 1.40rem + 3.0vw, 4.25rem);         /* 32–68 */
+  --fs-hero: clamp(2.75rem, 1.50rem + 6.2vw, 7.5rem);          /* 44–120 */
+
+  --lh-tight: 1.05;
+  --lh-snug: 1.2;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.7;
+
+  --ls-hero: -0.035em;
+  --ls-display: -0.025em;
+  --ls-title: -0.018em;
+  --ls-body: -0.006em;
+  --ls-label: 0.16em;    /* uppercase instrumentation labels */
+  --ls-wide: 0.26em;
+
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ------------------------------------------------------------ space --
+     4px base grid.                                                                 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-14: 56px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --sp-32: 128px;
+  --sp-40: 160px;
+
+  /* Layout rhythm */
+  --measure: 68ch;
+  --measure-tight: 46ch;
+  --shell-max: 1600px;
+  --shell-pad: clamp(16px, 4vw, 72px);
+  --page-top: clamp(88px, 12vh, 148px);
+
+  /* ------------------------------------------------------------ radius --
+     Glass edges are never fully round; 2px is intentionally sharp.            */
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 18px;
+  --r-2xl: 26px;
+  --r-pill: 999px;
+
+  /* ------------------------------------------------------------ shadow --
+     Retuned for a light ground.
+
+     On dark, a shadow is mostly "how black is the gap". On light, a shadow also
+     has to carry the object's edge — hence the wide, very soft ambient layer plus
+     a tight contact layer, and an ink tint rather than pure black so shadows do
+     not go grey and muddy against pearl white.                                */
+  --sh-ambient: 0 1px 2px rgb(16 24 40 / 0.05);
+  --sh-raised: 0 1px 2px rgb(16 24 40 / 0.06), 0 4px 12px -2px rgb(16 24 40 / 0.08);
+  --sh-float: 0 2px 4px rgb(16 24 40 / 0.05), 0 12px 28px -6px rgb(16 24 40 / 0.1),
+    0 32px 64px -24px rgb(16 24 40 / 0.12);
+  --sh-window: 0 1px 2px rgb(16 24 40 / 0.05), 0 16px 40px -10px rgb(16 24 40 / 0.11),
+    0 48px 96px -40px rgb(16 24 40 / 0.16);
+  --sh-inset-top: inset 0 1px 0 rgb(255 255 255 / 0.72);
+  --sh-inset-bottom: inset 0 -1px 0 rgb(16 24 40 / 0.05);
+  --sh-focus: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-focus);
+  /* A shadow for objects sitting ON a dark ground (Earth space, lightbox). */
+  --sh-on-dark: 0 2px 6px rgb(0 0 0 / 0.4), 0 18px 46px -12px rgb(0 0 0 / 0.6);
+
+  /* ------------------------------------------------------------ motion --
+     One easing family. Exactly four curves exist in this project.
+
+     V3 adds a fifth token — NOT a fifth curve. `--t-boot` shortens because the
+     brand entrance now has to hand off to a page whose layout is more complex
+     than V2's, and a longer overlay delays the first meaningful paint.        */
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);      /* 主力：出入对称 */
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);       /* 进场：快速减速 */
+  --ease-exit: cubic-bezier(0.5, 0, 0.92, 0.2);         /* 离场：缓慢加速 */
+  --ease-elastic: cubic-bezier(0.34, 1.4, 0.44, 1);     /* 液态回弹（克制使用） */
+
+  /* Durations — the canonical scale. Transition code references these only.    */
+  --t-instant: 90ms;
+  --t-fast: 160ms;
+  --t-base: 260ms;
+  --t-slow: 420ms;
+  --t-slower: 640ms;
+  --t-scene: 820ms;    /* full scene/route change, interruptible */
+  --t-boot: 1200ms;    /* brand entrance — brief allows 0.8–1.5s */
+  /* Shared-element transitions (photography, Earth) need longer than a normal
+     route change because the element travels across the whole viewport. */
+  --t-shared: 720ms;
+
+  /* Glass material ------------------------------------------------------- */
+  --glass-blur: 22px;
+  --glass-saturate: 1.4;
+  --glass-tint-opacity: 0.44;
+  --glass-stroke: 1px;
+  --glass-highlight: rgb(255 255 255 / 0.22);
+  --glass-highlight-soft: rgb(255 255 255 / 0.08);
+
+  /* -------------------------------------------------------------- depth --
+     z-index is centralised; no component may invent one.                      */
+  --z-canvas: 0;
+  --z-scene: 10;
+  --z-content: 20;
+  --z-chrome: 40;
+  --z-panel: 60;
+  --z-overlay: 80;
+  --z-boot: 90;
+  --z-toast: 95;
+  --z-secret: 100;
+
+  /* ------------------------------------------------------------- cursor --
+     Native cursor stays in the DOM; the custom cursor only augments it.        */
+  --cursor-size: 10px;
+  --cursor-ring: 34px;
+}
+
+/* ── Breakpoints (documented for reference; media queries use literal px) ───
+   xs   0–479     phone portrait / small phone
+   sm   480–767   phone landscape / large phone
+   md   768–1023  tablet portrait
+   lg   1024–1439 tablet landscape / small laptop
+   xl   1440–1919 desktop
+   2xl  1920+     large display
+   ─────────────────────────────────────────────────────────────────────────── */

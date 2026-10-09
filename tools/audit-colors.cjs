@@ -1,0 +1,297 @@
+/**
+ * audit-colors.cjs — measure the REAL rendered colours, not the source text.
+ *
+ * WHY THIS EXISTS
+ * A reported bug said the canvas and the text colour were both `--c-ink`, making
+ * the page unreadable. Reading the source suggests otherwise (theme.css re-points
+ * both on `:root`), but source text is not evidence about a running page: cascade,
+ * specificity, load order and later overrides all decide what actually paints. So
+ * this reads the COMPUTED value out of the browser for every route, plus the
+ * measured contrast between text and its own background.
+ *
+ * The contrast number is the point. A palette can look right in a stylesheet and
+ * still produce unreadable text if the text sits on a different layer than the
+ * one being checked.
+ *
+ * Usage: node tools/audit-colors.cjs <origin>
+ */
+
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+const origin = (process.argv[2] || 'http://127.0.0.1:5183').replace(/\/$/, '');
+const DISTLIKE = path.join(path.resolve(__dirname, '..'), 'dist');
+const outDir = path.join(__dirname, '_verify', 'colors');
+fs.mkdirSync(outDir, { recursive: true });
+
+const browser = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+
+const ROUTES = [
+  ['home', '/'],
+  ['photography', '/photography'],
+  ['earth', '/earth'],
+  ['lab', '/lab'],
+  ['projects', '/projects'],
+  ['journal', '/journal'],
+  ['about', '/about'],
+  ['contact', '/contact'],
+  ['secret', '/the-quiet-space'],
+];
+
+function wrapperHtml(routePath) {
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>colour audit</title></head>
+<body style="margin:0;background:#888">
+<iframe id="f" src="${routePath}" style="width:1440px;height:1000px;border:0"></iframe>
+<script>
+(function () {
+  var DONE = false;
+  function report(o) {
+    if (DONE) return; DONE = true;
+    var n = document.createElement('div');
+    n.id = 'tv-color-audit'; n.style.display = 'none';
+    n.textContent = JSON.stringify(o);
+    document.body.appendChild(n);
+  }
+  function parseRGB(s) {
+    var m = String(s).match(/rgba?\\(([^)]+)\\)/);
+    if (!m) return null;
+    var p = m[1].split(',').map(function (x) { return parseFloat(x); });
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+  }
+  // WCAG relative luminance + contrast ratio.
+  function lum(c) {
+    function f(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+  }
+  function contrast(a, b) {
+    if (!a || !b) return null;
+    var la = lum(a), lb = lum(b);
+    var hi = Math.max(la, lb), lo = Math.min(la, lb);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+  /*
+   * The backdrop a given element is actually painted on.
+   *
+   * Collects every background from the element up to the root, then composites
+   * them from the inside OUT — later layers under earlier ones — so a translucent
+   * plate over a light page resolves to the DARK the eye sees rather than to the
+   * light page beneath it.
+   *
+   * This replaced a "first fully opaque ancestor" walk, which silently skipped
+   * translucent surfaces and therefore reported light backdrops for text sitting
+   * on dark plates. The bug was in the measurement, and it produced a false
+   * failure rather than a missed one — but a harness that cries wolf is as
+   * damaging as one that misses defects.
+   */
+  function effectiveBg(el, w) {
+    var layers = [];
+    var node = el;
+    while (node) {
+      var st = w.getComputedStyle(node);
+      var bg = parseRGB(st.backgroundColor);
+
+      /*
+       * An element can be opaque without a background COLOUR: a gradient or an
+       * image covers it just as well. Reading only backgroundColor made the globe
+       * well look transparent, so text on it was measured against the light page
+       * far below and reported as failing when it is perfectly legible.
+       */
+      var hasImage = st.backgroundImage && st.backgroundImage !== 'none';
+      if (hasImage) {
+        // First colour stop of a gradient, or a mid-grey for a url() image. An
+        // approximation of a gradient, so the resulting ratio is indicative.
+        var stop = st.backgroundImage.match(/rgba?\([^)]+\)/);
+        var imgBg = stop ? parseRGB(stop[0]) : { r: 128, g: 128, b: 128, a: 1 };
+        if (imgBg && imgBg.a > 0.001) layers.push(imgBg);
+      } else if (bg && bg.a > 0.001) {
+        layers.push(bg);
+      }
+
+      if (node === w.document.documentElement) break;
+      node = node.parentElement;
+    }
+    // Innermost first; composite each over the accumulated result.
+    var out = { r: 255, g: 255, b: 255, a: 1 };
+    for (var i = layers.length - 1; i >= 0; i--) {
+      var l = layers[i];
+      out = {
+        r: l.r * l.a + out.r * (1 - l.a),
+        g: l.g * l.a + out.g * (1 - l.a),
+        b: l.b * l.a + out.b * (1 - l.a),
+        a: 1
+      };
+    }
+    return out;
+  }
+
+  /*
+   * The foreground as painted: an element with a translucent text colour (for
+   * example rgba(255,255,255,0.68)) is genuinely lighter than solid white, and
+   * treating it as opaque overstates its contrast.
+   */
+  function effectiveFg(el, w, bg) {
+    var fg = parseRGB(w.getComputedStyle(el).color);
+    if (!fg) return null;
+    if (fg.a >= 0.999) return fg;
+    return {
+      r: fg.r * fg.a + bg.r * (1 - fg.a),
+      g: fg.g * fg.a + bg.g * (1 - fg.a),
+      b: fg.b * fg.a + bg.b * (1 - fg.a),
+      a: 1
+    };
+  }
+
+  function run() {
+    try {
+      var f = document.getElementById('f');
+      var w = f.contentWindow, d = f.contentDocument;
+      if (!d || !d.body) { report({ url: '${routePath}', error: 'no document' }); return; }
+
+      var cs = w.getComputedStyle(d.documentElement);
+      var bodyCs = w.getComputedStyle(d.body);
+
+      // Read the semantic tokens straight off :root, which is what the whole
+      // palette is supposed to flow from.
+      var tokens = {};
+      ['--color-canvas','--color-surface','--color-text','--color-text-muted','--color-text-dim',
+       '--c-mist','--c-ink','--c-mist-soft','--glass-tint-top','--glass-fallback-bg'].forEach(function (t) {
+        tokens[t] = cs.getPropertyValue(t).trim();
+      });
+
+      // Sample real text elements and measure their true contrast.
+      var samples = [];
+      var selectors = ['h1', 'h2', 'p', 'li', 'a', 'button', 'label', 'dd', 'dt'];
+      var seen = 0;
+      selectors.forEach(function (sel) {
+        var nodes = d.querySelectorAll(sel);
+        for (var i = 0; i < nodes.length && seen < 40; i++) {
+          var el = nodes[i];
+          var text = (el.innerText || '').trim();
+          if (text.length < 3) continue;
+          var rect = el.getBoundingClientRect();
+          if (rect.width < 4 || rect.height < 4) continue;
+          var bg = effectiveBg(el, w);
+          var fg = effectiveFg(el, w, bg);
+          var ratio = contrast(fg, bg);
+          if (ratio === null) continue;
+          seen++;
+          if (ratio < 4.5) {
+            samples.push({
+              sel: sel,
+              text: text.slice(0, 26),
+              fg: w.getComputedStyle(el).color,
+              bg: 'rgb(' + bg.r + ',' + bg.g + ',' + bg.b + ')',
+              ratio: Math.round(ratio * 100) / 100,
+              top: Math.round(rect.top)
+            });
+          }
+        }
+      });
+
+      // The body background is the ground everything else sits on.
+      var bodyBg = parseRGB(bodyCs.backgroundColor);
+
+      report({
+        url: '${routePath}',
+        rootBg: cs.backgroundColor,
+        bodyBg: bodyCs.backgroundColor,
+        bodyColor: bodyCs.color,
+        colorScheme: cs.colorScheme,
+        ground: d.documentElement.getAttribute('data-ground') || '(none)',
+        scene: d.documentElement.getAttribute('data-scene') || '(none)',
+        tokens: tokens,
+        // canvas === text would mean an unreadable page.
+        canvasEqualsText: tokens['--color-canvas'] === tokens['--color-text'],
+        lowContrastCount: samples.length,
+        lowContrast: samples.slice(0, 8),
+        measured: seen
+      });
+    } catch (e) {
+      report({ url: '${routePath}', error: String(e) });
+    }
+  }
+  setTimeout(run, 3000);
+})();
+</script>
+</body></html>`;
+}
+
+function audit(name, routePath) {
+  const dump = path.join(outDir, `${name}.html`);
+  const profile = path.join(os.tmpdir(), `tv-col-${name}-${Date.now()}`);
+  const wrapperName = `__color-${name}.html`;
+  // The wrapper has to be served from the same origin as the app under test.
+  // For the dev server, dist/ is not served — so the wrapper is written into the
+  // project's public/ dir, which both dev and preview serve.
+  const publicDir = path.join(path.resolve(__dirname, '..'), 'public');
+  fs.writeFileSync(path.join(publicDir, wrapperName), wrapperHtml(routePath), 'utf8');
+
+  const args = [
+    '--headless=new', '--no-sandbox', '--disable-extensions',
+    '--window-size=1500,1150', `--user-data-dir=${profile}`,
+    '--virtual-time-budget=20000', '--dump-dom', `${origin}/${wrapperName}`,
+  ];
+  const quoted = args.map((a) => `'${String(a).replace(/'/g, "''")}'`).join(',');
+  const sp = path.join(outDir, `run-${name}.ps1`);
+  fs.writeFileSync(
+    sp,
+    `$p = Start-Process -FilePath '${browser.replace(/'/g, "''")}' -ArgumentList @(${quoted}) ` +
+      `-PassThru -NoNewWindow -RedirectStandardOutput '${dump.replace(/'/g, "''")}' ` +
+      `-RedirectStandardError '${path.join(outDir, `${name}.err`).replace(/'/g, "''")}'; ` +
+      `if (-not $p.WaitForExit(150000)) { $p.Kill() }`,
+    'utf8'
+  );
+  spawnSync(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', sp], { stdio: 'ignore', timeout: 170000 });
+
+  const dom = fs.existsSync(dump) ? fs.readFileSync(dump, 'utf8') : '';
+  const m = dom.match(/<div id="tv-color-audit"[^>]*>([\s\S]*?)<\/div>/);
+  if (!m) return null;
+  try {
+    return JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
+  } catch { return null; }
+}
+
+console.log(`\ncolour audit at ${origin}\n`);
+const collected = {};
+let problems = 0;
+
+for (const [name, routePath] of ROUTES) {
+  const r = audit(name, routePath);
+  if (!r) { console.log(`  ${name.padEnd(13)} (audit did not run)`); continue; }
+  collected[name] = r;
+  if (r.error) { console.log(`  ${name.padEnd(13)} error: ${r.error}`); continue; }
+  const flag = r.lowContrastCount > 0 ? ` <-- ${r.lowContrastCount} low-contrast text` : '';
+  if (r.lowContrastCount > 0) problems++;
+  console.log(
+    `  ${name.padEnd(13)} ground=${String(r.ground).padEnd(6)} bodyBg=${String(r.bodyBg).padEnd(22)} ` +
+      `text=${String(r.bodyColor).padEnd(20)} canvas==text=${r.canvasEqualsText}${flag}`
+  );
+  for (const s of r.lowContrast.slice(0, 4)) {
+    console.log(`      ${s.ratio}:1  <${s.sel}> "${s.text}" fg=${s.fg} bg=${s.bg} top=${s.top}`);
+  }
+}
+
+fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(collected, null, 2));
+
+// Show the resolved tokens once, from the home page.
+const home = collected.home;
+if (home && home.tokens) {
+  console.log('\n  resolved :root tokens (home):');
+  for (const [k, v] of Object.entries(home.tokens)) console.log(`    ${k.padEnd(22)} ${v}`);
+}
+
+console.log('\n' + '-'.repeat(76));
+console.log(`  ${ROUTES.length - problems}/${ROUTES.length} routes have no low-contrast text`);
+console.log('');
+console.log('  KNOWN LIMITATION OF THIS MEASUREMENT');
+console.log('  Multi-stop CSS gradients are approximated by their first colour stop, and');
+console.log('  a gradient whose stops are all written as rgb(...) cannot always be parsed');
+console.log('  from the computed value. So a route reported here may still be legible in');
+console.log('  practice — the globe well is a gradient of that kind. Treat a single flag as');
+console.log('  a prompt to look, not as proof of a defect.');

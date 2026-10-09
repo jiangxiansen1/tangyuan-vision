@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>正在跳转 · 汤圆Vision</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: #05070a;
+        color: #e8ecf2;
+        display: grid;
+        place-content: center;
+        font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+        text-align: center;
+        gap: 12px;
+        padding: 32px;
+      }
+      p {
+        margin: 0;
+        color: #97a2b0;
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 46ch;
+      }
+      a {
+        color: #8fe3ff;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="msg">正在恢复页面…</p>
+    <p><a id="fallback" href="./">如果长时间没有跳转，请点击这里返回主空间</a></p>
+
+    <script>
+      /*
+       * ==========================================================================
+       * GitHub Pages SPA deep-link fallback.
+       *
+       * THE PROBLEM
+       * GitHub Pages is a static file host with no rewrite rules. A request for
+       * /repo/photography finds no such file and the host serves this 404 page
+       * with an HTTP 404 status. Without help, any deep link or page refresh
+       * would show GitHub's own 404 instead of the app.
+       *
+       * THE STANDARD FIX, AND THE BUG IN THE USUAL VERSION
+       * The widely-copied snippet does:
+       *     var l = seg[0].slice(1);
+       *     location.replace(location.origin + l + '?/&' + seg[1].slice(1));
+       * which assumes the app is hosted at the DOMAIN ROOT. On a *project* Pages
+       * site (the normal case: https://owner.github.io/repo/…) that drops the
+       * "/repo/" prefix and sends the browser to a path that does not exist —
+       * producing an infinite 404 loop. This version computes the base from the
+       * current location instead of assuming it, so it works for:
+       *     • https://owner.github.io/repo/<deep>
+       *     • https://owner.github.io/<deep>          (user Pages site)
+       *     • https://custom-domain.tld/<deep>
+       *
+       * HOW THE PATH SURVIVES
+       * Everything after the base becomes a single "?/<path>" query string. The
+       * app entry (src/main.tsx → src/lib/deepLink.ts) reads that query and
+       * restores it with history.replaceState before React Router mounts, so
+       * Router sees the original clean URL and no application code has to know
+       * this happened.
+       * ==========================================================================
+       */
+      (function () {
+        var path = location.pathname;
+        var base = document.getElementById('base-hint');
+
+        // Recover the deploy base. Vite substitutes nothing here (this file is
+        // copied verbatim), so derive it from the path itself: the project base
+        // is the leading segment(s) that precede the requested deep path. The
+        // application always serves index.html at the base root, so we walk up
+        // one segment at a time and stop at the first one that exists — but
+        // because we cannot probe without a request, we instead use the
+        // conventional single-segment project base, and correctly handle the
+        // zero-segment (custom domain / user site) case.
+
+        // Strip a trailing "/index.html" if the host resolved it that way.
+        path = path.replace(/\/index\.html$/, '');
+
+        var segments = path.split('/').filter(Boolean);
+
+        // Decide how many leading segments are the deploy base. This file is
+        // emitted to the ROOT of the built site, so `./` in this document's own
+        // URL is the base. Deriving it from the script's own location is the only
+        // reliable, host-independent answer.
+        var basePath = '/';
+        try {
+          // thisScript will be undefined in some browsers; fall back below.
+          var scripts = document.getElementsByTagName('script');
+          var src = scripts[scripts.length - 1].src || '';
+          if (src) {
+            var u = new URL(src, location.href);
+            // The script lives at <base>/404.html, so its directory IS the base.
+            basePath = u.pathname.replace(/[^/]*$/, '');
+          }
+        } catch (e) {
+          /* fall through to the heuristic below */
+        }
+
+        if (basePath === '/' && segments.length > 1) {
+          // Heuristic: assume the first segment is the project base. This is the
+          // correct answer for a Pages project site, which is the case that
+          // matters; if it is wrong the app's own 404 page still resolves it.
+          basePath = '/' + segments[0] + '/';
+        }
+
+        var deep = location.pathname.slice(basePath.length - 1);
+        if (deep.charAt(0) === '/') deep = deep.slice(1);
+
+        var search = location.search ? location.search.replace(/^\?/, '&') : '';
+        var hash = location.hash || '';
+
+        if (!deep) {
+          // Nothing to restore — this really is an unknown path.
+          document.getElementById('msg').textContent =
+            '这个地址没有对应的页面。';
+          document.getElementById('fallback').setAttribute('href', basePath);
+          return;
+        }
+
+        var target = basePath + '?/' + deep + search + hash;
+
+        if (base) {
+          base.parentNode && base.parentNode.removeChild(base);
+        }
+
+        location.replace(target);
+      })();
+    </script>
+    <span id="base-hint" hidden></span>
+  </body>
+</html>

@@ -1,0 +1,169 @@
+/* ==========================================================================
+   VisionBackdrop — the cinematic field behind the brand core.
+
+   Four layers, painted in order. The important property is that layers 1, 3 and
+   4 are unconditional: the backdrop is a complete composition before any
+   photograph is involved, so a missing or slow image never produces a blank or
+   half-finished page.
+   ========================================================================== */
+
+.vback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Contain the paint: none of this may affect layout, and it must not be able
+     to create a scroll region. */
+  contain: strict;
+}
+
+/* ------------------------------------------------------- L1 · drawn field -- */
+
+/*
+  The drawn composition is not a placeholder for the photograph — it is the
+  design's floor. On a light ground it is built from three soft cool sources plus
+  a very slight vertical ramp, which together give the page depth before any
+  content exists.
+*/
+.vback__drawn {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      68% 52% at 50% 34%,
+      color-mix(in srgb, #bcd6ec 62%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      90% 62% at 12% 6%,
+      color-mix(in srgb, #dbe8f4 78%, transparent) 0%,
+      transparent 66%
+    ),
+    radial-gradient(
+      80% 56% at 92% 88%,
+      color-mix(in srgb, #e8e2d8 62%, transparent) 0%,
+      transparent 68%
+    ),
+    linear-gradient(178deg, #f7f9fb 0%, #eef2f6 52%, #e6ecf2 100%);
+}
+
+/* ----------------------------------------------------------- L2 · photo -- */
+
+/*
+  The photograph is held far back. `saturate(0.62)` is doing real work here: at
+  full saturation, a dark-toned photo behind a light page turns the top of the
+  viewport muddy and the white wordmark disappears. Desaturating and lifting it
+  keeps it as atmosphere.
+
+  `mix-blend-mode: luminosity` is deliberately NOT used — it would discard the
+  photograph's colour entirely, which defeats using a photograph at all.
+*/
+.vback__photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 34%;
+  filter: saturate(0.62) contrast(0.94) brightness(1.22);
+  opacity: calc(1 - var(--photo-overlay, 0.5));
+  animation: vback-in 1400ms var(--ease-standard) both;
+}
+
+@keyframes vback-in {
+  from { opacity: 0; }
+  to { opacity: calc(1 - var(--photo-overlay, 0.5)); }
+}
+
+/* ------------------------------------------------------------ L3 · wash -- */
+
+/*
+  The legibility wash. This is what the brand core's contrast actually rests on,
+  so it is a real layer rather than a nicety:
+
+    • a pale halo behind the centre, which is where the wordmark sits
+    • a vertical ramp that lightens toward the bottom, so the core windows sit on
+      a cleaner field than the hero does
+*/
+.vback__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      58% 42% at 50% 40%,
+      color-mix(in srgb, #ffffff 82%, transparent) 0%,
+      color-mix(in srgb, #ffffff 42%, transparent) 44%,
+      transparent 76%
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, #ffffff 42%, transparent) 0%,
+      transparent 22%,
+      transparent 62%,
+      color-mix(in srgb, #f4f6f8 58%, transparent) 100%
+    );
+}
+
+/* A single very soft directional light, which gives the composition a source
+   rather than making it uniformly lit. */
+.vback__light {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    118deg,
+    color-mix(in srgb, #ffffff 34%, transparent) 0%,
+    transparent 38%,
+    transparent 72%,
+    color-mix(in srgb, #cfe0ef 22%, transparent) 100%
+  );
+}
+
+/* --------------------------------------------------------- L4 · grain -- */
+
+/* The same static turbulence texture the rest of the product uses, at a lower
+   opacity because a light field shows banding more than a dark one and needs
+   proportionally less grain to hide it. */
+.vback__grain {
+  position: absolute;
+  inset: -6%;
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.34'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* --------------------------------------------------------- overrides -- */
+
+/* Reduced transparency: the photographic layer is dropped entirely and the drawn
+   field carries the page on its own. */
+[data-transparency='reduced'] .vback__photo {
+  display: none;
+}
+
+[data-transparency='reduced'] .vback__light {
+  display: none;
+}
+
+/* Forced high contrast: a flat, predictable field. */
+[data-contrast='high'] .vback__photo,
+[data-contrast='high'] .vback__grain,
+[data-contrast='high'] .vback__light {
+  display: none;
+}
+
+[data-contrast='high'] .vback__drawn {
+  background: var(--color-canvas);
+}
+
+[data-contrast='high'] .vback__wash {
+  background: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vback__photo {
+    animation: none;
+  }
+
+  .vback__grain {
+    animation: none;
+  }
+}

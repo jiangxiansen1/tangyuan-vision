@@ -1,0 +1,166 @@
+/* ==========================================================================
+   MiniWindow — tier 3a. Compact, quiet, deliberately unlike the core pair.
+   ========================================================================== */
+
+.mwin {
+  list-style: none;
+  min-width: 0;
+}
+
+.mwin__btn {
+  --mw-shift: 0px;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: stretch;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  border: 1px solid color-mix(in srgb, var(--color-text) 9%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow: var(--sh-raised);
+  text-align: left;
+  transition:
+    border-color var(--t-base) var(--ease-standard),
+    box-shadow var(--t-base) var(--ease-standard),
+    transform var(--t-base) var(--ease-entrance);
+}
+
+.mwin__btn:hover {
+  border-color: color-mix(in srgb, var(--color-text) 16%, transparent);
+  box-shadow: var(--sh-float);
+  transform: translateY(-2px);
+}
+
+.mwin__btn:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--sh-raised),
+    0 0 0 2px var(--color-canvas),
+    0 0 0 4px var(--color-focus);
+}
+
+/* ------------------------------------------------------------------ strip -- */
+
+.mwin__strip {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  border-right: 1px solid color-mix(in srgb, var(--color-text) 7%, transparent);
+  /* The drift is applied here so the three frames move as one surface. */
+  transform: translate3d(var(--mw-shift), 0, 0);
+  transition: transform var(--t-slow) var(--ease-entrance);
+}
+
+.mwin__strip-item {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  min-height: 96px;
+}
+
+.mwin__strip-item > * {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+/* Desaturated to near-monochrome: at this size a full-colour strip would read as
+   a second photographic element and pull attention from the core pair. */
+.mwin__strip-item {
+  filter: saturate(0.42) brightness(1.06);
+}
+
+/* ------------------------------------------------------------------- body -- */
+
+.mwin__body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.mwin__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--scene-accent, var(--color-accent)) 30%, transparent);
+  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 12%, transparent);
+  color: var(--scene-accent, var(--color-accent));
+  flex: none;
+}
+
+.mwin__titles {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.mwin__title {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--color-text);
+  letter-spacing: var(--ls-title);
+}
+
+.mwin__blurb {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  line-height: var(--lh-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mwin__arrow {
+  color: var(--color-text-dim);
+  transition: transform var(--t-base) var(--ease-standard), color var(--t-base) var(--ease-standard);
+}
+
+.mwin__btn:hover .mwin__arrow,
+.mwin__btn:focus-visible .mwin__arrow {
+  transform: translateX(3px);
+  color: var(--scene-accent, var(--color-accent));
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
+@media (max-width: 767px) {
+  .mwin__btn {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .mwin__strip-item {
+    min-height: 78px;
+  }
+
+  .mwin__blurb {
+    /* A phone should show the whole line rather than an ellipsis, because there
+       is room for it once the window is full width. */
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mwin__btn,
+  .mwin__strip,
+  .mwin__arrow {
+    transition: none;
+  }
+
+  .mwin__btn:hover {
+    transform: none;
+  }
+
+  .mwin__strip {
+    transform: none;
+  }
+}

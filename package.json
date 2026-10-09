@@ -1,0 +1,43 @@
+{
+  "name": "tangyuan-vision",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "汤圆Vision（汤圆视界）— 以摄影与地球 Online 进度为核心的沉浸式个人数字空间",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:only": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --pretty",
+    "lint": "eslint .",
+    "cms": "decap-server",
+    "assets:brand": "node tools/build-brand-assets.cjs",
+    "assets:stock": "node tools/build-sample-photos.cjs",
+    "assets:audio": "node tools/build-audio.cjs"
+  },
+  "dependencies": {
+    "motion": "^12.23.12",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.1",
+    "three": "^0.180.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.0.2",
+    "decap-server": "^3.3.3",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.21",
+    "globals": "^16.4.0",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.44.1",
+    "vite": "^7.1.7"
+  }
+}

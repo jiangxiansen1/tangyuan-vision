@@ -1,0 +1,422 @@
+/* ==========================================================================
+   CoreWindow — tier 2. The two windows that carry the site.
+
+   COMPOSITION
+   The two are deliberately unequal. The photography window leads with a tall
+   image stack; the Earth window is set lower and carries a live globe. That
+   offset is what keeps the pair from reading as a two-column grid, while the
+   shared frame, radius and type scale keep them obviously a set.
+   ========================================================================== */
+
+.cwin {
+  list-style: none;
+  min-width: 0;
+  /* The offset is applied here rather than to the button so the grid row keeps
+     its own height and the two windows cannot overlap on a narrow tablet. */
+  padding-block-end: var(--cwin-offset, 0);
+}
+
+.cwin[data-side='right'] {
+  --cwin-offset: clamp(0px, 4vw, 56px);
+}
+
+.cwin__btn {
+  --cw-tilt-x: 0deg;
+  --cw-tilt-y: 0deg;
+  --cw-par-x: 0px;
+  --cw-par-y: 0px;
+  --cw-mx: 50%;
+  --cw-my: 40%;
+
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--r-2xl);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-text) 9%, transparent);
+  background: var(--color-surface);
+  box-shadow: var(--sh-window);
+  /* The perspective lives on the button so the child's rotate reads as depth. */
+  perspective: 1400px;
+  transform: translateZ(0);
+  transition:
+    transform var(--t-slow) var(--ease-entrance),
+    box-shadow var(--t-base) var(--ease-standard),
+    border-color var(--t-base) var(--ease-standard);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The photography window is taller; the Earth window is wider-feeling. Both are
+   clamped so the pair never exceeds a comfortable viewport height. */
+.cwin[data-scene='photography'] .cwin__btn {
+  aspect-ratio: 4 / 5;
+  max-height: min(72vh, 780px);
+}
+
+.cwin[data-scene='earth'] .cwin__btn {
+  aspect-ratio: 4 / 4.4;
+  max-height: min(66vh, 700px);
+}
+
+.cwin__btn:hover {
+  border-color: color-mix(in srgb, var(--color-text) 16%, transparent);
+  box-shadow: var(--sh-float);
+}
+
+/* Focus must be unmistakable on a surface this large. */
+.cwin__btn:focus-visible {
+  outline: none;
+  border-color: transparent;
+  box-shadow:
+    var(--sh-window),
+    0 0 0 2px var(--color-canvas),
+    0 0 0 4px var(--color-focus);
+}
+
+/* ------------------------------------------------------------- preview -- */
+
+.cwin__preview {
+  position: absolute;
+  inset: 0;
+  display: block;
+  /* The parallax is a tiny counter-drift, applied to the whole preview rather
+     than to each layer, which keeps it to one composited transform. */
+  transform: translate3d(var(--cw-par-x), var(--cw-par-y), 0);
+  transition: transform var(--t-slow) var(--ease-entrance);
+}
+
+/* The frame holds the main image. On the photography window it is inset from the
+   edges so the stack behind it is visible, which is the whole point of a stack. */
+.cwin__frame {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-float);
+}
+
+.cwin[data-scene='photography'] .cwin__frame {
+  inset: 7% 7% 20% 7%;
+  rotate: -0.7deg;
+  transition: rotate var(--t-slow) var(--ease-entrance), inset var(--t-slow) var(--ease-entrance);
+}
+
+.cwin[data-scene='earth'] .cwin__frame {
+  inset: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.cwin__image {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+/* The two frames stacked behind, offset and rotated very slightly. They are the
+   visual argument that this window opens onto a larger body of work. */
+.cwin__stack {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-raised);
+  opacity: 0.72;
+  transition: transform var(--t-slow) var(--ease-entrance), opacity var(--t-base) var(--ease-standard);
+}
+
+.cwin__stack--b {
+  inset: 4% 12% 24% 3%;
+  rotate: -3.6deg;
+}
+
+.cwin__stack--c {
+  inset: 10% 3% 19% 12%;
+  rotate: 3.1deg;
+  opacity: 0.5;
+}
+
+.cwin__stack > * {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.cwin__btn:hover .cwin__stack--b {
+  transform: translate3d(-2%, -1.4%, 0);
+  opacity: 0.86;
+}
+
+.cwin__btn:hover .cwin__stack--c {
+  transform: translate3d(2%, -1%, 0);
+  opacity: 0.62;
+}
+
+.cwin__btn:hover .cwin[data-scene='photography'] .cwin__frame {
+  rotate: -0.2deg;
+}
+
+/* The Earth window's globe fills its frame. */
+.cwin__globe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.cwin__globe .eglobe {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  /* The preview is decorative here: the real interaction happens on the Earth
+     page, and a nested canvas that also accepts drags would fight the window's
+     own click-to-open. */
+  pointer-events: none;
+}
+
+/* The drawn stand-in used before the globe chunk resolves, and when the visitor
+   has chosen minimum quality. Composed, not empty. */
+.cwin__globe-static {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background:
+    radial-gradient(38% 38% at 50% 46%, rgb(64 132 198 / 0.5) 0%, transparent 70%),
+    radial-gradient(26% 26% at 50% 46%, rgb(18 52 96 / 0.9) 0%, transparent 68%),
+    radial-gradient(120% 90% at 50% 50%, #0b1220 0%, #05070d 70%);
+}
+
+.cwin__globe-static::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  translate: -50% -50%;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow:
+    inset -16px -12px 44px rgb(0 0 0 / 0.62),
+    inset 12px 10px 32px rgb(90 160 230 / 0.18),
+    0 0 70px rgb(40 110 180 / 0.24);
+}
+
+/* A left-to-right wash, so the text block at the bottom always has contrast
+   regardless of what the preview is showing. */
+.cwin__scrim {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, #0b1220 78%, transparent) 0%,
+      color-mix(in srgb, #0b1220 44%, transparent) 34%,
+      color-mix(in srgb, #0b1220 12%, transparent) 62%,
+      transparent 100%
+    );
+}
+
+/* Pointer-tracked specular, the same idiom as the glass material so the window
+   belongs to the same product. */
+.cwin__specular {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  background: radial-gradient(
+    300px circle at var(--cw-mx) var(--cw-my),
+    rgb(255 255 255 / 0.16) 0%,
+    transparent 62%
+  );
+  mix-blend-mode: screen;
+  transition: opacity var(--t-slow) var(--ease-standard);
+}
+
+.cwin__btn:hover .cwin__specular {
+  opacity: 1;
+}
+
+/* -------------------------------------------------------------- content -- */
+
+.cwin__body {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: grid;
+  gap: var(--sp-3);
+  padding: clamp(var(--sp-5), 2.4vw, var(--sp-8));
+  /* Text on the scrim is the one place in the light theme where the ink is
+     light, because the ground beneath it is a dark image wash. This is
+     deliberate and verified: white on #0b1220 at 78% is well above AA. */
+  color: var(--c-frost);
+}
+
+.cwin__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.cwin__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  flex: none;
+}
+
+.cwin__eyebrow {
+  color: rgb(255 255 255 / 0.72);
+}
+
+.cwin__titles {
+  display: grid;
+  gap: 4px;
+}
+
+.cwin__title {
+  font-size: clamp(1.5rem, 1.1rem + 1.7vw, 2.4rem);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-title);
+  line-height: 1.1;
+}
+
+.cwin__blurb {
+  font-size: var(--fs-small);
+  line-height: var(--lh-normal);
+  color: rgb(255 255 255 / 0.76);
+  max-width: 34ch;
+}
+
+.cwin__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid rgb(255 255 255 / 0.16);
+  margin-top: var(--sp-2);
+}
+
+.cwin__enter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+
+.cwin__enter svg {
+  transition: transform var(--t-base) var(--ease-standard);
+}
+
+.cwin__btn:hover .cwin__enter svg,
+.cwin__btn:focus-visible .cwin__enter svg {
+  transform: translateX(4px);
+}
+
+.cwin__key {
+  opacity: 0.5;
+  transition: opacity var(--t-base) var(--ease-standard);
+}
+
+.cwin__btn:hover .cwin__key,
+.cwin__btn:focus-visible .cwin__key {
+  opacity: 1;
+}
+
+/* The key chip on the image needs light-on-dark, not the default light chip. */
+.cwin__key kbd {
+  border-color: rgb(255 255 255 / 0.24);
+  background: rgb(255 255 255 / 0.14);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
+/* Tablet: the pair becomes two equal columns and the Earth offset is removed, so
+   neither window is pushed into a shorter row than the other. */
+@media (max-width: 1023px) {
+  .cwin[data-side='right'] {
+    --cwin-offset: 0;
+  }
+
+  .cwin[data-scene='photography'] .cwin__btn,
+  .cwin[data-scene='earth'] .cwin__btn {
+    aspect-ratio: 4 / 4.6;
+    max-height: none;
+  }
+}
+
+/* Phone: a single column, and each window becomes a wide banner rather than a
+   tall card — a tall card would put its own text below the fold. */
+@media (max-width: 767px) {
+  .cwin__btn,
+  .cwin[data-scene='photography'] .cwin__btn,
+  .cwin[data-scene='earth'] .cwin__btn {
+    aspect-ratio: 3 / 3.4;
+    max-height: 78vh;
+    /* No tilt on touch: there is no hover, and a 3D transform on a phone makes
+       the text inside feel unsteady. */
+    perspective: none;
+  }
+
+  .cwin__preview {
+    transform: none;
+  }
+
+  .cwin__body {
+    padding: var(--sp-5);
+    gap: var(--sp-2);
+  }
+
+  .cwin__title {
+    font-size: 1.5rem;
+  }
+
+  .cwin__blurb {
+    font-size: var(--fs-caption);
+  }
+
+  /* The stack is decorative and costs horizontal room a phone does not have. */
+  .cwin__stack {
+    display: none;
+  }
+
+  .cwin[data-scene='photography'] .cwin__frame {
+    inset: 5% 5% 30% 5%;
+    rotate: 0deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cwin__btn,
+  .cwin__preview,
+  .cwin__frame,
+  .cwin__stack {
+    transition: none;
+  }
+
+  .cwin__preview {
+    transform: none;
+  }
+}
+
+/* High contrast: the preview scrim is strengthened so the text contrast is not
+   dependent on the image. */
+[data-contrast='high'] .cwin__scrim {
+  background: color-mix(in srgb, #05070d 88%, transparent);
+}
+
+[data-contrast='high'] .cwin__specular {
+  display: none;
+}

@@ -1,0 +1,120 @@
+/* ==========================================================================
+   motion.css — shared motion primitives.
+
+   Transition orchestration lives in src/components/transitions (Motion for React
+   drives route changes); this file only carries the small, declarative reveals
+   that would be wasteful to run through JS: entrance of static blocks, the
+   marquee-free ambient drift, and the reveal-on-scroll fallback.
+   ========================================================================== */
+
+/* ---------------------------------------------------------- route shell -- */
+
+/* The route container fades its chrome without touching layout, which is what
+   prevents the layout jump you otherwise get when two pages swap. */
+.route-shell {
+  min-height: 100dvh;
+  will-change: opacity;
+}
+
+/* --------------------------------------------------------- reveal on view --
+   Progressive enhancement: content is fully visible without JS or with
+   reduced-motion. The `.is-armed` class is added by JS only once the
+   IntersectionObserver is live, so a JS failure can never hide content.        */
+
+.reveal.is-armed {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+}
+
+.reveal.is-armed.is-revealed {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--t-slower) var(--ease-entrance),
+    transform var(--t-slower) var(--ease-entrance);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal.is-armed {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------- ambient -- */
+
+/* A very slow breathing light. 24 s, transform/opacity only, and it is disabled
+   outright for reduced-motion. */
+@keyframes tv-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: var(--drift-opacity, 0.5);
+  }
+  50% {
+    transform: translate3d(1.5%, -1.2%, 0) scale(1.06);
+    opacity: calc(var(--drift-opacity, 0.5) * 1.3);
+  }
+}
+
+.ambient-drift {
+  animation: tv-drift 24s var(--ease-standard) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-drift {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------- instrumentation UI -- */
+
+/* A 1px line that draws in when a panel opens. Width-only, cheap. */
+@keyframes tv-scan {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.scanline {
+  transform-origin: left center;
+  animation: tv-scan var(--t-slower) var(--ease-entrance) both;
+}
+
+/* Slow pulse for "live" indicators. Two states only, never a strobe. */
+@keyframes tv-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.pulse {
+  animation: tv-pulse 2600ms var(--ease-standard) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse { animation: none; opacity: 1; }
+  .scanline { animation: none; }
+}
+
+/* -------------------------------------------------------------- shimmer -- */
+
+/* Logo / image skeleton. Travels left to right, low alpha, no white blowout. */
+@keyframes tv-shimmer {
+  from { background-position: -160% 0; }
+  to { background-position: 260% 0; }
+}
+
+.shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--c-mist) 9%, transparent) 46%,
+    transparent 72%
+  );
+  background-size: 220% 100%;
+  animation: tv-shimmer 1800ms var(--ease-standard) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { animation: none; }
+}

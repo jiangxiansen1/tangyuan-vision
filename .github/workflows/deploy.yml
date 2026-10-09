@@ -1,0 +1,120 @@
+# GitHub Pages deployment.
+#
+# WHAT THIS DOES
+#   push to main  ->  install  ->  typecheck  ->  lint  ->  build  ->  publish dist/
+#
+# The workflow is what makes the deploy reproducible: it pins the Node version,
+# derives the Pages sub-path from GITHUB_REPOSITORY automatically (see
+# vite.config.ts), and fails the run if typecheck or lint fails rather than
+# publishing a broken build.
+#
+# WHAT YOU MUST DO ONCE, IN THE REPOSITORY SETTINGS
+#   Settings -> Pages -> Build and deployment -> Source = "GitHub Actions"
+# No branch needs to be selected; this workflow uploads an artifact instead of
+# pushing to a gh-pages branch. That is the current recommended approach and it
+# avoids a second branch entirely.
+#
+# IF YOUR DEFAULT BRANCH IS NOT `main`
+#   Change the branch name in the `on.push.branches` list below (and in the
+#   workflow_dispatch trigger, which needs no change).
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Lets you re-run a deploy from the Actions tab without pushing a commit.
+  workflow_dispatch:
+
+# Least privilege: the deploy job needs exactly these, and nothing else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race. `cancel-in-progress: false` means an in-flight
+# deploy finishes rather than being interrupted mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          # Keep this in step with the `packageManager` field if you add one.
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        # --frozen-lockfile makes CI fail on a lockfile drift instead of silently
+        # resolving different versions from the ones that were tested.
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build
+        # GITHUB_REPOSITORY is provided by Actions and is what vite.config.ts
+        # turns into the correct Pages sub-path. Do not hardcode a base here.
+        run: pnpm run build
+
+      - name: Verify the deep-link fallback was emitted
+        # A missing 404.html breaks refreshes on every sub-route, and it is
+        # exactly the kind of thing that is easy to lose in a refactor. Fail here
+        # rather than discovering it in production.
+        run: |
+          if [ ! -f dist/404.html ]; then
+            echo "::error::dist/404.html is missing - deep links would 404 on refresh."
+            exit 1
+          fi
+          if [ ! -f dist/admin/index.html ]; then
+            echo "::warning::dist/admin/index.html is missing - the CMS admin will not be served."
+          fi
+          echo "Build output:"
+          ls -la dist/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Report the deployed URL
+        run: |
+          echo "### Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Site: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "Admin: ${{ steps.deployment.outputs.page_url }}admin/" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "If a deep link 404s on refresh, confirm Pages is set to 'GitHub Actions'" >> $GITHUB_STEP_SUMMARY
+          echo "and that dist/404.html was published." >> $GITHUB_STEP_SUMMARY
