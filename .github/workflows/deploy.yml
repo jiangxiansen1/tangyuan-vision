@@ -47,17 +47,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
+      # No `with: version:` here, ON PURPOSE.
+      #
+      # package.json already pins `packageManager: pnpm@11.8.0`, and
+      # pnpm/action-setup@v4 reads that field on its own. Specifying `version: 11`
+      # as well made the action refuse to start, with:
+      #
+      #   Error: Multiple versions of pnpm specified:
+      #   - version 11 in the GitHub Action config with the key "version"
+      #   - version pnpm@11.8.0 in the package.json with the key "packageManager"
+      #   Remove one of these versions to avoid version mismatch errors like
+      #   ERR_PNPM_BAD_PM_VERSION
+      #
+      # That failed run #1 in 9 seconds, before a single dependency was
+      # installed. One source of truth: package.json.
+      #
+      # Why the pin still matters: pnpm 11 owns pnpm-workspace.yaml's
+      # `allowBuilds`, so esbuild's postinstall runs. pnpm 10 does not understand
+      # that key and the build dies with "esbuild binary not found".
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
-        with:
-          # Must match the pnpm major that owns pnpm-workspace.yaml (`allowBuilds`)
-          # and this lockfile: pnpm 11. pnpm 10 does not understand `allowBuilds`,
-          # so esbuild's postinstall would be blocked and the build would die with
-          # "esbuild binary not found". Verified 2026-10-11: node_modules was
-          # installed by pnpm@11.8.0 (see node_modules/.modules.yaml).
-          version: 11
 
       - name: Set up Node
         uses: actions/setup-node@v4
