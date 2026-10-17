@@ -26,6 +26,24 @@ import './styles/globals.css';
 // Must run before the router is instantiated: it rewrites the URL in place.
 restoreDeepLink();
 
+/*
+ * START AT THE TOP, ALWAYS.
+ *
+ * The home page is a narrative of five full-viewport scenes (01 hub -> 02 earth
+ * -> 03 photography -> 04 create -> 05 contact). With the browser's default
+ * `scrollRestoration: 'auto'`, a reload or a revisit of the same URL restores the
+ * previous scroll offset — so a visitor who had scrolled to the earth and came
+ * back later was dropped straight onto the SECOND screen, with the hub they
+ * expected nowhere in sight. Measured: scroll to 900, reload, still 900.
+ *
+ * 'manual' makes the browser stop restoring, and the document starts at 0.
+ * In-app navigation is unaffected: RouteTransition already scrolls to the top on
+ * every route change, so this only removes the one behaviour nobody wanted.
+ */
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
 // Installed before React mounts so an error thrown while a module evaluates is
 // still captured. Active in development, and in production only with ?diag=1.
 if (diagnosticsEnabled()) installDiagnostics();

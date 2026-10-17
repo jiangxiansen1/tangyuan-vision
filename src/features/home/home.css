@@ -1,25 +1,16 @@
 /* ==========================================================================
-   HomePage — the V4 spatial hub.
+   HomePage — the vertical scene narrative (P2 structural correction).
 
-   ONE ROW, THREE TRACKS
-   =====================
-   The brief is specific: the brand must sit BETWEEN the two core windows, not in
-   a banner above them. That is enforced structurally by the grid below — the
-   brand is the middle track, a SIBLING of the two windows, so it cannot drift
-   above them at any width.
+   This file owns only what is specific to the home page chrome and the brand
+   stage: the floating chrome, the 100svh stage, the entrance gate, the scroll
+   hint, the quiet sub-page row and the footer. The five theme scenes live in
+   scenes/scenes.css; the backdrop in vision-backdrop.css; the particles in
+   cursor-field.css.
 
-       [ 摄影 ][ 品牌 ][ 地球 ]
-
-   The tracks are deliberately unequal. The windows carry the interaction and get
-   the width; the brand is the anchor and takes the middle. Equal thirds would put
-   the wordmark in direct competition with the things you can click.
-
-   BELOW THE ROW, IN DESCENDING WEIGHT
-     3a  Lab and Projects — compact windows
-     3b  About / Journal / Contact / hidden — text-weight links, no surface
-
-   At <=900px the row stacks: brand first, then the two windows vertically, which
-   is the only arrangement where both remain usable on a phone.
+   THE LEFT GUTTER
+   `--rail-gutter` reserves the left edge for the P3 SceneRail. Every scene and
+   the stage inherit it, so the rail overlays empty margin later without any
+   reflow of any scene.
    ========================================================================== */
 
 .vhome {
@@ -29,20 +20,23 @@
   flex-direction: column;
   isolation: isolate;
   overflow-x: clip;
+  --rail-gutter: 0px;
+  --gutter-l: calc(var(--shell-pad) + var(--rail-gutter));
+}
+
+@media (min-width: 900px) {
+  .vhome {
+    --rail-gutter: 64px;
+  }
 }
 
 /*
-  Every direct child sits above the backdrop, EXCEPT the two full-bleed layers that
-  ARE the backdrop and position themselves.
-
-  `.cfield` is excluded for a MEASURED reason, not a theoretical one. This rule gave
-  the field `position: relative`, which overrode its own `position: absolute` — and
-  a relative element with `inset: 0` has NO height. The field rendered at 1290 x 0
-  with a 1px-tall canvas drawing buffer: mounted correctly, shader compiled, drew
-  nothing at all. Both full-bleed layers must be listed here, or the next one added
-  to this page hits the same invisible failure.
+  Every direct child sits above the backdrop, EXCEPT the two full-bleed layers
+  that ARE the backdrop, the floating chrome and the skip link (both position
+  themselves). `.cfield` is excluded for a MEASURED reason: a relative position
+  there once collapsed the particle canvas to 0px height.
 */
-.vhome > *:not(.vback):not(.cfield) {
+.vhome > *:not(.vback):not(.cfield):not(.vhome__chrome):not(.skip-link) {
   position: relative;
   z-index: 1;
 }
@@ -50,12 +44,14 @@
 /* ---------------------------------------------------------------- chrome -- */
 
 .vhome__chrome {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-4);
-  padding: clamp(14px, 2vh, 24px) var(--shell-pad);
-  flex: none;
+  padding: clamp(14px, 2.4vh, 26px) var(--shell-pad) clamp(14px, 2.4vh, 26px) var(--gutter-l);
 }
 
 .vhome__brand-mark {
@@ -80,135 +76,157 @@
   flex: none;
 }
 
-/* ========================================================= THE ONE ROW == */
+/* =========================================================== 01 · stage == */
 
-/*
-  Three tracks: window, brand, window.
-
-  The side tracks are `1fr` each so the two windows stay equal to EACH OTHER —
-  which is what makes the composition read as balanced around the brand — while
-  the middle track is intrinsically sized by the wordmark. `minmax(0, 1fr)`
-  rather than `1fr` on the sides is load-bearing: a grid track defaults to a
-  minimum of `auto`, so a wide child (the photo stack) can force the row wider
-  than the viewport and produce a horizontal scrollbar.
-*/
-.vhome__row {
-  flex: 1 1 auto;
+.vhome__stage {
+  position: relative;
+  min-height: 100svh;
   display: grid;
-  /* The middle track is INTRINSIC. A fixed width would fight the lockup’s own
-     fluid font-size — two independent clamps that cannot agree — which is how the
-     first V4 build painted the wordmark across both windows. Sizing the track to
-     its content derives both from the same source. */
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(14px, 2.2vw, 44px);
+  align-content: center;
+  padding: clamp(64px, 10vh, 110px) 0 clamp(56px, 9vh, 96px);
+}
+
+.vhome__stage-inner {
   width: 100%;
   max-width: var(--shell-max);
   margin-inline: auto;
-  /* min-width: 0 here plus minmax(0, ...) on the side tracks is what stops a wide
-     child forcing the row past the viewport and creating a scrollbar. */
-  min-width: 0;
-  padding: clamp(12px, 2vh, 30px) var(--shell-pad) clamp(28px, 5vh, 64px);
-}
-
-.vhome__slot {
-  min-width: 0;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-}
-
-/* ------------------------------------------------ the middle brand track -- */
-
-/*
-  Intrinsically sized, and NOT a card. It gets a comfortable measure so the
-  wordmark and the gloss line have room, but no surface, no border and no shadow —
-  a panel around the brand is exactly what the brief rules out.
-*/
-.vhome__axis {
+  padding-inline: var(--gutter-l) var(--shell-pad);
   display: grid;
-  justify-items: center;
+  justify-items: start;
+  gap: var(--sp-6);
   min-width: 0;
-  /* No fixed width: the track sizes to this element, so the brand defines its own
-     column rather than being poured into a width chosen elsewhere. */
-  width: auto;
-  max-width: 100%;
-  padding-inline: clamp(4px, 1vw, 16px);
 }
 
-/* ------------------------------------------------------------- responsive -- */
-
-/*
-  Tablet and below: the row becomes two columns with the brand spanning both, so
-  the windows stay side by side (which at 900px still gives each a usable width)
-  while the brand is no longer squeezed between them.
-*/
-@media (max-width: 1023px) {
-  .vhome__row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    gap: clamp(14px, 2.4vw, 32px);
-  }
-
-  .vhome__axis {
-    /* First in the DOM order would put it between the windows; order moves it to
-       the top row instead, which is the only honest place for it once the windows
-       can no longer flank it. */
-    order: -1;
-    grid-column: 1 / -1;
-    width: 100%;
-    max-width: 100%;
-    padding-block-end: clamp(8px, 2vh, 24px);
-  }
-}
-
-/*
-  Phone: a single column throughout. The brand leads, then the two windows stack,
-  then the smaller entries.
-*/
-@media (max-width: 767px) {
-  .vhome__row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--sp-5);
-    padding-inline: var(--shell-pad);
-  }
-
-  .vhome__slot {
-    display: block;
-  }
-}
-
-/* ================================================== TIER 3a · compact pair == */
-
-.vhome__mini {
-  flex: none;
-  padding: 0 var(--shell-pad) clamp(28px, 4vh, 52px);
-}
-
-.vhome__section-label {
-  display: block;
-  max-width: var(--shell-max);
-  margin-inline: auto;
-  margin-block-end: var(--sp-4);
+.vhome__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
   color: var(--color-text-dim);
 }
 
-.vhome__mini-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(14px, 1.6vw, 22px);
-  width: 100%;
-  max-width: var(--shell-max);
-  margin-inline: auto;
-  list-style: none;
+.vhome__eyebrow-rule {
+  width: clamp(28px, 4vw, 56px);
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--c-cryo-300) 55%, transparent),
+    color-mix(in srgb, var(--c-mist) 12%, transparent)
+  );
 }
 
-/* ================================================== TIER 3b · quiet links == */
+/* Left-aligned on the stage: a left edge gives the negative space on the right
+   somewhere to breathe, which is what makes the field feel deep. */
+.vhome__stage .bcore {
+  justify-items: start;
+  text-align: left;
+}
+
+/* The tagline yields to the statement here; the statement is the CMS-owned voice. */
+.vhome__stage .bcore__tagline {
+  display: none;
+}
+
+.vhome__stage .bcore__statement {
+  margin-inline: 0;
+  color: var(--c-silver);
+}
+
+/* ------------------------------------------------------- the scroll hint -- */
+
+.vhome__scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 3.4vh, 34px);
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  color: var(--color-text-dim);
+  transition:
+    opacity 480ms var(--ease-standard),
+    transform 480ms var(--ease-standard);
+}
+
+.vhome[data-scrolled] .vhome__scroll-hint {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+  pointer-events: none;
+}
+
+.vhome__scroll-text {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-size: var(--fs-caption);
+  letter-spacing: 0.08em;
+}
+
+.vhome__scroll-en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.34em;
+  color: var(--color-text-dim);
+}
+
+.vhome__scroll-line {
+  position: relative;
+  width: 1px;
+  height: 44px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--c-mist) 14%, transparent);
+}
+
+.vhome__scroll-line::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 12px;
+  background: linear-gradient(to bottom, transparent, var(--c-cryo-300));
+  animation: vhome-hint 2400ms var(--ease-standard) 1200ms infinite;
+}
+
+@keyframes vhome-hint {
+  0% { transform: translateY(-14px); opacity: 0; }
+  18% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { transform: translateY(46px); opacity: 0; }
+}
+
+/* ---------------------------------------------------------- the entrance -- */
+
+.vhome__stage-inner > *,
+.vhome__scroll-hint {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 900ms var(--ease-entrance),
+    transform 900ms var(--ease-entrance);
+}
+
+.vhome__scroll-hint {
+  transform: translateX(-50%) translateY(18px);
+}
+
+.vhome[data-entered] .vhome__stage-inner > *,
+.vhome[data-entered] .vhome__scroll-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.vhome[data-entered] .vhome__scroll-hint {
+  transform: translateX(-50%) translateY(0);
+  transition-delay: 460ms;
+}
+
+.vhome[data-entered] .vhome__stage-inner > *:nth-child(2) {
+  transition-delay: 110ms;
+}
+
+/* ================================================== quiet row & footer == */
 
 .vhome__quiet {
-  flex: none;
-  padding: 0 var(--shell-pad) clamp(20px, 3vh, 40px);
+  padding: 0 0 clamp(20px, 3vh, 40px);
 }
 
 .vhome__quiet-list {
@@ -220,15 +238,13 @@
   max-width: var(--shell-max);
   margin-inline: auto;
   padding-top: clamp(16px, 2.2vh, 26px);
+  padding-inline: var(--gutter-l) var(--shell-pad);
   border-top: 1px solid var(--color-border);
   list-style: none;
 }
 
-/*
-  Text-weight links. These are the lowest tier, so they carry no surface, no
-  shadow and no preview — only a colour shift on hover. Giving them a card would
-  promote them above the compact pair.
-*/
+/* Text-weight links: no surface, no shadow — a card here would promote a
+   sub-page above the five scenes. */
 .vhome__quiet-link {
   display: inline-flex;
   align-items: center;
@@ -261,7 +277,6 @@
   color: var(--color-text-dim);
 }
 
-/* The hidden entry sits in this row and must not stretch its height. */
 .vhome__quiet .secret-signal {
   min-height: 0;
   display: inline-flex;
@@ -273,44 +288,20 @@
   grid-auto-flow: column;
 }
 
-.vhome__quiet .secret-signal__orb {
-  width: 26px;
-  height: 26px;
-}
-
-.vhome__quiet .secret-signal__ring:nth-child(1) {
-  width: 26px;
-}
-
-.vhome__quiet .secret-signal__ring:nth-child(2) {
-  width: 16px;
-}
-
-.vhome__quiet .secret-signal__text {
-  justify-items: start;
-  text-align: left;
-}
-
-.vhome__quiet .secret-signal__label {
-  font-size: var(--fs-small);
-  letter-spacing: 0.01em;
-  color: var(--color-text-dim);
-}
-
-.vhome__quiet .secret-signal__hint {
-  display: none;
-}
-
-/* ---------------------------------------------------------------- footer -- */
+.vhome__quiet .secret-signal__orb { width: 26px; height: 26px; }
+.vhome__quiet .secret-signal__ring:nth-child(1) { width: 26px; }
+.vhome__quiet .secret-signal__ring:nth-child(2) { width: 16px; }
+.vhome__quiet .secret-signal__text { justify-items: start; text-align: left; }
+.vhome__quiet .secret-signal__label { font-size: var(--fs-small); letter-spacing: 0.01em; color: var(--color-text-dim); }
+.vhome__quiet .secret-signal__hint { display: none; }
 
 .vhome__footer {
-  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-4);
   flex-wrap: wrap;
-  padding: var(--sp-4) var(--shell-pad) clamp(18px, 2.6vh, 32px);
+  padding: var(--sp-4) var(--shell-pad) clamp(18px, 2.6vh, 32px) var(--gutter-l);
   max-width: var(--shell-max);
   margin-inline: auto;
   width: 100%;
@@ -325,9 +316,7 @@
   transition: color var(--t-fast) var(--ease-standard);
 }
 
-.vhome__index-toggle:hover {
-  color: var(--color-text);
-}
+.vhome__index-toggle:hover { color: var(--color-text); }
 
 .vhome__footer-note {
   font-size: var(--fs-caption);
@@ -338,8 +327,8 @@
 /* ------------------------------------------------------------- phone == */
 
 @media (max-width: 767px) {
-  .vhome__mini-grid {
-    grid-template-columns: 1fr;
+  .vhome__stage {
+    padding-top: clamp(72px, 12vh, 120px);
   }
 
   .vhome__quiet-list {
@@ -359,16 +348,25 @@
 
 /* ============================================================ overrides == */
 
-[data-transparency='reduced'] .mwin__btn {
-  background: var(--color-surface);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .vhome__quiet-link,
   .vhome__quiet-link > svg,
   .vhome__index-toggle {
     transition: none;
+  }
+
+  .vhome__stage-inner > *,
+  .vhome__scroll-hint {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .vhome[data-scrolled] .vhome__scroll-hint {
+    transform: none;
+  }
+
+  .vhome__scroll-line::after {
+    animation: none;
   }
 }
