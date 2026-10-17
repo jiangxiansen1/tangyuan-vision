@@ -1,13 +1,22 @@
 {
   "channels": [
     {
+      "id": "douyin",
+      "label": "抖音",
+      "labelEn": "Douyin",
+      "handle": null,
+      "url": null,
+      "confirmed": false,
+      "note": "未提供。请把真实的抖音主页链接填到后台 CMS 的「联系方式」里（config.yml → settings → contact）。填写之前这里显示为待填写，不会伪造一个点不开的链接。"
+    },
+    {
       "id": "email",
       "label": "电子邮箱",
       "labelEn": "Email",
       "handle": null,
       "url": null,
       "confirmed": false,
-      "note": "我刻意没有填写任何邮箱地址。请在后台 CMS 的「联系方式」中填入你希望公开的邮箱，页面上就会显示为可点击的邮件链接；在填写之前，这里会明确显示为待填写状态，而不是一个看起来像真的但发不出去的地址。"
+      "note": "未提供。请在后台 CMS 的「联系方式」中填入你希望公开的邮箱；在填写之前，这里显示为待填写状态，而不是一个看起来像真的但发不出去的地址。"
     },
     {
       "id": "github",
@@ -16,36 +25,9 @@
       "handle": null,
       "url": null,
       "confirmed": false,
-      "note": "未提供。需要真实的账号地址才会显示为链接。"
-    },
-    {
-      "id": "bilibili",
-      "label": "哔哩哔哩",
-      "labelEn": "Bilibili",
-      "handle": null,
-      "url": null,
-      "confirmed": false,
-      "note": "未提供。"
-    },
-    {
-      "id": "xiaohongshu",
-      "label": "小红书",
-      "labelEn": "Xiaohongshu",
-      "handle": null,
-      "url": null,
-      "confirmed": false,
-      "note": "未提供。"
-    },
-    {
-      "id": "wechat",
-      "label": "微信",
-      "labelEn": "WeChat",
-      "handle": null,
-      "url": null,
-      "confirmed": false,
-      "note": "微信不适合以链接形式公开，建议仅在确认后再填写。"
+      "note": "未提供。需要你真实的 GitHub 主页地址（https://github.com/<用户名>）才会显示为链接。"
     }
   ],
-  "privacyNote": "隐私原则：本站只使用昵称「汤圆Vision」，不公开真实姓名、手机号、住址或任何个人敏感信息。所有联系方式均为可编辑字段，未填写前一律显示为待填写状态。",
+  "privacyNote": "隐私原则：本站只使用昵称「汤圆Vision」，不公开真实姓名、手机号、住址或任何个人敏感信息。联系方式只有抖音、邮箱、GitHub 三个可编辑字段，未填写前一律显示为待填写状态，不会伪造账号或指向空锚点的假链接。",
   "formNote": "本站是纯静态站点，没有服务端接口，因此不提供在线留言表单——任何「提交成功」的提示都会是假的。请通过上面填写的联系方式与我联系。"
 }

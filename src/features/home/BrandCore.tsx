@@ -63,6 +63,15 @@ export function BrandCore({ variant = 'full', className }: BrandCoreProps) {
 
       <p className="bcore__tagline-en">{BRAND.taglineEn}</p>
       <p className="bcore__tagline">{BRAND.tagline}</p>
+
+      {/*
+        个人宣言。唯一真源是 CMS 的 brand.statement（src/content/data/brand.json），
+        经 src/content/index.ts 的 BRAND 读取；这里不复制任何文案常量。
+        只在 full 变体渲染——compact 用于 boot 交接，保持极简。
+      */}
+      {variant === 'full' && BRAND.statement ? (
+        <p className="bcore__statement">{BRAND.statement.trim()}</p>
+      ) : null}
     </div>
   );
 }

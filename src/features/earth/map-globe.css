@@ -85,7 +85,7 @@
 /*
   The failure state is deliberately explicit and names the fallback. A silent blank
   globe would be indistinguishable from a slow load, and the page does still work
-  without the map — the region panel, the votes and the search all keep running off
+  without the map — the region panel and the search all keep running off
   the local GeoIndex.
 */
 .mglobe__failed {

@@ -8,43 +8,24 @@
  *   VISITED     the author recorded a real trip. Show the record — dates, story,
  *               photos — and nothing that was not supplied.
  *   PLANNED     the author intends to go. Say so.
- *   UNRECORDED  the author has no record. Say THAT, in plain words, and offer the
- *               visitor something real to do: vote "I want to go too".
+ *   UNRECORDED  the author has no record. Say THAT, in plain words, and leave it
+ *               at that — the panel records the author’s travels; it is not a
+ *               place for visitors to vote, rate or rank destinations.
  *
  * The failure mode being avoided is a country panel that looks equally full for
  * all three, which quietly implies a trip that never happened. So the unrecorded
  * branch leads with the fact rather than with filler prose.
- *
- * The vote count is NEVER invented. When the shared database is not configured,
- * the panel says so and the button explains why it is unavailable — the count
- * field is not rendered with a zero, because a zero is a claim.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { ProvenanceBadge } from '@/components/ui/ProvenanceBadge';
 import { travelFor } from './regions';
+import { provinceCenter } from './admin1-pick';
+import type { Admin1Item } from './admin1';
 import type { RegionShape } from './geo-index';
 import { approximateLocalTime, isDaylight } from './solar';
 import './region-panel.css';
-
-/**
- * The vote state this panel renders.
- *
- * `count` is `number | null`, and the distinction is the whole point:
- *   • a number, including 0, means the backend genuinely reported that value
- *   • null means the value could NOT be read — the write landed but the read-back
- *     failed, or the request errored — and the UI must show a dash rather than
- *     guessing. A fabricated 0 is a claim about data the site does not have.
- */
-export interface RegionVoteState {
-  count: number | null;
-  voted: boolean;
-  pending?: boolean;
-  error?: string | null;
-  /** True when the numbers come from the local DEMO backend, not a real one. */
-  demo?: boolean;
-}
 
 export interface RegionPanelProps {
   region: RegionShape;
@@ -52,13 +33,35 @@ export interface RegionPanelProps {
   label: string;
   /** Photography lookup, so a visited region can show its own photos. */
   photosById: Map<string, { src: string; thumb?: string; title: string; width: number; height: number; tone: string }>;
-  /** Vote state for this region, or null when the backend is unavailable. */
-  vote: RegionVoteState | null;
-  onVote: () => void;
+  /** The real Admin-1 province the visitor picked, or null to show the country. */
+  province?: Admin1Item | null;
+  /** Return from the province to its country panel. */
+  onBackToCountry?: () => void;
   onClose: () => void;
 }
 
-export function RegionPanel({ region, label, photosById, vote, onVote, onClose }: RegionPanelProps) {
+/** Chinese label for a Natural Earth Admin-1 feature type, when one exists. */
+const PROVINCE_TYPE_ZH: Record<string, string> = {
+  Province: '省',
+  'Autonomous Region': '自治区',
+  Municipality: '直辖市',
+  'Special Administrative Region': '特别行政区',
+  Region: '地区',
+  State: '州',
+  Territory: '领地',
+  District: '区',
+  Governorate: '省',
+  Prefecture: '地区',
+  County: '县',
+  Department: '省',
+};
+
+/** The most human label the data actually carries; never invented. */
+function provinceLabel(p: Admin1Item): string {
+  return p.nameZh || p.nameEn || p.name;
+}
+
+export function RegionPanel({ region, label, photosById, province = null, onBackToCountry, onClose }: RegionPanelProps) {
   const travel = travelFor(region.id);
   const panelRef = useRef<HTMLElement>(null);
   const [now, setNow] = useState(() => new Date());
@@ -87,6 +90,7 @@ export function RegionPanel({ region, label, photosById, vote, onVote, onClose }
   );
 
   const daylight = isDaylight(region.center.lat, region.center.lon, now);
+  const provCenter = province ? provinceCenter(province) : null;
 
   const statusMeta = {
     visited: { label: '已到访', tone: 'visited' as const },
@@ -116,7 +120,7 @@ export function RegionPanel({ region, label, photosById, vote, onVote, onClose }
             {region.nameEn}
           </p>
           <h2 id="rpanel-title" className="rpanel__title">
-            {label}
+            {province ? provinceLabel(province) : label}
           </h2>
         </div>
 
@@ -124,6 +128,70 @@ export function RegionPanel({ region, label, photosById, vote, onVote, onClose }
           <Icon name="close" size={16} />
         </button>
       </header>
+
+      {province && provCenter ? (
+        <>
+          <nav className="rpanel__crumbs" aria-label="层级导航">
+            <button type="button" className="rpanel__crumb" onClick={onBackToCountry}>
+              <Icon name="arrow-left" size={12} />
+              {label}
+            </button>
+            <span className="rpanel__crumb-sep" aria-hidden="true">
+              →
+            </span>
+            <span className="rpanel__crumb rpanel__crumb--current" aria-current="page">
+              {provinceLabel(province)}
+            </span>
+          </nav>
+
+          <dl className="rpanel__facts">
+            <div>
+              <dt className="u-label">所属国家</dt>
+              <dd>{label}</dd>
+            </div>
+            <div>
+              <dt className="u-label">行政区类型</dt>
+              <dd>{PROVINCE_TYPE_ZH[province.type] || province.type}</dd>
+            </div>
+            {province.iso3166_2 ? (
+              <div>
+                <dt className="u-label">ISO 3166-2</dt>
+                <dd className="u-mono">{province.iso3166_2}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt className="u-label">几何中心纬度</dt>
+              <dd className="u-mono">
+                {Math.abs(provCenter.lat).toFixed(1)}°{provCenter.lat >= 0 ? 'N' : 'S'}
+              </dd>
+            </div>
+            <div>
+              <dt className="u-label">几何中心经度</dt>
+              <dd className="u-mono">
+                {Math.abs(provCenter.lon).toFixed(1)}°{provCenter.lon >= 0 ? 'E' : 'W'}
+              </dd>
+            </div>
+            <div>
+              <dt className="u-label">当地时间</dt>
+              <dd className="u-mono">{approximateLocalTime(provCenter.lon, now)}</dd>
+            </div>
+          </dl>
+          <p className="rpanel__fact-note">
+            几何中心由该行政区的真实边界推算，不是省会城市；当地时间按经度估算。
+          </p>
+
+          <section className="rpanel__section" aria-labelledby="rpanel-province-note">
+            <h3 id="rpanel-province-note" className="u-label">
+              地理信息
+            </h3>
+            <p className="rpanel__body">
+              这是来自 Natural Earth 的一级行政区几何。选中一个行政区只表示你查看了它的位置，
+              不代表作者到访、拍摄或收藏过这里——旅行记录由内容文件单独管理。
+            </p>
+          </section>
+        </>
+      ) : (
+      <>
 
       {/* ------------------------------------------------------- status bar -- */}
       <div className="rpanel__status" data-tone={statusMeta.tone}>
@@ -233,68 +301,6 @@ export function RegionPanel({ region, label, photosById, vote, onVote, onClose }
         </section>
       ) : null}
 
-      {/* ======================================================= VOTING ==== */}
-      <section className="rpanel__section rpanel__vote" aria-labelledby="rpanel-vote">
-        <h3 id="rpanel-vote" className="u-label">
-          我也想去
-        </h3>
-
-        {vote === null ? (
-          /* The backend is not configured. Say so, and do not render a count —
-             a zero here would be a fabricated number. */
-          <div className="rpanel__vote-unavailable">
-            <Icon name="alert" size={15} />
-            <div>
-              <p className="rpanel__vote-unavailable-title">共享投票暂不可用</p>
-              <p className="rpanel__vote-unavailable-body">
-                投票需要连接到共享数据库，当前站点没有配置。所以在拿到真实数据之前，
-                这里不显示任何票数——显示一个「0」或随机数字都是在编造。
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="rpanel__vote-body">
-            <div className="rpanel__vote-count">
-              <span className="rpanel__vote-number">{vote.count}</span>
-              <span className="rpanel__vote-unit">人表示想去</span>
-            </div>
-
-            <button
-              type="button"
-              className="rpanel__vote-btn"
-              onClick={onVote}
-              aria-pressed={vote.voted}
-              disabled={vote.pending}
-              data-voted={vote.voted || undefined}
-            >
-              <Icon name={vote.voted ? 'check' : 'sparkle'} size={16} />
-              <span>
-                {vote.pending ? '提交中…' : vote.voted ? '已投票' : '我也想去'}
-              </span>
-            </button>
-
-            {vote.error ? (
-              <p className="rpanel__vote-error" role="alert">
-                <Icon name="alert" size={14} />
-                {vote.error}
-              </p>
-            ) : null}
-
-            {vote.demo ? (
-              <p className="rpanel__vote-demo">
-                <span className="badge badge--warn">DEMO</span>
-                这是本地演示数据，只存在于这个浏览器会话中，刷新即消失。
-              </p>
-            ) : null}
-
-            <p className="rpanel__vote-note">
-              匿名投票按浏览器标识去重，清除站点数据后可以重复投。这是匿名投票的固有限制，
-              不是承诺不可绕过的验证。
-            </p>
-          </div>
-        )}
-      </section>
-
       {/* ------------------------------------------------- provenance note -- */}
       {travel.status !== 'unrecorded' ? (
         <footer className="rpanel__foot">
@@ -304,6 +310,8 @@ export function RegionPanel({ region, label, photosById, vote, onVote, onClose }
           </p>
         </footer>
       ) : null}
+      </>
+      )}
     </aside>
   );
 }

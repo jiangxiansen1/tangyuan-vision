@@ -99,8 +99,10 @@
   );
 
   animation:
-    boot-sweep calc(600ms * var(--boot-scale, 1) + 150ms) var(--ease-standard) 150ms forwards,
-    boot-gain calc(600ms * var(--boot-scale, 1) + 150ms) var(--ease-entrance) 150ms forwards;
+    boot-sweep calc(600ms * var(--boot-scale, 1) + 150ms) var(--ease-standard)
+      calc(150ms * var(--boot-scale, 1)) forwards,
+    boot-gain calc(600ms * var(--boot-scale, 1) + 150ms) var(--ease-entrance)
+      calc(150ms * var(--boot-scale, 1)) forwards;
 }
 
 /* @property lets the browser interpolate the mask position smoothly. Without
@@ -117,8 +119,20 @@
 }
 
 @keyframes boot-gain {
-  from { filter: brightness(0.82) contrast(1.02); }
-  to   { filter: brightness(1.12) contrast(1.06); }
+  /* A whisper of dispersion rides the reveal: cool fringe leading, warm
+     fringe trailing, both gone before the mark settles. Two drop-shadows,
+     1.5px apart — enough to read as glass, not as a misregistered print. */
+  0% {
+    filter: brightness(0.82) contrast(1.02) drop-shadow(0 0 0 rgb(0 0 0 / 0));
+  }
+  45% {
+    filter: brightness(1.02) contrast(1.04)
+      drop-shadow(1.5px 0 0 rgb(143 227 255 / 0.26))
+      drop-shadow(-1.5px 0 0 rgb(255 122 60 / 0.16));
+  }
+  100% {
+    filter: brightness(1.12) contrast(1.06) drop-shadow(0 0 0 rgb(0 0 0 / 0));
+  }
 }
 
 /* L3 — a raking highlight that crosses the mark and dissipates. A single pass;
@@ -138,7 +152,8 @@
   );
   mix-blend-mode: screen;
   transform: translate3d(-58%, 0, 0);
-  animation: boot-rake calc(360ms * var(--boot-scale, 1) + 120ms) var(--ease-standard) 420ms forwards;
+  animation: boot-rake calc(360ms * var(--boot-scale, 1) + 120ms) var(--ease-standard)
+    calc(500ms * var(--boot-scale, 1)) forwards;
 }
 
 @keyframes boot-rake {
@@ -162,7 +177,8 @@
   justify-items: center;
   gap: 6px;
   opacity: 0;
-  animation: boot-lockup 460ms var(--ease-entrance) 640ms forwards;
+  animation: boot-lockup calc(500ms * var(--boot-scale, 1)) var(--ease-entrance)
+    calc(900ms * var(--boot-scale, 1)) forwards;
 }
 
 @keyframes boot-lockup {
@@ -186,7 +202,8 @@
     transparent
   );
   transform: scaleX(0);
-  animation: boot-rule 620ms var(--ease-entrance) 620ms forwards;
+  animation: boot-rule calc(620ms * var(--boot-scale, 1)) var(--ease-entrance)
+    calc(880ms * var(--boot-scale, 1)) forwards;
 }
 
 .boot__rule--short {
@@ -341,5 +358,31 @@
   .boot__name {
     letter-spacing: 0.3em;
     text-indent: 0.3em;
+  }
+}
+
+/* P2R: the gloss (汤圆视界) enters as its own beat after the name settles,
+   so the lockup reads as two arrivals instead of one block. */
+.boot__cn {
+  animation: boot-cn calc(500ms * var(--boot-scale, 1)) var(--ease-entrance)
+    calc(1150ms * var(--boot-scale, 1)) both;
+}
+
+@keyframes boot-cn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot__cn {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

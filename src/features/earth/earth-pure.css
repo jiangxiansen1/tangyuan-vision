@@ -1,0 +1,193 @@
+/* ==========================================================================
+   earth-pure.css — the /earth page as a pure Three.js globe surface.
+
+   The page is the globe. Chrome is deliberately minimal: a back link and the
+   scene name (top), the gesture control and progress line (bottom-left), a
+   one-line credit (bottom-right), and the region panel that slides in when a
+   place is picked. There is no map-source list, no data table, and no second
+   renderer: the textures are the project's own public-domain NASA set, so the
+   only required credit is that single line.
+   ========================================================================== */
+
+.epure {
+  position: relative;
+  min-height: 100svh;
+  background: radial-gradient(120% 80% at 50% 8%, #0b1a2e 0%, #070d18 46%, #04060a 100%);
+  overflow: hidden;
+}
+
+.epure__globe {
+  position: absolute;
+  inset: clamp(48px, 7vh, 96px) clamp(12px, 4vw, 72px) clamp(96px, 16vh, 168px);
+  border-radius: var(--r-2xl);
+  overflow: hidden;
+}
+
+.epure__globe > .eglobe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ------------------------------------------------------------- chrome -- */
+
+.epure__top {
+  position: absolute;
+  inset: clamp(14px, 2.4vh, 26px) clamp(16px, 3vw, 40px) auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  z-index: 3;
+}
+
+.epure__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.epure__back:hover,
+.epure__back:focus-visible {
+  color: var(--color-text);
+}
+
+.epure__titles {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.epure__title {
+  margin: 0;
+  font-size: clamp(0.95rem, 0.85rem + 0.4vw, 1.15rem);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+}
+
+.epure__bottom {
+  position: absolute;
+  inset: auto clamp(16px, 3vw, 40px) clamp(16px, 3vh, 32px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  z-index: 3;
+}
+
+.epure__stats {
+  display: flex;
+  gap: clamp(14px, 2vw, 28px);
+  margin: 0;
+}
+
+.epure__stats div {
+  display: grid;
+  gap: 2px;
+}
+
+.epure__stats dt {
+  color: var(--color-text-dim);
+}
+
+.epure__stats dd {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: var(--fw-semibold);
+  color: var(--c-cryo-300);
+}
+
+.epure__credit {
+  margin: 0;
+  max-width: 46ch;
+  text-align: right;
+  font-size: var(--fs-micro);
+  line-height: 1.6;
+  color: var(--color-text-dim);
+}
+
+/* The region panel reuses the shared panel styles; on this page it sits above
+   the bottom chrome instead of inside a glass frame. */
+.epure .rpanel {
+  z-index: 4;
+}
+
+@media (max-width: 900px) {
+  .epure__globe {
+    inset: clamp(64px, 10vh, 96px) 8px clamp(150px, 26vh, 220px);
+  }
+
+  .epure__bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-3);
+  }
+
+  .epure__credit {
+    text-align: left;
+  }
+}
+
+/* ---------------------------------------------------------- city card (P2) -- */
+.epure__city {
+  position: absolute;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(6rem, 14vh, 9rem);
+  width: min(22rem, calc(100vw - 2rem));
+  display: grid;
+  gap: var(--sp-3, 0.75rem);
+  padding: var(--sp-4, 1.1rem);
+  border-radius: var(--r-lg, 18px);
+  z-index: 5;
+}
+.epure__city-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.epure__city-title { margin: 0; font-size: 1.15rem; }
+.epure__city-sub { display: block; margin-top: 0.15rem; color: var(--color-text-dim, #98a4b3); }
+.epure__city-close { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.16); background: rgb(255 255 255 / 0.06); color: var(--color-text, #eef2f7); cursor: pointer; }
+.epure__city-facts { display: grid; gap: 0.4rem; margin: 0; }
+.epure__city-facts > div { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 0.6rem; align-items: baseline; }
+.epure__city-facts dd { margin: 0; color: var(--color-text, #eef2f7); }
+.epure__city-note { margin: 0; color: var(--color-text-dim, #98a4b3); font-size: var(--fs-micro, 0.72rem); line-height: 1.6; }
+@media (max-width: 760px) {
+  .epure__city { right: 0.75rem; left: 0.75rem; bottom: 0.75rem; width: auto; }
+}
+
+/* ---------------------------------------------------------- gesture HUD (P2) */
+.ghud {
+  display: grid;
+  gap: var(--sp-2, 0.5rem);
+  align-self: start;
+  margin-bottom: var(--sp-3, 0.75rem);
+  padding: var(--sp-2, 0.6rem) var(--sp-3, 0.9rem);
+  border-radius: var(--r-lg, 16px);
+  max-width: min(30rem, calc(100vw - 1.5rem));
+}
+.ghud[data-status='running'] { border-color: rgb(120 220 200 / 0.4); }
+.ghud__row { display: flex; align-items: center; gap: var(--sp-3, 0.9rem); flex-wrap: wrap; }
+.ghud__toggle { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.8rem; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.18); background: rgb(255 255 255 / 0.06); color: var(--color-text, #eef2f7); font-size: var(--fs-small, 0.9rem); cursor: pointer; }
+.ghud__toggle:hover { background: rgb(255 255 255 / 0.13); }
+.ghud__status { display: flex; gap: var(--sp-3, 0.9rem); margin: 0; }
+.ghud__status > div { display: grid; gap: 0.1rem; }
+.ghud__status dd { margin: 0; color: var(--color-text, #eef2f7); }
+.ghud__hint { margin: 0; color: var(--color-text-muted, #b7c1cd); font-size: var(--fs-caption, 0.82rem); line-height: 1.5; }
+.ghud__hint--quiet { color: var(--color-text-dim, #98a4b3); }
+@media (max-width: 760px) {
+  .ghud { max-width: calc(100vw - 1.5rem); }
+  .ghud__status { gap: var(--sp-2, 0.6rem); }
+}
+
+/* ------------------------------------------------------------- reticle (P2) */
+.reticle { position: absolute; width: 92px; height: 92px; transform: translate(-50%, -50%); pointer-events: none; z-index: 6; }
+.reticle__ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgb(150 210 255 / 0.55); }
+.reticle__ticks { position: absolute; inset: -6px; border-radius: 50%; border: 1px dashed rgb(150 210 255 / 0.28); }
+.reticle__progress { position: absolute; inset: -3px; border-radius: 50%; border: 2px solid transparent; border-top-color: rgb(120 230 255 / 0.9); opacity: var(--p, 0); }
+.reticle::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: rgb(180 235 255 / 0.9); }
+.reticle[data-locked] .reticle__ring { border-color: rgb(120 230 255 / 0.85); }
+.reticle__name { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 6px; white-space: nowrap; font-size: 12px; color: #eaf4ff; background: rgb(6 12 20 / 0.55); padding: 2px 8px; border-radius: 999px; }

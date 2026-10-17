@@ -236,136 +236,6 @@
   display: block;
 }
 
-/* ------------------------------------------------------------------ vote -- */
-
-.rpanel__vote-body {
-  display: grid;
-  gap: var(--sp-3);
-}
-
-.rpanel__vote-count {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-2);
-}
-
-.rpanel__vote-number {
-  font-family: var(--font-mono);
-  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  color: var(--c-cryo-glow);
-}
-
-.rpanel__vote-unit {
-  font-size: var(--fs-caption);
-  color: var(--c-fog);
-}
-
-.rpanel__vote-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-5);
-  border-radius: var(--r-pill);
-  border: 1px solid rgb(143 227 255 / 0.36);
-  background: rgb(143 227 255 / 0.12);
-  color: var(--c-cryo-glow);
-  font-size: var(--fs-small);
-  transition:
-    background-color var(--t-fast) var(--ease-standard),
-    transform var(--t-fast) var(--ease-standard);
-}
-
-.rpanel__vote-btn:hover:not(:disabled) {
-  background: rgb(143 227 255 / 0.2);
-  transform: translateY(-1px);
-}
-
-.rpanel__vote-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px #05070d, 0 0 0 4px var(--c-cryo-glow);
-}
-
-.rpanel__vote-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-/* Already voted: filled and calmer, since the action is spent. */
-.rpanel__vote-btn[data-voted] {
-  background: rgb(111 216 180 / 0.16);
-  border-color: rgb(111 216 180 / 0.4);
-  color: #8fe6c6;
-  transform: none;
-}
-
-.rpanel__vote-error {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  border: 1px solid rgb(255 138 120 / 0.34);
-  background: rgb(255 138 120 / 0.1);
-  font-size: var(--fs-caption);
-  line-height: 1.6;
-  color: #ffb3a3;
-}
-
-.rpanel__vote-error svg {
-  flex: none;
-  margin-top: 2px;
-}
-
-/* A DEMO banner must be impossible to miss, because the numbers beneath it are
-   not real shared data. */
-.rpanel__vote-demo {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--fs-micro);
-  line-height: 1.6;
-  color: var(--c-silver);
-}
-
-.rpanel__vote-note {
-  font-size: var(--fs-micro);
-  line-height: 1.65;
-  color: var(--c-fog);
-}
-
-/* The unavailable state is a real explanatory panel, not a disabled button with
-   no reason given. It also carries the reason no count is shown. */
-.rpanel__vote-unavailable {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-  border-radius: var(--r-md);
-  border: 1px dashed rgb(255 255 255 / 0.18);
-  background: rgb(255 255 255 / 0.03);
-}
-
-.rpanel__vote-unavailable > svg {
-  flex: none;
-  margin-top: 2px;
-  color: #f0c07a;
-}
-
-.rpanel__vote-unavailable-title {
-  font-size: var(--fs-small);
-  color: var(--c-frost);
-}
-
-.rpanel__vote-unavailable-body {
-  margin-top: 4px;
-  font-size: var(--fs-micro);
-  line-height: 1.68;
-  color: var(--c-silver);
-}
-
 /* ------------------------------------------------------------------ foot -- */
 
 .rpanel__foot {
@@ -428,7 +298,46 @@
     animation: none;
   }
 
-  .rpanel__vote-btn:hover:not(:disabled) {
-    transform: none;
-  }
+}
+
+/* -------------------------------------------------- province breadcrumb -- */
+.rpanel__crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2, 8px);
+  font-size: 0.78rem;
+}
+
+.rpanel__crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(255 255 255 / 0.05);
+  color: var(--c-fog, #c7d0dc);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--t-fast, 160ms), color var(--t-fast, 160ms), border-color var(--t-fast, 160ms);
+}
+
+.rpanel__crumb:hover,
+.rpanel__crumb:focus-visible {
+  background: rgb(255 255 255 / 0.12);
+  color: var(--c-frost, #eef4fb);
+  border-color: rgb(255 255 255 / 0.3);
+}
+
+.rpanel__crumb--current {
+  cursor: default;
+  background: rgb(120 190 255 / 0.14);
+  border-color: rgb(120 190 255 / 0.34);
+  color: var(--c-frost, #eef4fb);
+}
+
+.rpanel__crumb-sep {
+  color: var(--c-fog, #c7d0dc);
+  opacity: 0.6;
 }

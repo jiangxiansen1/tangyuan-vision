@@ -43,6 +43,7 @@ export type IconName =
   | 'chevron-right'
   | 'menu'
   | 'lock'
+  | 'video'
   | 'sparkle';
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
@@ -212,6 +213,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M8.4 10.4V7.8a3.6 3.6 0 0 1 7.2 0v2.6" />
     </>
   ),
+  video: (
+    <>
+      <rect x="3" y="6" width="12.5" height="12" rx="2.6" />
+      <path d="M15.5 10.6 21 7.6v8.8l-5.5-3" />
+    </>
+  ),
+
   sparkle: (
     <>
       {/*

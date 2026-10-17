@@ -57,13 +57,18 @@ export interface MapGlobeProps {
    * would replace a working map with the fallback the moment a visitor zoomed in.
    */
   onFail?: (reason: string) => void;
+  /**
+   * Home-scene preview: the page-level wheel controller owns the wheel, so the
+   * map must not consume it for zooming. Drag/rotate/keyboard stay live.
+   */
+  preview?: boolean;
   className?: string;
 }
 
 /** Where the globe opens. Roughly the middle of the populated world. */
 const HOME_VIEW = { center: [104, 24] as [number, number], zoom: 1.6 };
 
-export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, className }: MapGlobeProps) {
+export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, preview = false, className }: MapGlobeProps) {
   /*
    * TWO REFS, BECAUSE TWO DIFFERENT ELEMENTS ARE INVOLVED — and conflating them was a
    * real bug that took far too long to find.
@@ -100,6 +105,8 @@ export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, clas
    * tile cache and the WebGL context each time. The ref keeps the current handler
    * reachable without making the map depend on it.
    */
+  const previewRef = useRef(preview);
+  previewRef.current = preview;
   const handlers = useRef({ onSelectRegion, onHoverRegion, onFail });
   handlers.current = { onSelectRegion, onHoverRegion, onFail };
 
@@ -200,6 +207,8 @@ export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, clas
       // zoom affordance is unusable without a wheel.
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
       map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+        // Home preview: the page-level scene controller owns the wheel.
+        if (previewRef.current) map.scrollZoom.disable();
 
       /* ---- diagnostics for a hard failure ---- */
       map.on('error', (e) => {
@@ -427,7 +436,7 @@ export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, clas
         <div className="mglobe__failed" role="alert">
           <p className="mglobe__failed-title">地图未能启动</p>
           <p className="mglobe__failed-body">
-            {failure || '地图库或影像源不可用'}。已切换到本地三维地球，地区识别与投票仍然可用。
+            {failure || '地图库或影像源不可用'}。已切换到本地三维地球，地区识别与旅行记录仍然可用。
           </p>
         </div>
       ) : null}

@@ -40,7 +40,7 @@
 .lightbox__panel {
   position: relative;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   width: min(1500px, 100%);
   height: min(100%, calc(100dvh - clamp(16px, 4vh, 56px)));
   overflow: hidden;
@@ -298,5 +298,76 @@
   .lightbox__panel,
   .lightbox__image[data-state='loaded'] > img {
     animation: none;
+  }
+}
+
+/* ------------------------------------------------------------- filmstrip -- */
+/* A thumbnail rail inside the lightbox. It is the primary way to jump to a
+   specific photo (and the only nav on touch, where the side arrows are hidden),
+   so it is always keyboard-focusable and never relies on hover. */
+.lightbox__film {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  margin: 0;
+  list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-top: 1px solid var(--color-border);
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+
+.lightbox__film-btn {
+  display: block;
+  flex: none;
+  width: 64px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm, 8px);
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+  opacity: 0.62;
+  scroll-snap-align: center;
+  transition: opacity var(--t-fast, 160ms), border-color var(--t-fast, 160ms), transform var(--t-fast, 160ms);
+}
+
+.lightbox__film-btn:hover,
+.lightbox__film-btn:focus-visible {
+  opacity: 0.9;
+  border-color: var(--color-text-dim);
+}
+
+.lightbox__film-btn[data-active] {
+  opacity: 1;
+  border-color: var(--c-cryo-glow, #8fe3ff);
+  box-shadow: 0 0 0 1px var(--c-cryo-glow, #8fe3ff);
+}
+
+.lightbox__film-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* A nav arrow at the very first/last photo is disabled, not hidden: the
+   visitor can see that they have reached the edge rather than clicking into
+   nothing. */
+.lightbox__nav:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .lightbox__film-btn {
+    width: 54px;
+    height: 40px;
+  }
+  .lightbox__film {
+    padding-left: var(--sp-3);
+    padding-right: var(--sp-3);
   }
 }

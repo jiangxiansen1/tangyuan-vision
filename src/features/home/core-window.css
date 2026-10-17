@@ -106,7 +106,7 @@
   z-index: 0;
   /* These are the values that make glass possible: under 1 so the pane's own
      blur and tint visibly composite over the image. */
-  opacity: 0.62;
+  opacity: 0.7;
   transform: translate3d(var(--cw-par-x), var(--cw-par-y), 0);
   transition: transform var(--t-slow) var(--ease-entrance), opacity var(--t-base) var(--ease-standard);
 }

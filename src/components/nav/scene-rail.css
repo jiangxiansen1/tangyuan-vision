@@ -1,0 +1,171 @@
+/* ==========================================================================
+   scene-rail.css — the P3 scene progress rail.
+   Desktop: a glass capsule in the reserved 64px gutter (left, vertically
+   centred). Mobile: the capsule hides and a 3px right-edge bar plus a top
+   scene-name pill take over, so no content width is lost. It never captures
+   the wheel and never locks scrolling.
+   ========================================================================== */
+
+.rail {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+}
+
+.rail__list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 7px;
+  list-style: none;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--c-deepspace) 62%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+}
+
+.rail__item {
+  display: block;
+}
+
+.rail__node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.rail__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c-mist) 26%, transparent);
+  transition: background var(--t-fast) var(--ease-standard), box-shadow var(--t-fast) var(--ease-standard),
+    transform var(--t-fast) var(--ease-standard);
+}
+
+.rail__node[data-active] .rail__dot {
+  background: var(--c-cryo-300);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c-cryo-300) 70%, transparent);
+  transform: scale(1.3);
+}
+
+.rail__node:hover .rail__dot {
+  background: color-mix(in srgb, var(--c-mist) 55%, transparent);
+}
+
+.rail__node[data-active]:hover .rail__dot {
+  background: var(--c-cryo-300);
+}
+
+.rail__tip {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: var(--r-md);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms var(--ease-standard), transform 160ms var(--ease-standard);
+}
+
+.rail__node:hover .rail__tip,
+.rail__node:focus-visible .rail__tip {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.rail__tip b {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  color: var(--color-text);
+}
+
+.rail__tip-en {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.14em;
+  color: var(--color-text-dim);
+}
+
+.rail__node:focus-visible {
+  outline: 2px solid var(--c-cryo-300);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------- mobile -- */
+
+.rail-bar,
+.rail-pill {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .rail {
+    display: none;
+  }
+
+  .rail-bar {
+    display: block;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: color-mix(in srgb, var(--c-mist) 10%, transparent);
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  .rail-bar i {
+    display: block;
+    width: 100%;
+    height: 0;
+    background: var(--c-cryo-300);
+    transition: height 120ms linear;
+  }
+
+  .rail-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+    z-index: 31;
+    pointer-events: none;
+    transition: opacity var(--t-fast) var(--ease-standard), transform var(--t-fast) var(--ease-standard);
+  }
+
+  /* At the top the header owns that strip; the capsule fades in once it is
+     clear of the brand mark. */
+  .rail-pill[data-pill='off'] {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail__dot,
+  .rail__tip,
+  .rail-bar i {
+    transition: none;
+  }
+}

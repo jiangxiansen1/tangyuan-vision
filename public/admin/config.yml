@@ -40,10 +40,29 @@
 #  key and leaves the keys it does not know about untouched.
 # ==============================================================================
 
+# ----------------------------------------------------------------------------
+# 环境边界（2026-10-11 实测核定，见 docs/cms-online-readiness.md）
+
+# local_backend: true 表示在 localhost / 127.0.0.1 上一律走 decap-server 代理
+# （默认 http://localhost:8081/api/v1，CORS 仅放行本地来源），与 backend 的取值无关。
+# 因此将来把 backend 换成线上 github 后端时，本地编辑流程不受任何影响。
+# 依据：https://decapcms.org/docs/decap-proxy/
+# ----------------------------------------------------------------------------
+local_backend: true
+
 backend:
-  # 'local' writes to the local working copy through decap-server.
-  # Switch to 'github' once an OAuth relay exists — see docs/CMS.md.
-  name: local
+  # 当前唯一实测可用的后端：decap-server 文件系统代理，写入本地工作副本。
+  # 注意：'local' 不是任何 decap-cms 版本注册的后端名（实测 3.8.4→latest 均报
+  # "Backend not found: local"）；官方名称是 proxy。
+  name: proxy
+  proxy_url: http://localhost:8081/api/v1
+
+  # ---- 线上生产后端模板：授权后再启用，禁止猜测或硬编码仓库信息 ----
+  # name: github
+  # repo: <OWNER>/<REPO>            # 创建 GitHub 仓库后填写
+  # branch: main                    # 须与 .github/workflows/deploy.yml 监听分支一致
+  # base_url: <OAuth 中转地址>       # 方案与步骤见 docs/cms-online-readiness.md §4/§5
+  # auth_endpoint: auth
 
   # ---- To enable the GitHub backend, replace the two lines above with: -------
   # name: github
@@ -76,7 +95,9 @@ collections:
         file: src/content/data/brand.json
         fields:
           - { name: nickname, label: 中文昵称, widget: string, hint: '全站展示用。请勿填写真实姓名。' }
-          - { name: latin, label: 英文标识, widget: string }
+          - { name: brandLatin, label: 英文标识, widget: string, hint: '拉丁标识（如 Vision）。禁止拼音主标题。' }
+          - { name: brandFull, label: 品牌全称, widget: string, hint: '全站主标题，如「汤圆Vision」。' }
+          - { name: brandGloss, label: 中文释义, widget: string, hint: '如「汤圆视界」。' }
           - { name: logoLine, label: 'Logo 品牌文字', widget: string, hint: '应与 Logo 图片上的文字一致' }
           - { name: tagline, label: 中文标语, widget: string }
           - { name: taglineEn, label: 英文标语, widget: string }
@@ -115,7 +136,10 @@ collections:
   # =================================================================== photos
   - name: photography
     label: 摄影作品
-    description: '未填写的可选字段不会在页面上显示空标签。'
+    description: >-
+      照片在这里上传：每张作品的「原图」和「缩略图」都是图片字段。
+      每张作品必须有一个「唯一标识」id（英文小写加连字符）；旅行记录的 photoIds 引用的就是这个 id，
+      所以 id 定好之后不要随意更改。未填写的可选字段不会在页面上显示空标签。
     files:
       - name: photos
         label: 作品列表
@@ -127,17 +151,15 @@ collections:
             widget: list
             summary: '{{fields.title}}'
             fields:
-              - { name: id, label: '唯一标识（英文小写加连字符）', widget: string }
+              - { name: id, label: '唯一标识（英文小写加连字符）', widget: string, hint: '旅行记录的 photoIds 引用这个值。添加作品时先定好它，之后稳定不要改（改了要同步更新引用它的旅行记录）。' }
               - { name: title, label: 标题, widget: string }
               - name: category
                 label: 分类
                 widget: select
                 options:
-                  - { label: 风景 landscape, value: landscape }
-                  - { label: 街景 street, value: street }
-                  - { label: 机械 machine, value: machine }
-                  - { label: 天空 sky, value: sky }
-                  - { label: 抽象 abstract, value: abstract }
+                  - { label: 风光 landscape, value: landscape }
+                  - { label: 人像 portrait, value: portrait }
+                  - { label: '未分类 other（历史作品）', value: other }
               - { name: src, label: 原图, widget: image }
               - { name: thumb, label: '缩略图（可选，留空则用原图）', widget: image, required: false }
               - { name: width, label: '宽度（像素）', widget: number, value_type: int, min: 1 }
@@ -373,6 +395,53 @@ collections:
                 options: *provenance
                 default: real
 
+  # ==================================================== earth & travels
+  # 字段模型与 src/content/data/travels.json 的注释一致；notes 键不在 schema 内，
+  # Decap 保存时会原样保留（实测），因此说明文字不会因编辑而丢失。
+  - name: travels
+    label: 地球与旅行
+    description: >-
+      「地球 Online 进度」的旅行记录。只填真实经历；没有就留空。
+      照片不在这个集合上传：请先在「摄影作品」里上传作品并定好它的「唯一标识」，
+      再用本记录的 photoIds 引用那个 id（例如 sample-ridge-01）。
+    files:
+      - name: records
+        label: 旅行记录
+        file: src/content/data/travels.json
+        fields:
+          - name: items
+            label: 旅行记录
+            widget: list
+            summary: '{{fields.regionId}} · {{fields.title}}'
+            fields:
+              - { name: regionId, label: '地区 ISO 数字代码', widget: string, hint: '字符串，例如中国是 "156"。' }
+              - name: status
+                label: 状态
+                widget: select
+                options:
+                  - { label: '已到访 visited', value: visited }
+                  - { label: '计划中 planned', value: planned }
+                  - { label: '尚未记录 unrecorded', value: unrecorded }
+                default: unrecorded
+              - { name: label, label: '中文名称覆盖（可选）', widget: string, required: false }
+              - { name: title, label: '旅行名称（可选）', widget: string, required: false }
+              - { name: visitedAt, label: '日期（可选，仅真实到访才填）', widget: string, required: false, hint: 'YYYY-MM-DD' }
+              - { name: story, label: '正文（可选）', widget: text, required: false }
+              - name: photoIds
+                label: '引用作品 id（可选）'
+                widget: list
+                required: false
+                hint: >-
+                  照片先在「摄影作品」集合上传（那里的 原图/缩略图 是 image 字段），再回到这里填作品的 id。
+                  值必须与「摄影作品」条目的 唯一标识（id）完全相同，例如 sample-ridge-01。
+                  当前作品 id：sample-ridge-01 / sample-ridge-02 / sample-asphalt-01 / sample-asphalt-02 /
+                  sample-machined-01 / sample-machined-02 / sample-sky-01 / sample-sky-02 /
+                  sample-caustic-01 / sample-caustic-02 / sample-caustic-03。
+                  留空则面板显示「尚无照片」，不会伪造。
+                field: { name: photoId, label: 作品 id, widget: string }
+              - { name: latitude, label: '纬度（可选）', widget: number, required: false, valueType: float }
+              - { name: longitude, label: '经度（可选）', widget: number, required: false, valueType: float }
+              - { name: published, label: 公开显示, widget: boolean, default: false }
   # ================================================================== contact
   - name: contact
     label: 联系方式
@@ -384,6 +453,7 @@ collections:
         fields:
           - name: channels
             label: 渠道
+            hint: '只保留三项：抖音（douyin）、邮箱（email）、GitHub（github）。不要新增其它渠道。未提供真实值时保持 confirmed=false。'
             widget: list
             summary: '{{fields.label}}'
             fields:

@@ -10,7 +10,7 @@
 | 需要付费吗？ | 不需要。软件免费，**本地后端零配置**；线上后端用免费额度的中转服务 |
 | 需要自己的服务器吗？ | 不需要。后台是静态文件，挂在 `/admin/` |
 | 需要数据库吗？ | 不需要。内容就是仓库里的 JSON，Git 提交即历史 |
-| 现在能用吗？ | **能，用本地后端**。`pnpm cms` 即可 |
+| 现在能用吗？ | **能，用本地代理后端**（`proxy` + `local_backend`）。见第 3 节 |
 | 线上能登录吗？ | **需要你手动配一次 OAuth 中转**。见第 4 节 |
 | 配好之前站点能用吗？ | 完全可用。公开站点从不依赖后台在线 |
 
@@ -37,28 +37,39 @@ GitHub 的 OAuth 授权码流程需要两步：
 
 ---
 
-## 3. 方案 A · 本地后端（现在就能用）
+## 3. 方案 A · 本地代理后端（现在就能用，2026-10-11 实测）
 
-后台默认就是这个配置：
+后台默认配置（P1 修复后）：
 
 ```yaml
 # public/admin/config.yml
+local_backend: true          # localhost 上一律走 decap-server 代理
 backend:
-  name: local
+  name: proxy                # 注意：不是 local！
+  proxy_url: http://localhost:8081/api/v1
 ```
+
+**为什么不是 `local`**：任何 decap-cms 版本（实测 3.8.4→latest）都没有注册名为
+`local` 的后端，旧配置会在后台直接报 "Backend not found: local"。官方本地代理的
+后端名是 `proxy`（见 https://decapcms.org/docs/decap-proxy/ ）。
+`local_backend: true` 的作用是**环境边界**：在 localhost/127.0.0.1 上强制走代理，
+与 `backend` 的取值无关——将来把 `backend` 换成线上 github 后端时本地流程不变。
 
 用法：
 
 ```bash
-# 终端 1
+# 终端 1（pnpm 版本不一致时可直接用 node_modules\.bin\decap-server.CMD）
 pnpm cms          # 启动 decap-server，默认代理 http://localhost:8081
 
 # 终端 2
 pnpm dev
 ```
 
-打开 `http://127.0.0.1:5183/admin/`，即可增删改内容。
+打开 `http://127.0.0.1:5183/admin/index.html`，即可增删改内容。
+**注意**：开发服务器上 `/admin/` 会被 SPA fallback 抢占渲染成站内 404，
+必须带 `index.html`；生产静态主机上 `/admin/` 目录索引正常，两种地址都可用。
 保存会**直接写入你的工作副本**，然后你像平常一样 `git commit && git push`。
+发布按钮是两级菜单：`发布` → `立即发布`。
 
 **特点：**
 
@@ -150,13 +161,14 @@ OAuth App 需要的 scope 只有：
 
 | 集合 | 文件 | 关键字段 |
 |---|---|---|
-| 个人品牌 | `brand.json` | 昵称、英文标识、Logo 文字、标语、宣言 |
+| 个人品牌 | `brand.json` | 昵称、英文标识(brandLatin)、品牌全称(brandFull)、中文释义(brandGloss)、Logo 文字、标语、**宣言(statement)** |
 | 四条线索 | `profile.json` | 列表：标识 / 标题 / 正文 / 补充说明 |
 | 摄影作品 | `photography.json` | 图片、分类、尺寸、主色调、可选的拍摄信息 |
 | 摩旅与骑行 | `riding.json` | 车辆档案、路线（含点位坐标）、维护记录 |
 | AI 与编程 | `lab.json` | 问题 / 方法 / **结论**（强制填写） |
 | 个人项目 | `projects.json` | 状态、技术栈、封面、仓库与演示地址 |
 | 随笔 | `journal.json` | 类型、摘要、段落列表、标签 |
+| 地球与旅行 | `travels.json` | regionId/status/title/visitedAt/story/photoIds/经纬度/是否公开（P1 新增集合；`notes` 说明键不在 schema 内，保存时原样保留） |
 | 联系方式 | `contact.json` | 渠道、账号、链接、是否公开 |
 | 网站设置 | `settings.json` | 标题、描述、主题色、分享图、开关 |
 | 隐藏空间 | `secret.json` | 标题、输入口令、宣言、留给以后的位置 |

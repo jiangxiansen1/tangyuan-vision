@@ -3,7 +3,8 @@
  *
  * FUNCTIONALITY THE BRIEF REQUIRES, AND WHERE IT LIVES
  *   ✓ large view                      → the stage
- *   ✓ previous / next                 → buttons + ArrowLeft / ArrowRight
+ *   ✓ previous / next (no wrap)       → buttons + ArrowLeft / ArrowRight, disabled at the ends
+ *   ✓ thumbnail filmstrip             → jump directly to any photo in the set
  *   ✓ Escape to close                 → useFocusTrap's onEscape
  *   ✓ title and description           → the caption panel
  *   ✓ optional location/time/device   → rendered only when present (never blank)
@@ -53,16 +54,31 @@ export function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProp
 
   const total = photos.length;
 
+  /*
+   * NO WRAP-AROUND. The brief is explicit: reaching the first or last photo must
+   * stop, not loop. So this clamps at the edges (doing nothing past them) and the
+   * prev/next controls are disabled at the ends — the visitor can see that they
+   * have reached the edge rather than being silently teleported to the other side.
+   * A direct thumbnail selection still jumps anywhere, because choosing a specific
+   * photo is not the same gesture as stepping past the end.
+   */
   const go = useCallback(
     (delta: number) => {
       if (!open) return;
+      const next = index + delta;
+      if (next < 0 || next >= total) return;
       setDirection(delta > 0 ? 'next' : 'prev');
-      // Wrap around: a gallery is a ring, and dead-ending at either edge is worse
-      // than the mild surprise of looping.
-      const next = (index + delta + total) % total;
       onIndexChange(next);
     },
     [index, onIndexChange, open, total]
+  );
+  const select = useCallback(
+    (next: number) => {
+      if (next < 0 || next >= total || next === index) return;
+      setDirection(next > index ? 'next' : 'prev');
+      onIndexChange(next);
+    },
+    [index, onIndexChange, total]
   );
 
   useFocusTrap(panelRef, {
@@ -227,6 +243,7 @@ export function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProp
             icon="chevron-left"
             className="lightbox__nav lightbox__nav--prev"
             onClick={() => go(-1)}
+            disabled={index === 0}
             aria-label="上一张"
           />
 
@@ -261,9 +278,41 @@ export function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProp
             icon="chevron-right"
             className="lightbox__nav lightbox__nav--next"
             onClick={() => go(1)}
+            disabled={index === total - 1}
             aria-label="下一张"
           />
         </div>
+
+        {/* ---------------------------------------------------- filmstrip -- */}
+        {/* A real thumbnail rail: it shows every photo in the current set, marks
+            the one being viewed, and lets the visitor jump straight to any of
+            them. Hidden when there is only one photo — a one-item strip is noise. */}
+        {total > 1 ? (
+          <ul className="lightbox__film" aria-label="缩略图胶片带">
+            {photos.map((p, i) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  className="lightbox__film-btn"
+                  data-active={i === index || undefined}
+                  aria-current={i === index ? 'true' : undefined}
+                  aria-label={`第 ${i + 1} 张：${p.title}`}
+                  onClick={() => select(i)}
+                >
+                  <SmartImage
+                    src={p.thumb ?? p.src}
+                    alt=""
+                    width={p.width}
+                    height={p.height}
+                    tone={p.tone}
+                    sizes="72px"
+                    className="lightbox__film-img"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         {/* ------------------------------------------------------ caption -- */}
         <footer className="lightbox__caption">

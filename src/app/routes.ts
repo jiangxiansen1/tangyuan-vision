@@ -116,7 +116,7 @@ export const SCENE_ROUTES: SceneRoute[] = [
     title: '地球 Online 进度',
     description:
       '可旋转、可缩放的真实三维地球：本地根据真实太阳位置计算昼夜分界，射线拾取国家与地区，' +
-      '记录旅行进度并对未到访地区投票。',
+      '查看真实旅行记录与摄影关联。',
     accent: '#5fb0e8',
     Component: EarthPage,
     key: 'e',

@@ -173,3 +173,34 @@
 [data-contrast='high'] .bcore__latin {
   text-shadow: none;
 }
+
+/* ---------------------------------------------------------------- statement --
+   个人宣言：CMS 可编辑内容（brand.statement）。克制排版——它是一段话，
+   不是第二个标题：窄行宽、低一级对比、足够行高。缺失时组件不渲染该节点。
+   -------------------------------------------------------------------------- */
+
+.bcore__statement {
+  margin: var(--sp-5) 0 0;
+  max-width: 34ch;
+  font-size: 0.95rem;
+  line-height: 1.9;
+  letter-spacing: 0.01em;
+  color: var(--color-text-muted);
+  text-wrap: balance;
+  /*
+   * The statement is CMS-owned prose and may carry deliberate spacing
+   * (the author's line "你这一生太安静   该出发了" uses a three-space gap).
+   * HTML collapses runs of spaces by default, so the visible line lost the
+   * gap the author typed. pre-wrap keeps the author's spacing AND still wraps
+   * normally; the component trims the trailing newline so no blank line is
+   * introduced. The file itself is never rewritten.
+   */
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  .bcore__statement {
+    max-width: 29ch;
+    font-size: 0.92rem;
+  }
+}

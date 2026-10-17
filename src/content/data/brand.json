@@ -1,13 +1,18 @@
 {
-  "nickname": "汤圆",
-  "brandLatin": "Vision",
-  "brandFull": "汤圆Vision",
+  "provenance": "sample",
   "brandGloss": "汤圆视界",
-  "logoLine": "CAPTURE MOMENTS",
+  "nickname": "汤圆",
   "tagline": "以镜头记录世界，以好奇心探索未来。",
+  "statement": "你这一生太安静   该出发了\n",
+  "brandFull": "汤圆Vision",
   "taglineEn": "A WORLD BEYOND THE FRAME",
-  "statement": "我把这里当作一间一直在施工的数字空间：摄影是它的窗，地球是我还没走完的地图，AI 与代码是它的神经系统，而写作是它留下的温度。",
   "statementEn": "A space under permanent construction.",
-  "roles": ["摄影", "地球 Online", "AI 与编程", "独立创作"],
-  "provenance": "sample"
+  "roles": [
+    "摄影",
+    "地球 Online",
+    "AI 与编程",
+    "独立创作"
+  ],
+  "brandLatin": "Vision",
+  "logoLine": "CAPTURE MOMENTS"
 }

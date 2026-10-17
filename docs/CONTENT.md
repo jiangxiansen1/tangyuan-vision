@@ -141,15 +141,15 @@ pnpm typecheck && pnpm dev
 | 字段 | 必填 | 说明 |
 |---|---|---|
 | `id` | ✅ | 唯一，英文小写。用于灯箱定位 |
-| `title` | ✅ | 显示在网格与灯箱 |
-| `category` | ✅ | `landscape` / `street` / `machine` / `sky` / `abstract` |
+| `title` | ✅ | 显示在作品阅读器与灯箱 |
+| `category` | ✅ | `landscape`（风光）/ `portrait`（人像）/ `other`（未分类、历史值） |
 | `src` | ✅ | 原图路径（**不带 base**） |
 | `thumb` | | 缩略图。省略则自动用原图 |
 | `width` `height` | ✅ | **真实像素尺寸** |
 | `description` | ✅ | 灯箱中的描述 |
 | `tone` | | 主色调，用于占位背景与灯箱环境色 |
 | `takenAt` `location` `camera` `lens` | | **可选。未提供就不显示该行** |
-| `feature` | | `true` 时使用大幅横向头条排版 |
+| `feature` | | 保留字段（旧版大幅横向头条排版用）；当前作品集阅读器不再使用 |
 | `order` | | 排序权重，小的在前 |
 
 ### 三个必须注意的点
@@ -158,8 +158,8 @@ pnpm typecheck && pnpm dev
    填错会导致图片加载完成后版面跳动。
 2. **不要填推测的拍摄信息。** 没有 EXIF 就不显示这些字段，
    这比填一个看起来合理但错误的信息要好。
-3. **`category` 会驱动一次筛选。** 分类计数为 0 的按钮会被禁用，
-   所以分类用错不会产生空分类。
+3. **`category` 驱动分类浏览。** 风光 / 人像 两个分类 + 全部；未归入这两类的历史作品
+   作为「未分类」仍显示在「全部」中。人像为空时显示诚实空态，不生成假作品。
 
 ---
 
@@ -336,6 +336,25 @@ pnpm typecheck && pnpm dev
 
 ---
 
+## 9.5 `travels.json` — 地球与旅行（P1 新增 CMS 集合）
+
+CMS 集合：`地球与旅行 → 旅行记录`（file 集合，根级 `items` 列表）。
+字段与 `src/features/earth/regions.ts` 的 `RegionTravel` 一致：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `regionId` | string | ISO 3166-1 数字代码，如 `"156"` |
+| `status` | enum | `visited` / `planned` / `unrecorded` |
+| `label` | string? | 中文名称覆盖 |
+| `title` | string? | 旅行名称 |
+| `visitedAt` | string? | `YYYY-MM-DD`，仅真实到访才填 |
+| `story` | string? | 正文 |
+| `photoIds` | string[] | 引用 `photography.json` 的作品 id |
+| `latitude` / `longitude` | number? | 仅记录了具体地点时才填 |
+| `published` | boolean | 是否公开显示 |
+
+**没有真实记录就保持空列表。** 文件里的 `notes` 键是说明文字，不在 CMS schema 内，
+Decap 保存时会原样保留（P0 实测）。
 ## 10. `settings.json` — 网站设置
 
 ```json
@@ -417,3 +436,28 @@ pnpm typecheck && pnpm dev
 - [ ] 换成真实内容后 `provenance` 已改为 `real`，示例徽章已消失
 - [ ] 没有填入任何推测的日期、里程、坐标、设备或 EXIF
 - [ ] 未提供的链接仍然是「待填写」，没有变成假地址
+
+### L. P4 CMS 旅行记录录入体验（2026-10-13，实测）
+
+**照片在哪里上传**：`photography` 集合（「摄影作品」，file 集合）的每个作品条目里，`src`（原图）与
+`thumb`（缩略图）都是 `widget: image`；上传落到 `media_folder: public/assets/uploads`，对外路径
+`public_folder: /assets/uploads`，与前台 `assetUrl()` 一致（实测：媒体库上传后 `/assets/uploads/<file>` 返回 200）。
+
+**旅行记录如何关联作品**：`travels.photoIds` 是字符串列表，值必须等于作品条目「唯一标识（id）」字段，
+例如 `sample-ridge-01`；前台 `toPhoto()` 以显式 `id` 为键，地球面板用 `PHOTOS.find(p => p.id === id)`
+解析缩略图。**不是 slug，也不是文件名**。
+
+**relation widget 实测结论**：把 `photoIds` 临时改为 `widget: relation, collection: photography` 后，
+配置能通过校验，但**不产生任何可选项**（DOM 中无选项节点）——因为 `photography` 是 **file 集合**，
+relation 只对 folder 集合可用。故回滚为 list，并采用最小可靠替代：把指引写进**可见位置**
+（有记录时字段 hint 可见；无记录时集合描述可见）。
+
+**指引落点（实测可见）**：
+- 摄影作品集合描述：「照片在这里上传…每张作品必须有一个「唯一标识」id…旅行记录的 photoIds 引用的就是这个 id」。
+- 作品 `id` 字段 hint：「旅行记录的 photoIds 引用这个值…定好之后不要改」。
+- 旅行记录集合描述（无记录时也可见）：「照片不在这个集合上传…先用 photoIds 引用那个 id」。
+- `photoIds` 字段 hint（有记录时可见）：完整指引 + 当前 11 个作品 id 示例。
+
+**本次真实验证**：媒体库上传真实图片成功（字节一致、路径可达）；旅行记录→面板缩略图链路此前已用
+真实作品 id（sample-ridge-01）验证。**测试上传产物已删除**，`photography.json` / `travels.json`
+`git diff` 均为空，零残留。

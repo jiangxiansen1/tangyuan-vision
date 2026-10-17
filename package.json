@@ -1,6 +1,7 @@
 {
   "name": "tangyuan-vision",
   "private": true,
+  "packageManager": "pnpm@11.8.0",
   "version": "1.0.0",
   "type": "module",
   "description": "汤圆Vision（汤圆视界）— 以摄影与地球 Online 进度为核心的沉浸式个人数字空间",

@@ -46,11 +46,19 @@ export interface CoreWindowProps {
   onFocus: () => void;
 }
 
-/** The most presentable photograph for a scene, by category preference. */
+/** The most presentable photograph for a scene.
+ *  P2: an explicit first choice per scene, because "first file of a category"
+  picked a fog field whose low structure read as a smear behind the glass.
+  Falls back to the category preference when the id is absent. */
 function heroPhoto(sceneId: string) {
+  const heroIds: Record<string, string> = {
+    photography: 'sample-asphalt-01',
+  };
+  const byId = PHOTOS.find((p) => p.id === heroIds[sceneId]);
+  if (byId) return byId;
   const preferred: Record<string, string[]> = {
-    photography: ['landscape', 'street', 'sky', 'abstract'],
-    earth: ['sky', 'landscape'],
+    photography: ['landscape', 'portrait'],
+    earth: ['landscape'],
   };
   for (const category of preferred[sceneId] ?? []) {
     const found = PHOTOS.find((p) => p.category === category && p.width >= p.height);

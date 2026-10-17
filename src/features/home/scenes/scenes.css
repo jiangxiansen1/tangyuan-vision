@@ -1,0 +1,724 @@
+/* ==========================================================================
+   scenes.css — the full-screen theme scenes (P2 structural correction).
+   ONE THEME, ONE SCENE, ONE VISUAL CENTRE. Each .vscene is its own 100svh
+   room: eyebrow + title + lede, the theme's real content as visual centre,
+   then glass CTAs into the full route experience. Inherits --rail-gutter
+   from .vhome so the P3 rail overlays every scene identically.
+   ========================================================================== */
+
+.vscene {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-7);
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding: clamp(56px, 9vh, 104px) var(--shell-pad) clamp(56px, 9vh, 104px) var(--gutter-l);
+  border-top: 1px solid var(--color-border);
+  min-width: 0;
+}
+
+.vscene:nth-of-type(even) {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--c-deepspace) 46%, transparent) 0%,
+    transparent 26%,
+    transparent 74%,
+    color-mix(in srgb, var(--c-deepspace) 30%, transparent) 100%
+  );
+}
+
+.vscene__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-4);
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.vscene__index {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.22em;
+}
+
+.vscene__eyebrow-rule {
+  height: 1px;
+  flex: 0 1 clamp(40px, 8vw, 140px);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--scene-accent, var(--color-accent)) 46%, transparent),
+    transparent
+  );
+}
+
+.vscene__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.1rem + 3.6vw, 4rem);
+  font-weight: var(--fw-semibold);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  color: var(--color-text);
+}
+
+.vscene__lede {
+  margin: var(--sp-4) 0 0;
+  max-width: 52ch;
+  font-size: clamp(0.92rem, 0.86rem + 0.3vw, 1.05rem);
+  line-height: 1.85;
+  color: var(--color-text-muted);
+}
+
+.vscene__stats {
+  display: flex;
+  gap: clamp(18px, 3vw, 44px);
+  margin: var(--sp-5) 0 0;
+}
+
+.vscene__stats div { display: grid; gap: 2px; }
+.vscene__stats dt { color: var(--color-text-dim); }
+
+.vscene__stats dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: var(--fw-semibold);
+  color: var(--scene-accent, var(--color-accent));
+}
+
+.vscene__body { min-width: 0; }
+
+.vscene__body--cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2.4vw, 36px);
+}
+
+.vscene__body--cols .cscene__col--wide { grid-column: 1 / -1; }
+
+.vscene__ctas { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+
+.vscene__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-lg);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.vscene__cta-en {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.2em;
+  color: var(--color-text-dim);
+}
+
+.vscene__cta--primary {
+  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 42%, transparent);
+}
+
+.vscene__cta--primary .vscene__cta-en {
+  color: var(--scene-accent, var(--color-accent));
+}
+
+
+/* ------------------------------------------------------- 02 · earth scene -- */
+
+.vscene__globe {
+  position: relative;
+  height: clamp(380px, 56svh, 660px);
+  border-radius: var(--r-2xl);
+  overflow: hidden;
+}
+
+.vscene__globe > .mglobe,
+.vscene__globe > .eglobe {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.vscene__globe-note {
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-4);
+  transform: translateX(-50%);
+  margin: 0;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--c-void) 72%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  backdrop-filter: blur(10px) saturate(1.4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  max-width: calc(100% - var(--sp-8));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* ----------------------------------------------------- 03 · photo scene -- */
+
+.pscene__filters { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+
+.pscene__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  font-size: var(--fs-small);
+  color: var(--color-text-muted);
+  transition: color var(--t-fast) var(--ease-standard), border-color var(--t-fast) var(--ease-standard);
+}
+
+.pscene__filter[aria-pressed='true'] {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 55%, transparent);
+}
+
+.pscene__filter-count { font-size: var(--fs-micro); color: var(--color-text-dim); }
+
+.pmosaic {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(150px, 21svh);
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pmosaic li {
+  position: relative;
+  min-width: 0;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.pmosaic__lead { grid-column: span 2; grid-row: span 2; }
+
+.pmosaic .smart-image {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto !important;
+  width: 100%;
+  height: 100%;
+}
+
+.pmosaic .smart-image img { width: 100%; height: 100%; object-fit: cover; }
+
+.pmosaic__cap {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-6) var(--sp-3) var(--sp-2);
+  background: linear-gradient(to top, color-mix(in srgb, var(--c-void) 82%, transparent), transparent);
+}
+
+.pmosaic__title {
+  font-size: var(--fs-caption);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------- 04 · create scene -- */
+
+.cscene__col { min-width: 0; }
+.cscene__col-title { margin: 0 0 var(--sp-4); color: var(--color-text-dim); }
+.cscene__list { display: grid; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
+
+.cscene__card {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--color-surface) 62%, transparent);
+}
+
+.cscene__card-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.cscene__card-title { font-weight: var(--fw-medium); color: var(--color-text); }
+
+.cscene__status {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+}
+
+.cscene__status--shipped { color: var(--c-aurora); border-color: color-mix(in srgb, var(--c-aurora) 45%, transparent); }
+.cscene__status--building { color: var(--scene-accent, var(--color-accent)); border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 45%, transparent); }
+.cscene__card-q { font-size: var(--fs-small); line-height: 1.7; color: var(--color-text-muted); }
+.cscene__card-o { font-size: var(--fs-caption); color: var(--color-text-dim); }
+.cscene__repo { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--scene-accent, var(--color-accent)); }
+.cscene__norepo { color: var(--color-text-dim); }
+
+/* ---------------------------------------------------- 05 · contact scene -- */
+
+.kscene__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kscene__card {
+  display: grid;
+  gap: var(--sp-2);
+  align-content: start;
+  padding: var(--sp-5);
+  border-radius: var(--r-xl);
+  text-decoration: none;
+  color: var(--color-text);
+  min-height: 128px;
+}
+
+.kscene__card-label { font-weight: var(--fw-medium); }
+.kscene__card-handle { font-size: var(--fs-small); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kscene__card-en { color: var(--color-text-dim); }
+.kscene__card--pending { opacity: 0.78; }
+.kscene__notes { display: grid; gap: var(--sp-2); }
+
+.vscene__empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: var(--sp-5);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--r-lg);
+  font-size: var(--fs-small);
+  line-height: 1.8;
+  color: var(--color-text-dim);
+}
+
+.vscene__note {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin: var(--sp-4) 0 0;
+  max-width: 68ch;
+  font-size: var(--fs-caption);
+  line-height: 1.8;
+  color: var(--color-text-dim);
+}
+
+@media (max-width: 900px) {
+  .vscene { min-height: auto; padding-block: clamp(48px, 8vh, 88px); }
+  .vscene__body--cols { grid-template-columns: minmax(0, 1fr); }
+  .vscene__globe { height: clamp(320px, 48svh, 520px); }
+
+  /* On phones the map's own HUD owns the bottom edge; the hint moves to the
+     top of the pane so the two can never overlap. */
+  .vscene__globe-note {
+    bottom: auto;
+    top: var(--sp-3);
+  }
+  .pmosaic { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(130px, 18svh); }
+  .pmosaic__lead { grid-column: span 2; grid-row: span 2; }
+}
+
+@media (max-width: 560px) {
+  .kscene__grid { grid-template-columns: minmax(0, 1fr); }
+  .vscene__stats { gap: var(--sp-5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pscene__filter, .vscene__cta { transition: none; }
+}
+
+
+/* ================================================== split scenes (P2R) ==
+   Text column and media column share ONE viewport: earth 34/66, photography
+   mirrored 64/36. Mobile collapses to a single column without merging.     */
+
+.vscene--split {
+  display: grid;
+  grid-template-columns: minmax(0, 34fr) minmax(0, 66fr);
+  gap: var(--sp-6) clamp(24px, 3.6vw, 64px);
+  align-items: center;
+}
+
+.vscene--split .vscene__head {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.vscene--split .vscene__body { grid-column: 2; grid-row: 1; min-width: 0; }
+
+.vscene--split.vscene--media-first { grid-template-columns: minmax(0, 64fr) minmax(0, 36fr); }
+.vscene--split.vscene--media-first .vscene__head { grid-column: 2; grid-row: 1; }
+.vscene--split.vscene--media-first .vscene__body { grid-column: 1; grid-row: 1; }
+
+.vscene--split .vscene__lede { max-width: 34ch; }
+.vscene--split .vscene__ctas { margin-top: var(--sp-6); }
+.vscene--split .vscene__globe { height: clamp(340px, 62svh, 620px); }
+
+.pmosaic--scene {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-rows: repeat(2, minmax(120px, 27svh));
+  grid-auto-rows: auto;
+  height: clamp(300px, 56svh, 560px);
+}
+
+.pmosaic--scene .pmosaic__lead { grid-column: 1; grid-row: 1 / span 2; }
+.pmosaic--scene li:nth-child(2) { grid-column: 2; grid-row: 1; }
+.pmosaic--scene li:nth-child(3) { grid-column: 2; grid-row: 2; }
+
+.pscene__empty-media { min-height: clamp(280px, 48svh, 480px); align-content: center; }
+
+.cscene__bench {
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--r-md);
+}
+
+.vscene--split .cscene__card { padding: var(--sp-3) var(--sp-4); }
+
+.cscene__card-q {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vscene--split .vscene__body--cols { gap: clamp(14px, 1.8vw, 28px); }
+.vscene:not(.vscene--split) .kscene__grid { gap: var(--sp-3); }
+.vscene:not(.vscene--split) .kscene__card { min-height: 112px; padding: var(--sp-4); }
+
+@media (max-width: 900px) {
+  .vscene--split,
+  .vscene--split.vscene--media-first { display: flex; flex-direction: column; align-items: stretch; }
+  .vscene--split .vscene__head,
+  .vscene--split.vscene--media-first .vscene__head { order: 1; }
+  .vscene--split.vscene--media-first .vscene__body { order: 0; }
+  .vscene--split .vscene__body { order: 2; }
+  .vscene--split .vscene__body,
+  .vscene--split.vscene--media-first .vscene__body { width: 100%; }
+  .vscene--split .vscene__lede { max-width: 52ch; }
+  .vscene--split .vscene__globe { height: clamp(320px, 46svh, 520px); }
+  .pmosaic--scene { height: auto; grid-template-rows: repeat(2, minmax(140px, 24svh)); }
+}
+
+/* ==========================================================================
+   P2.5 — scene backgrounds and the earth stage
+   Each scene now owns a background identity instead of sharing one flat dark
+   field: deep space for the earth, a neutral that lets photographs lead, a
+   technical workbench for the lab, and the quietest room for contact. Every
+   scene still opens with the same soft top fade, so crossing a boundary reads
+   as one continuous space rather than a page change.
+   ========================================================================== */
+
+.vscene {
+  background-image: var(--scene-bg, none);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* A shared 120px top fade: the previous scene's colour bleeds in, so the cut
+   between rooms is a gradient, not a seam. */
+.vscene::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 130px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--c-void) 70%, transparent), transparent);
+}
+
+/* earth · deep space: a cool core above the globe, floor glow beneath it, and a
+   handful of static star specks. No full-screen blur, ever. */
+#scene-earth {
+  --scene-bg:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgb(255 255 255 / 0.55), transparent 60%),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgb(214 236 255 / 0.5), transparent 60%),
+    radial-gradient(1.2px 1.2px at 34% 68%, rgb(255 255 255 / 0.4), transparent 60%),
+    radial-gradient(1.2px 1.2px at 88% 58%, rgb(200 226 255 / 0.42), transparent 60%),
+    radial-gradient(1px 1px at 56% 34%, rgb(255 255 255 / 0.35), transparent 60%),
+    radial-gradient(1px 1px at 22% 84%, rgb(255 255 255 / 0.32), transparent 60%),
+    radial-gradient(120% 78% at 50% 12%, #0b1a2e 0%, #070d18 48%, #04060a 100%);
+}
+
+/* photography · neutral, un-tinted: the pictures carry the colour. */
+#scene-photography {
+  --scene-bg: linear-gradient(180deg, #08090c 0%, #0a0b0f 46%, #07080b 100%);
+}
+
+/* create · technical workbench: hairline grid, one low beam, corner vignette. */
+#scene-lab {
+  --scene-bg:
+    linear-gradient(200deg, color-mix(in srgb, var(--c-cryo-300) 5%, transparent) 0%, transparent 38%),
+    repeating-linear-gradient(to right, color-mix(in srgb, var(--c-mist) 4%, transparent) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(to bottom, color-mix(in srgb, var(--c-mist) 4%, transparent) 0 1px, transparent 1px 96px),
+    linear-gradient(180deg, #07080b 0%, #05070a 100%);
+}
+
+/* contact · the quietest room: near-black with one soft overhead light. */
+#scene-contact {
+  --scene-bg:
+    radial-gradient(64% 42% at 50% 0%, color-mix(in srgb, var(--c-steel) 34%, transparent) 0%, transparent 72%),
+    linear-gradient(180deg, #05060a 0%, #04050a 100%);
+}
+
+/* ------------------------------------------- earth stage: expand + panel -- */
+
+.escene__stage {
+  transition: height 700ms var(--ease-entrance), box-shadow 700ms var(--ease-standard);
+}
+
+.escene__stage.is-expanded {
+  height: clamp(520px, 82svh, 860px);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-cryo-300) 18%, transparent),
+    0 30px 80px color-mix(in srgb, #000 55%, transparent);
+}
+
+.escene__chrome {
+  position: absolute;
+  inset: var(--sp-3) var(--sp-3) auto var(--sp-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  pointer-events: none;
+}
+
+.escene__hint {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--c-void) 68%, transparent);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 62%;
+}
+
+.escene__expand {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  font-size: var(--fs-caption);
+  color: var(--color-text);
+}
+
+.escene__panel {
+  position: absolute;
+  inset: var(--sp-6) var(--sp-4) var(--sp-6) auto;
+  width: clamp(260px, 36%, 400px);
+  display: grid;
+  gap: var(--sp-3);
+  align-content: start;
+  padding: var(--sp-5);
+  border-radius: var(--r-xl);
+  overflow: auto;
+  animation: escene-panel-in 520ms var(--ease-entrance) both;
+}
+
+@keyframes escene-panel-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.escene__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.escene__panel-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+}
+
+.escene__status {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.escene__status--visited { color: var(--c-aurora); border-color: color-mix(in srgb, var(--c-aurora) 45%, transparent); }
+.escene__status--planned { color: var(--c-cryo-300); border-color: color-mix(in srgb, var(--c-cryo-300) 45%, transparent); }
+
+.escene__panel-sub {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--color-text);
+}
+
+.escene__panel-story {
+  margin: 0;
+  font-size: var(--fs-caption);
+  line-height: 1.8;
+  color: var(--color-text-muted);
+}
+
+.escene__panel-story--empty { color: var(--color-text-dim); }
+
+.escene__panel-note { margin: 0; }
+
+.escene__photos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.escene__photos li {
+  position: relative;
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.escene__photos .smart-image { width: 100%; height: 100%; }
+.escene__photos .provenance { position: absolute; left: 4px; bottom: 4px; }
+
+.escene__panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.escene__close {
+  font-size: var(--fs-caption);
+  color: var(--color-text-dim);
+  padding: var(--sp-2);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.escene__close:hover { color: var(--color-text); }
+
+/* ------------------------------------------------ gesture control panel -- */
+
+.gctl {
+  display: grid;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+
+.gctl__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: var(--fs-small);
+  color: var(--color-text);
+  justify-self: start;
+}
+
+.gctl__state {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.18em;
+  color: var(--color-text-dim);
+}
+
+.gctl[data-status='running'] .gctl__state { color: var(--c-aurora); }
+.gctl[data-status='unavailable'] .gctl__state,
+.gctl[data-status='denied'] .gctl__state { color: var(--c-amber); }
+
+.gctl__detail {
+  margin: 0;
+  max-width: 44ch;
+  font-size: var(--fs-caption);
+  line-height: 1.75;
+  color: var(--color-text-muted);
+}
+
+.gctl__detail--quiet { color: var(--color-text-dim); }
+
+.gctl__video {
+  width: 96px;
+  height: 72px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border-strong);
+  /* Show the WHOLE camera frame in the preview (no cropping), so what the visitor
+     sees matches the frame the detector actually receives. */
+  object-fit: contain;
+  background: #000;
+  transform: scaleX(-1);
+}
+
+@media (max-width: 900px) {
+  .escene__stage.is-expanded { height: clamp(420px, 62svh, 680px); }
+
+  .escene__panel {
+    inset: auto var(--sp-3) var(--sp-3) var(--sp-3);
+    width: auto;
+    max-height: 56%;
+  }
+
+  .escene__hint { max-width: 46%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .escene__stage { transition: none; }
+  .escene__panel { animation: none; }
+}
+
+/* -------------------------------------------- arrival choreography (P2.5) --
+   After a wheel transition settles, the arriving scene's head resolves in
+   order: eyebrow → title → lede → stats → controls. The scroll itself stays a
+   single driver; this only shapes what the eye reads on arrival. */
+.vscene[data-active='true'] .vscene__head > * {
+  animation: scene-arrive 620ms var(--ease-entrance) both;
+}
+
+.vscene[data-active='true'] .vscene__head > *:nth-child(1) { animation-delay: 40ms; }
+.vscene[data-active='true'] .vscene__head > *:nth-child(2) { animation-delay: 130ms; }
+.vscene[data-active='true'] .vscene__head > *:nth-child(3) { animation-delay: 220ms; }
+.vscene[data-active='true'] .vscene__head > *:nth-child(4) { animation-delay: 300ms; }
+.vscene[data-active='true'] .vscene__head > *:nth-child(5) { animation-delay: 360ms; }
+
+@keyframes scene-arrive {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vscene[data-active='true'] .vscene__head > * { animation: none; }
+}

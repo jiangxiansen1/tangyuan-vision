@@ -22,6 +22,7 @@ import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { RouteTransition } from '@/components/transitions/RouteTransition';
 import { BootSequence, shouldRunBoot } from '@/components/boot/BootSequence';
 import { Toast } from '@/components/ui/Toast';
+import { SceneRail } from '@/components/nav/SceneRail';
 import { SceneLoading } from '@/components/layout/SceneLoading';
 import { NotFoundPage } from '@/features/not-found/NotFoundPage';
 import { useUIStore } from '@/store/useUIStore';
@@ -172,6 +173,7 @@ export default function App() {
       </RouteTransition>
 
       {/* ---------------------------------------------------- global chrome -- */}
+      <SceneRail />
       <CustomCursor />
       <SettingsPanel />
       <Toast />

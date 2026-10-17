@@ -70,7 +70,7 @@ export interface ProfileBlock {
 
 /* ------------------------------------------------------------ photography */
 
-export type PhotoCategory = 'landscape' | 'street' | 'machine' | 'sky' | 'abstract';
+export type PhotoCategory = 'landscape' | 'portrait' | 'other';
 
 export interface Photo {
   id: string;
@@ -242,6 +242,17 @@ export interface SiteSettings {
   secretEnabled: boolean;
   /** Whether the boot sequence runs on a first visit. */
   bootEnabled: boolean;
+  /**
+   * The home stage backdrop photograph (CMS-managed via settings.json).
+   * Absent or unresolvable means the drawn cinematic field carries the page.
+   */
+  homeBackground?: {
+    src?: string;
+    tone?: string;
+    /** 0–1: how far the photograph is held back behind the wash. */
+    overlay?: number;
+    provenance?: 'sample' | 'real';
+  };
 }
 
 /* ---------------------------------------------------------------- secret */

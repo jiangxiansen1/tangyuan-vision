@@ -131,7 +131,9 @@ export const PROFILE = itemsOf(profileJson, 'profile.json').map((raw, i) => ({
   provenance: (optionalString(raw, 'provenance') === 'real' ? 'real' : 'sample') as 'real' | 'sample',
 }));
 
-const PHOTO_CATEGORIES = ['landscape', 'street', 'machine', 'sky', 'abstract'] as const;
+/* The two real categories, plus an honest bucket for legacy/unfiled records so
+   nothing is silently dropped (see toPhoto). */
+const PHOTO_CATEGORIES = ['landscape', 'portrait'] as const;
 
 /** A photo record that failed validation is dropped rather than rendered broken. */
 function toPhoto(raw: Record<string, unknown>, i: number): Photo | null {
@@ -149,9 +151,12 @@ function toPhoto(raw: Record<string, unknown>, i: number): Photo | null {
   }
 
   const cat = optionalString(raw, 'category');
+  // landscape / portrait are the two categories; anything else (including the
+  // legacy street/machine/sky/abstract values) is kept as 'other' rather than
+  // discarded, so no record ever disappears from the portfolio.
   const category: Photo['category'] = (PHOTO_CATEGORIES as readonly string[]).includes(cat ?? '')
     ? (cat as Photo['category'])
-    : 'abstract';
+    : 'other';
 
   return {
     id,
@@ -180,11 +185,9 @@ export const PHOTOS: Photo[] = itemsOf(photographyJson, 'photography.json')
   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
 export const PHOTO_CATEGORY_LABELS: Record<Photo['category'], string> = {
-  landscape: '风景 / Landscape',
-  street: '街景 / Street',
-  machine: '机械 / Machine',
-  sky: '天空 / Sky',
-  abstract: '抽象 / Abstract',
+  landscape: '风光 / Landscape',
+  portrait: '人像 / Portrait',
+  other: '未分类 / Unfiled',
 };
 
 const riding = ridingJson as unknown as {
@@ -296,6 +299,7 @@ export const SETTINGS: SiteSettings = (() => {
     homeScene: s.homeScene ?? 'home',
     secretEnabled: s.secretEnabled !== false,
     bootEnabled: s.bootEnabled !== false,
+    homeBackground: readHomeBackground(settingsJson),
   };
 })();
 
@@ -319,6 +323,28 @@ export const SECRET: SecretContent = (() => {
     artifacts: asArray(s.artifacts),
   };
 })();
+
+/**
+ * settings.json → homeBackground, validated.
+ *
+ * P2 found the real defect this guards: VisionBackdrop has always read
+ * `SETTINGS.homeBackground`, but the content layer never exported it, so the
+ * configured photograph could never appear. A missing/empty src returns
+ * undefined and the backdrop falls back to its drawn field — a finished
+ * design, never a broken image.
+ */
+function readHomeBackground(json: unknown): SiteSettings['homeBackground'] {
+  const hb = (json as { homeBackground?: Record<string, unknown> } | null)?.homeBackground;
+  if (!hb || typeof hb !== 'object') return undefined;
+  const src = optionalString(hb, 'src');
+  if (!src) return undefined;
+  return {
+    src,
+    tone: optionalString(hb, 'tone'),
+    overlay: optionalNumber(hb, 'overlay'),
+    provenance: optionalString(hb, 'provenance') === 'real' ? 'real' : 'sample',
+  };
+}
 
 /* -------------------------------------------------------------- reporting */
 

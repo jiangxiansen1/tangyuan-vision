@@ -1,389 +1,353 @@
-/* ==========================================================================
-   PhotographyPage — an asymmetric editorial layout, not a card grid.
-   ========================================================================== */
+/* photography.css — the portfolio: an editorial spread, not a grid and not a feed.
+ *
+ * Left: the photograph, shown whole (object-fit: contain) and never cropped to a
+ * fixed tile. Right: its title, category, description and the real shooting facts.
+ * A thumbnail rail moves between works; the Lightbox shows the full-size view.
+ * There is deliberately no like/favourite/comment/ranking UI anywhere.
+ */
 
 .photography {
-  position: relative;
+  --ph-gutter: clamp(1rem, 3vw, 2.5rem);
+  --ph-max: 78rem;
 }
 
-/* A scene-wide tone wash taken from the active category's first photo. It sits
-   under everything and is what makes the space respond to the work. */
-.photography__tone {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    100% 60% at 50% 0%,
-    color-mix(in srgb, var(--tone, #101820) 26%, transparent) 0%,
-    transparent 68%
-  );
-  transition: background var(--t-scene) var(--ease-standard);
+/* ------------------------------------------------------------------- head -- */
+
+.ph__head {
+  max-width: 62rem;
+  margin: 0 auto var(--sp-6, 2rem);
+  padding: 0 var(--ph-gutter);
 }
 
-.photography > *:not(.photography__tone):not(.scene-ambient):not(.scene__grain) {
-  position: relative;
-  z-index: 1;
-}
-
-/* ------------------------------------------------------------- sample note -- */
-
-.photography__notice {
+.ph__eyebrow {
   display: flex;
-  gap: var(--sp-4);
-  padding: var(--sp-5);
-  margin-block-end: var(--sp-8);
+  align-items: center;
+  gap: 0.6em;
+  color: var(--color-text-dim, #98a4b3);
 }
 
-.photography__notice > svg {
-  flex: none;
-  margin-top: 2px;
-  color: var(--c-amber);
+.ph__eyebrow-mark {
+  color: var(--color-text, #eef2f7);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.photography__notice-title {
-  font-size: var(--fs-small);
-  font-weight: var(--fw-medium);
-  color: var(--c-amber);
-  margin-block-end: var(--sp-2);
+.ph__eyebrow-sep {
+  opacity: 0.5;
 }
 
-.photography__notice-body {
-  font-size: var(--fs-caption);
-  line-height: var(--lh-relaxed);
-  color: var(--color-text-muted);
-  max-width: 82ch;
+.ph__title {
+  margin: 0.45rem 0 0.7rem;
+  font-size: clamp(2.4rem, 6vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
 }
 
-.photography__notice-body code {
-  font-family: var(--font-mono);
+.ph__lede {
+  max-width: 46rem;
+  color: var(--color-text-muted, #b7c1cd);
+  line-height: 1.7;
+}
+
+/* --------------------------------------------------------- notice / empty -- */
+
+.ph__notice,
+.ph__empty {
+  display: flex;
+  gap: var(--sp-3, 1rem);
+  align-items: flex-start;
+  max-width: 62rem;
+  margin: 0 auto var(--sp-5, 1.5rem);
+  padding: var(--sp-4, 1.25rem);
+}
+
+.ph__notice-title,
+.ph__empty-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  color: var(--color-text, #eef2f7);
+}
+
+.ph__notice-body,
+.ph__empty-body {
+  margin: 0;
+  color: var(--color-text-muted, #b7c1cd);
+  line-height: 1.7;
+  font-size: var(--fs-caption, 0.9rem);
+}
+
+.ph__notice-body code {
+  font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.92em;
-  padding: 0.1em 0.36em;
-  border-radius: var(--r-xs);
-  background: color-mix(in srgb, var(--c-mist) 10%, transparent);
-  color: var(--c-cryo-100);
 }
 
-/* ----------------------------------------------------------------- filters -- */
+/* ------------------------------------------------------------------ tabs -- */
 
-.photography__filters {
+.ph__tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-2);
-  margin-block-end: var(--sp-8);
+  gap: 0.5rem;
+  max-width: 62rem;
+  margin: 0 auto var(--sp-5, 1.5rem);
+  padding: 0 var(--ph-gutter);
 }
 
-.photography__filter {
+.ph__tab {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
-  min-height: 36px;
-  padding: 0 var(--sp-4);
-  border-radius: var(--r-pill);
-  border: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--c-mist) 4%, transparent);
-  font-size: var(--fs-caption);
-  color: var(--color-text-muted);
-  transition:
-    border-color var(--t-base) var(--ease-standard),
-    background-color var(--t-base) var(--ease-standard),
-    color var(--t-base) var(--ease-standard);
+  gap: 0.55em;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong, rgb(255 255 255 / 0.18));
+  background: rgb(255 255 255 / 0.04);
+  color: var(--color-text-muted, #b7c1cd);
+  font-size: var(--fs-small, 0.95rem);
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
-.photography__filter:hover:not(:disabled) {
-  color: var(--color-text);
-  border-color: var(--color-border-strong);
+.ph__tab:hover {
+  color: var(--color-text, #eef2f7);
 }
 
-/* Selected state carries a border + background + weight change, so it is not
-   signalled by hue alone. */
-.photography__filter[aria-pressed='true'] {
-  border-color: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 56%, transparent);
-  background: color-mix(in srgb, var(--scene-accent, var(--color-accent)) 12%, transparent);
-  color: var(--scene-accent, var(--color-accent));
-  font-weight: var(--fw-medium);
+.ph__tab[data-active] {
+  color: var(--color-text, #eef2f7);
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.4);
 }
 
-.photography__filter:disabled {
-  opacity: 0.38;
-}
-
-.photography__filter-count {
-  font-size: var(--fs-micro);
+.ph__tab-count {
+  font-size: var(--fs-micro, 0.72rem);
   opacity: 0.7;
 }
 
-/* ==========================================================================
-   Feature band — full width, large image, caption beside it.
-   ========================================================================== */
+/* ---------------------------------------------------------------- viewer -- */
 
-.photography__feature {
+.ph__viewer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-  gap: clamp(20px, 3vw, 48px);
-  align-items: center;
-  margin-block-end: clamp(64px, 10vh, 132px);
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 2.5rem);
+  align-items: start;
+  max-width: var(--ph-max);
+  margin: 0 auto var(--sp-5, 1.5rem);
+  padding: 0 var(--ph-gutter);
 }
 
-/* Alternating: every second feature band mirrors, which is what stops the page
-   reading as a vertical list of the same module. */
-.photography__feature:nth-of-type(even) {
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+.ph__stage {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
 }
 
-.photography__feature:nth-of-type(even) .photography__feature-button {
-  order: 2;
-}
-
-.photography__feature-button {
+.ph__stage-button {
   position: relative;
   display: block;
   width: 100%;
-  border-radius: var(--r-xl);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-lg, 18px);
+  background: rgb(255 255 255 / 0.03);
   overflow: hidden;
   cursor: zoom-in;
-  transition: transform var(--t-slow) var(--ease-entrance);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 0.35);
 }
 
-.photography__feature-button:hover {
-  transform: scale(1.006);
+.ph__image {
+  width: 100%;
+  max-height: 78vh;
+  border-radius: var(--r-lg, 18px);
 }
 
-.photography__feature-image {
-  border-radius: var(--r-xl);
-  /* A subtle inner edge so the image reads as a framed print, not a screenshot. */
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--c-mist) 10%, transparent),
-    var(--sh-float);
-}
-
-.photography__feature-caption {
-  display: grid;
-  gap: var(--sp-4);
-  align-content: center;
-}
-
-.photography__feature-title {
-  font-size: var(--fs-title);
-  letter-spacing: var(--ls-title);
-  line-height: var(--lh-snug);
-}
-
-.photography__feature-desc {
-  font-size: var(--fs-small);
-  line-height: var(--lh-relaxed);
-  color: var(--color-text-muted);
-  max-width: 40ch;
-}
-
-.photography__feature-dim {
-  font-size: var(--fs-micro);
-  color: var(--color-text-dim);
-  letter-spacing: 0.1em;
-}
-
-/* The zoom affordance: a small glass square that fades in on hover/focus. */
-.photography__zoom {
+.ph__zoom {
   position: absolute;
-  right: var(--sp-4);
-  bottom: var(--sp-4);
+  right: 0.85rem;
+  bottom: 0.85rem;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-md);
-  border: 1px solid rgb(255 255 255 / 0.16);
-  background: color-mix(in srgb, var(--c-void) 52%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  color: var(--c-frost);
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.45);
+  color: #fff;
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity var(--t-base) var(--ease-standard), transform var(--t-base) var(--ease-entrance);
+  transition: opacity 0.18s ease;
 }
 
-.photography__zoom--sm {
-  width: 30px;
-  height: 30px;
-  right: var(--sp-3);
-  bottom: var(--sp-3);
-}
-
-.photography__feature-button:hover .photography__zoom,
-.photography__feature-button:focus-visible .photography__zoom,
-.photography__flow-button:hover .photography__zoom,
-.photography__flow-button:focus-visible .photography__zoom {
+.ph__stage-button:hover .ph__zoom,
+.ph__stage-button:focus-visible .ph__zoom {
   opacity: 1;
-  transform: none;
 }
 
-/* ==========================================================================
-   Flow layout — each tile keeps its own aspect ratio.
-
-   CSS columns are used rather than a grid because they let each image stay at
-   its natural ratio and flow, which is the whole point: a 4:5 portrait must not
-   be cropped into a 3:2 landscape's box.
-   ========================================================================== */
-
-.photography__flow {
-  columns: 3;
-  column-gap: clamp(14px, 1.4vw, 22px);
-  list-style: none;
-}
-
-.photography__flow-item {
-  break-inside: avoid;
-  margin-block-end: clamp(14px, 1.4vw, 22px);
-  position: relative;
-}
-
-.photography__flow-button {
-  position: relative;
-  display: block;
-  width: 100%;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  cursor: zoom-in;
-}
-
-.photography__flow-image {
-  border-radius: var(--r-lg);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-mist) 8%, transparent);
-  transition: transform var(--t-slow) var(--ease-entrance);
-}
-
-.photography__flow-button:hover .photography__flow-image,
-.photography__flow-button:focus-visible .photography__flow-image {
-  transform: scale(1.012);
-}
-
-/* The caption is revealed on hover / focus. It is also present in the DOM for
-   screen readers at all times, and the lightbox always shows it — so nothing is
-   discoverable only through hover. */
-.photography__flow-overlay {
-  position: absolute;
-  inset: auto 0 0 0;
-  display: grid;
-  gap: 2px;
-  padding: var(--sp-5) var(--sp-4) var(--sp-4);
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--c-void) 90%, transparent) 0%,
-    transparent 100%
-  );
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity var(--t-base) var(--ease-standard), transform var(--t-base) var(--ease-entrance);
-  pointer-events: none;
-}
-
-.photography__flow-button:hover .photography__flow-overlay,
-.photography__flow-button:focus-visible .photography__flow-overlay {
-  opacity: 1;
-  transform: none;
-}
-
-.photography__flow-title {
-  font-size: var(--fs-small);
-  color: var(--color-text);
-}
-
-.photography__flow-meta {
-  color: var(--color-text-muted) !important;
-  font-size: var(--fs-micro);
-}
-
-/* The sample marker stays permanently visible on the tile — it must not depend
-   on hovering to be seen. */
-.photography__flow-badge {
-  position: absolute;
-  top: var(--sp-3);
-  left: var(--sp-3);
-  pointer-events: none;
-}
-
-/* ==========================================================================
-   Implementation notes
-   ========================================================================== */
-
-.photography__impl {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: clamp(24px, 4vw, 64px);
-  align-items: start;
-}
-
-.photography__impl .spec-table {
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-}
-
-.photography__impl .spec-table th,
-.photography__impl .spec-table td {
-  padding: var(--sp-3) var(--sp-4);
-}
-
-.photography__impl-notes {
-  display: grid;
-  gap: var(--sp-5);
-}
-
-.photography__impl-notes p {
-  font-size: var(--fs-small);
-  line-height: var(--lh-relaxed);
-  color: var(--color-text-muted);
-}
-
-.photography__impl-notes b {
-  color: var(--color-text);
-  font-weight: var(--fw-medium);
-}
-
-.photography__back {
+.ph__nav {
   display: flex;
-  padding-top: var(--sp-8);
-  border-top: 1px solid var(--color-border);
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
-/* -------------------------------------------------------------- responsive */
-
-@media (max-width: 1023px) {
-  .photography__flow {
-    columns: 2;
-  }
+.ph__nav-btn {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong, rgb(255 255 255 / 0.18));
+  background: rgb(255 255 255 / 0.05);
+  color: var(--color-text, #eef2f7);
+  cursor: pointer;
+  transition: background 0.18s ease;
 }
 
-/* Tablet and below: the feature band stacks, and the mirrored variant is undone
-   so the image always leads. */
+.ph__nav-btn:hover {
+  background: rgb(255 255 255 / 0.14);
+}
+
+.ph__counter {
+  font-size: var(--fs-micro, 0.8rem);
+  letter-spacing: 0.12em;
+  color: var(--color-text-dim, #98a4b3);
+}
+
+/* ------------------------------------------------------------- meta panel -- */
+
+.ph__meta {
+  position: sticky;
+  top: clamp(1rem, 6vh, 4rem);
+  display: grid;
+  gap: 0.8rem;
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  border-radius: var(--r-lg, 18px);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.04);
+  backdrop-filter: blur(14px);
+}
+
+.ph__meta-index {
+  color: var(--color-text-dim, #98a4b3);
+}
+
+.ph__meta-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.ph__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ph__meta-desc {
+  margin: 0;
+  color: var(--color-text-muted, #b7c1cd);
+  line-height: 1.75;
+}
+
+.ph__facts {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.4rem 0 0;
+}
+
+.ph__facts > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.ph__facts dt {
+  color: var(--color-text-dim, #98a4b3);
+}
+
+.ph__facts dd {
+  margin: 0;
+  color: var(--color-text, #eef2f7);
+}
+
+.ph__meta-note {
+  margin: 0.2rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  color: var(--color-text-dim, #98a4b3);
+  font-size: var(--fs-caption, 0.85rem);
+  line-height: 1.65;
+}
+
+/* ------------------------------------------------------------ thumb rail -- */
+
+.ph__rail {
+  display: flex;
+  gap: 0.6rem;
+  max-width: var(--ph-max);
+  margin: 0 auto var(--sp-5, 1.5rem);
+  padding: 0 var(--ph-gutter) 0.3rem;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ph__rail-btn {
+  display: block;
+  width: 96px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--r-md, 12px);
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.18s ease, border-color 0.18s ease;
+}
+
+.ph__rail-btn:hover {
+  opacity: 0.9;
+}
+
+.ph__rail-btn[data-active] {
+  opacity: 1;
+  border-color: rgb(255 255 255 / 0.7);
+}
+
+.ph__rail-img {
+  width: 100%;
+  border-radius: var(--r-sm, 8px);
+}
+
+.ph__back {
+  max-width: var(--ph-max);
+  margin: 0 auto var(--sp-6, 2rem);
+  padding: 0 var(--ph-gutter);
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
 @media (max-width: 900px) {
-  .photography__feature,
-  .photography__feature:nth-of-type(even) {
-    grid-template-columns: 1fr;
-    gap: var(--sp-5);
+  .ph__viewer {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .photography__feature:nth-of-type(even) .photography__feature-button {
-    order: 0;
+  .ph__meta {
+    position: static;
   }
 
-  .photography__impl {
-    grid-template-columns: 1fr;
+  .ph__image {
+    max-height: none;
+  }
+
+  .ph__facts > div {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
   }
 }
 
-@media (max-width: 600px) {
-  .photography__flow {
-    columns: 1;
-  }
-
-  /* Hover-revealed captions are useless on touch, so they are shown always. */
-  .photography__flow-overlay {
-    opacity: 1;
-    transform: none;
-  }
-
-  .photography__zoom {
-    display: none;
+@media (prefers-reduced-motion: reduce) {
+  .ph__tab,
+  .ph__nav-btn,
+  .ph__rail-btn,
+  .ph__zoom {
+    transition: none;
   }
 }

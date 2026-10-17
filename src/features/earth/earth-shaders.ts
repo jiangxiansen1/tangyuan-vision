@@ -273,3 +273,160 @@ export const STAR_FRAGMENT = /* glsl */ `
     gl_FragColor = vec4(vec3(0.94, 0.96, 1.0), a);
   }
 `;
+
+
+/* --------------------------------------------------------- point surface -- */
+
+/*
+ * POINT SURFACE
+ * The globe's visible surface is a sphere of points. Their colour comes from the
+ * SAME real data the textured version used — earth-specular.jpg is bright over
+ * water (ocean mask), earth-day.jpg carries land brightness — and their light is
+ * the same real sun-angle blend, taken from the CPU-computed sub-solar point.
+ * The textures are only ever SAMPLED to classify a dot; they are never shown as a
+ * photo on the sphere. No clouds, no terrain texture, no invented geometry.
+ */
+export const EARTH_POINTS_VERTEX = /* glsl */ `
+  uniform float uPixelRatio;
+  uniform float uSize;
+  attribute float aRand;
+  attribute float aLand;
+  varying float vLand;
+  varying vec2 vUv;
+  varying vec3 vNormalW;
+  varying vec3 vPositionW;
+
+  void main() {
+    vUv = uv;
+    vLand = aLand;
+    vNormalW = normalize(mat3(modelMatrix) * normal);
+    vec4 worldPos = modelMatrix * vec4(position, 1.0);
+    vPositionW = worldPos.xyz;
+    vec4 mv = viewMatrix * worldPos;
+    // Dots grow as the camera closes in; a per-dot size jitter (aRand) breaks the
+    // regular spiral so the field does not moire against the pixel grid.
+    float sizeScale = 0.94 + 0.12 * aRand;
+    gl_PointSize = max(1.0, uSize * uPixelRatio * sizeScale * (3.05 / max(-mv.z, 0.001)));
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+
+export const EARTH_POINTS_FRAGMENT = /* glsl */ `
+  precision highp float;
+
+  uniform sampler2D uDayTexture;
+  uniform sampler2D uSpecularMask;
+  uniform vec3  uSunDirection;
+  uniform vec3  uOceanColor;
+  uniform vec3  uLandColor;
+  varying float vLand;
+  uniform float uNightSurface;
+  uniform float uTerminatorSoftness;
+  uniform vec3  uAtmosphereColor;
+  uniform float uAtmosphereStrength;
+  uniform vec3  uCameraPosition;
+
+  varying vec2 vUv;
+  varying vec3 vNormalW;
+  varying vec3 vPositionW;
+
+  void main() {
+    // Soft round dot: feathering the edge (instead of a hard discard) removes the
+    // aliasing moire between the point lattice and the pixel grid while keeping a
+    // crisp silhouette, because back-hemisphere dots are still depth-culled.
+    float d = length(gl_PointCoord - 0.5);
+    float alpha = smoothstep(0.5, 0.3, d);
+    if (alpha <= 0.002) discard;
+
+    vec3 normal = normalize(vNormalW);
+    float sunDot = dot(normal, normalize(uSunDirection));
+    float dayAmount = smoothstep(-uTerminatorSoftness, uTerminatorSoftness, sunDot);
+
+    // Real land/ocean split from the imagery itself: land is warmer (R>B), ocean bluer.
+    vec3 dayColor = texture2D(uDayTexture, vUv).rgb;
+    // Land/ocean from the SAME Natural Earth polygons as the selection (vLand).
+    float landMask = vLand;
+
+    // Cool blue-white land, modulated by the real imagery brightness (so it is
+    // still the data, not a flat painted colour); deep-blue ocean.
+    float landVar = clamp(dot(dayColor, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
+    vec3 land = uLandColor * (0.86 + 0.34 * landVar);
+    vec3 base = mix(uOceanColor, land, landMask);
+
+    // Full light on the day side; dimmed but readable on the night side.
+    float lit = mix(uNightSurface, 1.0, dayAmount);
+    vec3 color = base * lit;
+
+    // Restrained limb glow, strongest on the sunlit edge.
+    vec3 viewDir = normalize(uCameraPosition - vPositionW);
+    float fres = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.0);
+    color += uAtmosphereColor * fres * uAtmosphereStrength * (0.18 + 0.82 * max(sunDot, 0.0));
+
+    gl_FragColor = vec4(color, alpha);
+
+    #include <colorspace_fragment>
+  }
+`;
+
+
+/* ------------------------------------------------------------ city layer -- */
+
+/*
+ * CITY LAYER
+ * Points placed at the real coordinates of the (small) Natural Earth populated-
+ * places set. Brightness is boosted on the night side by the SAME real sun angle
+ * used by the globe, so the city layer follows the true day/night terminator and
+ * never pretends to be a satellite night-lights image. Used for both the
+ * decorative light layer (small, dense) and the interactive marker layer (larger,
+ * zoom-gated) — the two differ only by uniform values, not by data.
+ */
+export const CITY_VERTEX = /* glsl */ `
+  uniform float uPixelRatio;
+  uniform float uSize;
+  attribute float aSize;
+  attribute float aPop;
+  varying vec3 vNormalW;
+  varying float vPop;
+
+  void main() {
+    vPop = aPop;
+    vNormalW = normalize(mat3(modelMatrix) * position);
+    vec4 worldPos = modelMatrix * vec4(position, 1.0);
+    vec4 mv = viewMatrix * worldPos;
+    gl_PointSize = max(1.0, uSize * uPixelRatio * aSize * (3.05 / max(-mv.z, 0.001)));
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+
+export const CITY_FRAGMENT = /* glsl */ `
+  precision highp float;
+
+  uniform vec3  uSunDirection;
+  uniform vec3  uColor;
+  uniform float uTerminatorSoftness;
+  uniform float uNightBoost;
+  uniform float uMinPop;
+  uniform float uOpacity;
+
+  varying vec3 vNormalW;
+  varying float vPop;
+
+  void main() {
+    if (vPop < uMinPop) discard;
+
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.2, d);
+    if (a <= 0.002) discard;
+
+    vec3 n = normalize(vNormalW);
+    float sunDot = dot(n, normalize(uSunDirection));
+    float dayAmount = smoothstep(-uTerminatorSoftness, uTerminatorSoftness, sunDot);
+    float night = 1.0 - dayAmount;
+
+    // Brighter on the night side, but still restrained.
+    float g = 0.5 + uNightBoost * night;
+    gl_FragColor = vec4(uColor * g, a * uOpacity * (0.55 + 0.45 * g));
+
+    #include <colorspace_fragment>
+  }
+`;

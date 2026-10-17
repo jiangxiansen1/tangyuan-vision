@@ -12,11 +12,11 @@
   "bootEnabled": true,
   "locale": "zh-CN",
   "homeBackground": {
-    "src": "/assets/photography/sample-caustic-03.jpg",
+    "src": "/assets/photography/sample-ridge-01.jpg",
     "tone": "#0b1017",
-    "overlay": 0.72,
+    "overlay": 0.55,
     "provenance": "sample",
-    "note": "首页背景。换成你自己的摄影作品时改这里的 src，并把 provenance 改为 real。未填写时回退为程序绘制的渐变场景，不会破图。深色主题下 overlay 建议 0.7 以上：背景要克制，不能抢主体。"
+    "note": "首页背景。换成你自己的摄影作品时改这里的 src，并把 provenance 改为 real。未填写时回退为程序绘制的渐变场景，不会破图。深色主题下 overlay 建议 0.55–0.75：背景要克制，但必须看得见。"
   },
   "keywords": [
     "汤圆Vision",

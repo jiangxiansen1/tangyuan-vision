@@ -62,7 +62,7 @@ function crc32(buf) {
  * node_modules and dist are regenerable from the lockfile and are large enough to
  * dominate the download. tools/_verify holds ~31 MB of screenshots produced by the
  * verification scripts, and .git is not part of the source distribution.
- * supabase/.temp is local CLI state.
+ * dotted cache dirs (for example a local CMS/CLI .temp) are local state, not source.
  */
 const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'dist-ssr', '_verify', '.git', '.vite', '.temp']);
 const EXCLUDED_FILES = [/\.tsbuildinfo$/, /^\.env$/, /^\.env\.local$/, /^\.env\.production$/, /^\.env\.development$/];

@@ -1,372 +1,278 @@
 /**
- * EarthPage — 地球 Online 进度.
+ * EarthPage — /earth: the full immersive globe, and nothing else.
  *
- * STRUCTURE
- *   • The globe takes the field. It is the reason the page exists, so the layout
- *     gives it the whole viewport and floats the UI over it rather than putting
- *     the globe inside a content column.
- *   • The header floats over the top-left, the stats over the top-right, and the
- *     region panel slides in from the right. Everything is a glass overlay on the
- *     dark ground, which is the one place the dark theme applies.
- *   • A region LIST is always present, below the fold. This is the accessible
- *     equivalent of the globe: every country is reachable by keyboard and by
- *     screen reader without interacting with a canvas at all, which the brief
- *     requires and which is also what makes the page usable when WebGL fails.
+ * WHAT CHANGED AND WHY
+ * This page used to render MapGlobe (MapLibre vector + NASA raster tiles) as its
+ * main surface, with a "数据与素材来源" list underneath. The visitor asked for a
+ * pure three-dimensional globe, and the home scene had already proved that the
+ * project's own EarthGlobe (natural-colour textures in /public/assets/earth,
+ * cloud shell, atmosphere rim, starfield, GeoIndex picking) is the better
+ * immersive surface. So /earth now mounts ONE EarthGlobe:
  *
- * GROUND
- * This scene runs on the SITE'S LIGHT GROUND. Darkness is contained to one
- * element — the globe well — because a lit sphere needs an unlit field, but the
- * page around it belongs to the same product as every other route. Declaring the
- * whole route dark (as V3 did) put the region list and credits on a near-black
- * background they were never designed for.
+ *   • no MapLibre, therefore no tile requests at all on this route;
+ *   • no map-source list — the textures are the project's own public-domain NASA
+ *     set and Natural Earth, credited in a single compact line instead;
+ *   • the gesture control is the SHARED session (gestureSession), so a session
+ *     started on the home scene keeps running when the visitor arrives here;
+ *   • region picking, real travel markers, the region panel and the honest empty
+ *     states are all preserved.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PHOTOS, SETTINGS } from '@/content';
+import { PHOTOS } from '@/content';
 import { NAVIGABLE_ROUTES } from '@/app/routes';
 import { Icon } from '@/components/ui/Icon';
-import { SmartImage } from '@/components/ui/SmartImage';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { useRegionVotes } from '@/hooks/useRegionVotes';
 import { useVisualStore } from '@/store/useVisualStore';
-import { EarthGlobe } from './EarthGlobe';
-import { MapGlobe } from './MapGlobe';
-import { RegionSearch } from './RegionSearch';
-import { RegionPanel, type RegionVoteState } from './RegionPanel';
-import { GeoIndex, type RegionShape } from './geo-index';
-import { regionLabel, regionStats, travelFor, hasChineseLabel } from './regions';
-import { subSolarPoint } from './solar';
+import { EarthGlobe, type GlobeControlApi } from './EarthGlobe';
+import { GeoIndex } from './geo-index';
+import { regionLabel, regionStats } from './regions';
+import { RegionPanel } from './RegionPanel';
+import { GestureHud } from './gesture/GestureHud';
+import { Reticle } from './gesture/Reticle';
+import { loadAdmin1ForCountry, type Admin1Item } from './admin1';
+import { readTravelRecords, deriveMarkers } from './travel-markers';
+import { CITIES, cityLabel, citySubLabel, type City } from './cities';
 import countriesTopology from './data/countries-110m.json';
-import './earth-page.css';
+import travelData from '@/content/data/travels.json';
+import './earth-pure.css';
 
 const route = NAVIGABLE_ROUTES.find((r) => r.id === 'earth')!;
 
 export default function EarthPage() {
-  useDocumentTitle({
-    title: route.title,
-    description: route.description,
-    image: SETTINGS.ogImage,
-    path: route.path,
-  });
+  useDocumentTitle({ title: route.title, description: route.description, path: '/earth' });
 
   const { reduced } = usePrefersReducedMotion();
   const glassQuality = useVisualStore((s) => s.glassQuality);
-
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [now, setNow] = useState(() => new Date());
+  /** The real city marker the visitor activated, if any. */
+  const [city, setCity] = useState<City | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
+  const globeControl = useRef<GlobeControlApi | null>(null);
 
-  /**
-   * Set when the map renderer cannot run, which switches the page to the local globe.
-   *
-   * This is not a decorative error state. The map needs the network — a style
-   * document and then tiles — so it fails on a blocked host, in a sandboxed preview,
-   * or wherever the tile CDN is unreachable. The old globe needs nothing: its
-   * textures are bundled and its geometry is local. Keeping it as the fallback is
-   * what makes region identification and voting survive an offline visit, and those
-   * are the page's actual business functions.
-   *
-   * A declared failure (the library failed to load, the style was rejected) is
-   * distinguished from a slow tile by only switching on the former; a tile 404 is
-   * routine, because the satellite imagery legitimately ends at z9.
-   */
-  const [mapFailed, setMapFailed] = useState(false);
-
-  /** Built once. ~40 ms, and it is what makes region lookup per-frame cheap. */
   const geoIndex = useMemo(() => {
     try {
       return GeoIndex.build(countriesTopology as never);
-    } catch (e) {
-      console.error('[earth] geo index build failed:', e);
+    } catch {
       return null;
     }
   }, []);
+  const stats = useMemo(() => regionStats(geoIndex?.size ?? 0), [geoIndex]);
+  const records = useMemo(() => readTravelRecords(travelData), []);
+  const markers = useMemo(() => deriveMarkers(records, geoIndex), [records, geoIndex]);
+  const photosById = useMemo(
+    () =>
+      new Map(
+        PHOTOS.map((p) => [
+          p.id,
+          { src: p.src, thumb: p.thumb, title: p.title, width: p.width, height: p.height, tone: p.tone },
+        ])
+      ),
+    []
+  );
 
-  /**
-   * The solar readout ticks once a minute. The globe itself does not need this —
-   * it computes its own sun direction on mount — but the header's terminator note
-   * should not go stale while the page is open.
-   */
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(t);
-  }, []);
-
-  const sun = useMemo(() => subSolarPoint(now), [now]);
-
-  const selected: RegionShape | null = useMemo(
+  const selected = useMemo(
     () => (selectedId && geoIndex ? geoIndex.lookupById(selectedId) ?? null : null),
     [selectedId, geoIndex]
   );
-
-  const stats = useMemo(
-    () => regionStats(geoIndex?.size ?? 0),
-    [geoIndex]
+  const focus = useMemo(
+    () => (selected ? { lon: selected.center.lon, lat: selected.center.lat, distance: 0.86 } : null),
+    [selected]
   );
 
-  /** Photo lookup for a visited region's panel. */
-  const photosById = useMemo(() => {
-    const m = new Map<string, { src: string; thumb?: string; title: string; width: number; height: number; tone: string }>();
-    for (const p of PHOTOS) {
-      m.set(p.id, { src: p.src, thumb: p.thumb, title: p.title, width: p.width, height: p.height, tone: p.tone });
-    }
-    return m;
+  /** The real Admin-1 province the visitor activated, or null (country level). */
+  const [selectedProvince, setSelectedProvince] = useState<Admin1Item | null>(null);
+
+  const handleSelectRegion = useCallback((id: string) => {
+    setCity(null);
+    setSelectedProvince(null);
+    setSelectedId((cur) => (cur === id ? null : id));
   }, []);
 
   /**
-   * The countries list, sorted so the ones with a Chinese label come first.
-   *
-   * That ordering is a small honesty decision: a Chinese-language page that leads
-   * with "Argentina, Armenia, Australia" and buries 中国 somewhere in the middle
-   * reads as a translation failure. Leading with the labelled set makes it
-   * obvious the list is curated, and the English names that follow are visibly
-   * English rather than wrongly-Chinese.
+   * A real Admin-1 province was activated. Its parent country is already the
+   * selected country — the globe only offers a province when its loaded geometry
+   * matches the hit country — so we set that country WITHOUT toggling it off and
+   * record the province. Selecting a province is a geographic query only; it
+   * never claims the author visited it (travel records live in the CMS).
    */
-  const listRegions = useMemo(() => {
-    if (!geoIndex) return [];
-    const all = [...geoIndex.regions];
-    all.sort((a, b) => {
-      const aZh = hasChineseLabel(a.id) ? 0 : 1;
-      const bZh = hasChineseLabel(b.id) ? 0 : 1;
-      if (aZh !== bZh) return aZh - bZh;
-      // Within each group, surfaces the author's records first — those are the
-      // entries a visitor is most likely to want.
-      const aT = travelFor(a.id).status === 'unrecorded' ? 1 : 0;
-      const bT = travelFor(b.id).status === 'unrecorded' ? 1 : 0;
-      if (aT !== bT) return aT - bT;
-      return regionLabel(a.id, a.nameEn).localeCompare(regionLabel(b.id, b.nameEn), 'zh-Hans-CN');
+  const handleSelectProvince = useCallback((countryId: string, province: Admin1Item) => {
+    setCity(null);
+    setSelectedId(countryId);
+    setSelectedProvince(province);
+  }, []);
+
+  const handleSelectCity = useCallback((next: City) => {
+    setSelectedId(null);
+    setSelectedProvince(null);
+    setCity(next);
+  }, []);
+
+  const closeCity = useCallback(() => setCity(null), []);
+
+  /*
+   * Real Admin-1 geometry for the SELECTED country (loaded on demand, cached).
+   * The country id travels WITH the geometry so the globe can never test a click
+   * on one country against another country's province polygons. Stale geometry is
+   * cleared the instant the selection changes, so a fast switch cannot pick a
+   * province from the country that was selected a moment ago.
+   */
+  const [admin1, setAdmin1] = useState<{ countryId: string; items: Admin1Item[] } | null>(null);
+  useEffect(() => {
+    if (!selectedId) { setAdmin1(null); return; }
+    let alive = true;
+    setAdmin1(null);
+    void loadAdmin1ForCountry(selectedId).then((c) => {
+      if (alive) setAdmin1(c ? { countryId: selectedId, items: c.items } : null);
     });
-    return all;
-  }, [geoIndex]);
+    return () => { alive = false; };
+  }, [selectedId]);
 
-  /**
-   * Vote state covers the recorded regions plus whichever one is open. Asking for
-   * all 177 on mount would be a wasted round trip; asking only for the open one
-   * would re-subscribe on every click.
-   */
-  const votableIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const r of listRegions) {
-      if (travelFor(r.id).status !== 'unrecorded') ids.add(r.id);
-    }
-    if (selectedId) ids.add(selectedId);
-    return [...ids];
-  }, [listRegions, selectedId]);
+  /* Region id -> label, for the reticle's name readout. */
+  const labelOf = useCallback(
+    (id: string) => {
+      const sh = geoIndex?.lookupById(id);
+      return sh ? regionLabel(sh.id, sh.nameEn) : null;
+    },
+    [geoIndex]
+  );
 
-  const regionVotes = useRegionVotes(votableIds);
+  const returnToGlobal = useCallback(() => {
+    setSelectedProvince(null);
+    setSelectedId(null);
+    setResetSignal((n) => n + 1);
+  }, []);
 
-  /**
-   * Adapt the hook's shape to what the panel renders.
-   *
-   * Returns null ONLY for the true "no backend" case, which is what makes the
-   * panel switch to its explicit unavailable state. A region that has simply not
-   * been voted on yet still gets an object, with count read from the backend —
-   * including a genuine 0, which is different from "not read".
-   */
-  const voteForSelected: RegionVoteState | null = useMemo(() => {
-    if (!selected) return null;
-    if (regionVotes.status === 'unconfigured') return null;
-
-    const entry = regionVotes.counts[selected.id];
-    return {
-      count: entry?.count ?? null,
-      voted: regionVotes.hasVoted(selected.id),
-      pending: false,
-      error: regionVotes.status === 'error' ? (regionVotes.error ?? '读取投票失败') : null,
-      demo: regionVotes.isDemo,
+  /* ESC closes the panel first, then returns the view — same semantics as the
+     home earth scene, and never stealing Escape from a modal or a text field. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      const el = e.target as Element | null;
+      if (el && el.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      if (!selectedId) return;
+      e.preventDefault();
+      returnToGlobal();
     };
-  }, [selected, regionVotes]);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedId, returnToGlobal]);
 
-  const onVote = useCallback(() => {
-    if (!selected) return;
-    void regionVotes.vote(selected.id);
-  }, [selected, regionVotes]);
-
-  const closePanel = useCallback(() => setSelectedId(null), []);
+  const quality = reduced
+    ? 'balanced'
+    : glassQuality === 'off'
+      ? 'off'
+      : glassQuality === 'balanced'
+        ? 'balanced'
+        : 'high';
 
   return (
-    <div className="scene epage" data-scene="earth">
-      {/*
-        The skip link now targets the MAP, not a list. The list is gone (see the
-        removal note further down); the map is the thing a keyboard user needs to
-        reach, and it is genuinely focusable because MapLibre binds arrow-key panning
-        to its canvas.
-      */}
-      <a className="skip-link" href="#earth-map">
-        跳到地图 <span className="skip-link__en">Skip to the map</span>
-      </a>
+    <div className="scene epure" data-scene="earth">
+      <div className="epure__globe" data-earth-surface="full">
+        <EarthGlobe
+          quality={quality}
+          focus={focus}
+          markers={markers}
+          cities={CITIES}
+          resetSignal={resetSignal}
+          controlRef={globeControl}
+          onSelectRegion={handleSelectRegion}
+          onSelectCity={handleSelectCity}
+          admin1={admin1?.items ?? null}
+          admin1Country={admin1?.countryId ?? null}
+          onSelectProvince={handleSelectProvince}
+        />
+        <Reticle labelOf={labelOf} />
+      </div>
 
-      {/* ============================================================ map === */}
-      <div className="epage__stage shared-hero" id="earth-map">
-        {/*
-          Two renderers, one page.
+      <header className="epure__top">
+        <Link className="epure__back glass glass--standard" to="/" data-interactive="true">
+          <Icon name="arrow-left" size={14} />
+          <span>主空间</span>
+        </Link>
+        <div className="epure__titles">
+          <h1 className="epure__title">{route.label}</h1>
+          <span className="u-label">{route.labelEn}</span>
+        </div>
+      </header>
 
-          MapGlobe is the real map: it loads MORE data as you zoom in, which is the
-          only thing that fixes "there is no detail when zoomed". The old WebGL globe
-          is kept and used when MapLibre cannot start — a fully offline renderer that
-          needs no tiles, no network and no key, so the page still identifies regions
-          and records votes when the map library or the imagery is unreachable.
-        */}
-        {mapFailed ? (
-          <EarthGlobe
-            onSelectRegion={(id) => setSelectedId((cur) => (cur === id ? null : id))}
-            quality={
-              reduced
-                ? 'balanced'
-                : glassQuality === 'balanced'
-                  ? 'balanced'
-                  : glassQuality === 'off'
-                    ? 'off'
-                    : 'high'
-            }
-          />
-        ) : (
-          <MapGlobe
-            geoIndex={geoIndex}
-            onSelectRegion={(id) => setSelectedId((cur) => (cur === id ? null : id))}
-            onFail={() => setMapFailed(true)}
-            onHoverRegion={() => {
-              /* Hover feedback lives in the map's own cursor and labels; the old
-                 globe's tooltip is not needed here and would duplicate MapLibre's
-                 place labels. */
-            }}
-          />
-        )}
-
-        {/* --------------------------------------------------------- chrome -- */}
-        <header className="epage__chrome">
-          <div className="epage__chrome-left">
-            <Link to="/" className="epage__back">
-              <Icon name="arrow-left" size={15} />
-              <span>主空间</span>
-            </Link>
-            <div className="epage__titles">
-              <h1 className="epage__title">{route.label}</h1>
-              <p className="epage__sub u-label">{route.labelEn}</p>
-            </div>
-          </div>
-
-          {/* ------------------------------------------------------- stats -- */}
-          <dl className="epage__stats" aria-label="旅行进度">
+      <div className="epure__bottom">
+        <div>
+          <GestureHud control={globeControl} />
+          <dl className="epure__stats" aria-label="旅行进度">
             <div>
               <dt className="u-label">已到访</dt>
-              <dd>{stats.visited}</dd>
+              <dd className="u-mono">{stats.visited}</dd>
             </div>
             <div>
               <dt className="u-label">计划中</dt>
-              <dd>{stats.planned}</dd>
+              <dd className="u-mono">{stats.planned}</dd>
             </div>
             <div>
-              <dt className="u-label">可识别国家与地区</dt>
-              <dd>{stats.total}</dd>
+              <dt className="u-label">可识别</dt>
+              <dd className="u-mono">{stats.total}</dd>
             </div>
           </dl>
-        </header>
-
-        {/* -------------------------------------------------------- sun note -- */}
-        <div className="epage__sun" role="note">
-          <span className="epage__sun-dot" aria-hidden="true" />
-          <div>
-            <p className="epage__sun-line">
-              太阳直射点 <span className="u-mono">{sun.latitude.toFixed(1)}°, {sun.longitude.toFixed(1)}°</span>
-            </p>
-            <p className="epage__sun-note">
-              昼夜分界由本地按当前 UTC 时间与太阳赤纬计算，不是装饰性的扫光。
-              地表影像本身是静态贴图，不是实时卫星画面。
-            </p>
-          </div>
         </div>
-
-        {/* ------------------------------------------------------ region panel -- */}
-        {selected ? (
-          <RegionPanel
-            region={selected}
-            label={regionLabel(selected.id, selected.nameEn)}
-            photosById={photosById}
-            vote={voteForSelected}
-            onVote={onVote}
-            onClose={closePanel}
-          />
-        ) : null}
-
-        {/* ----------------------------------------------------- region search -- */}
-        {/*
-          The permanent 174-row grid that used to sit below the map is gone. It was
-          doing two jobs that both had to survive: keyboard reachability of every
-          region, and finding a region by name. Both now live in this collapsed panel
-          — the same complete dataset, reachable on demand, occupying no space until
-          asked for. Removing it without replacing that would have made the page less
-          usable, not more immersive.
-        */}
-        <RegionSearch
-          geoIndex={geoIndex}
-          selectedId={selectedId}
-          onSelect={(id) => setSelectedId((cur) => (cur === id ? null : id))}
-        />
-      </div>
-
-      {/* ======================================================= credits == */}
-      <footer className="epage__credits">
-        <h2 className="epage__credits-title u-label">数据与素材来源</h2>
-        <ul>
-          <li>
-            <strong>全球视图（z0–z4）</strong>：NASA 的 BlueMarble 无云参考镶嵌图，
-            <strong>公有领域</strong>，无需密钥。它不是某一天的天气，而是由数月观测合成的
-            无云地表——正因为没有云、没有轨道空档，这里没有任何黑带。
-          </li>
-          <li>
-            <strong>大陆与区域视图（z4–z9）</strong>：NASA EOSDIS GIBS 的 MODIS Terra
-            真彩日合成图（2024-07-01），<strong>公有领域</strong>，无需密钥。
-            最深 z9（约 610 m/像素），z10 服务器直接返回 400。
-            这是<strong>真实观测</strong>，但它是每日合成图，所以会看到
-            <strong>卫星轨道条带之间的接缝</strong>——那是传感器没有拍到的空隙，
-            不是渲染错误。放大后看到的是下面的矢量街道图，不是更清晰的卫星照片。
-          </li>
-          <li>
-            <strong>路网与地名（z4 起）</strong>：OpenStreetMap 数据，经 OpenFreeMap
-            分发（MIT 许可，无需密钥）。道路、建筑轮廓与地名在各缩放级别都是真实数据。
-          </li>
-          <li>
-            国界：Natural Earth 1:110m（公有领域）。该精度下小岛屿与部分边界会被简化或缺失，
-            因此地球上的国界仅供识别，不能作为精确边界使用。
-          </li>
-          <li>
-            昼夜与太阳位置：本地按低精度太阳位置算法计算，误差小于 1°。
-            这是真实的天文位置，但不是精密星历，也不包含大气折射。地图视图不绘制昼夜分界。
-          </li>
-          <li>
-            本地三维地球（地图库不可用时的降级渲染器）使用 NASA / Goddard 的合成影像
-            （经 Wikimedia Commons 分发，公有领域）。该渲染器<strong>不联网</strong>，
-            因此在离线或影像源不可达时仍然可用。
-          </li>
-        </ul>
-        <p className="epage__credits-note">
-          地图影像为固定日期的合成图，不是实时卫星画面。完整来源与许可记录在{' '}
-          <code>public/assets/earth/textures.json</code> 与{' '}
-          <code>src/features/earth/map-sources.ts</code>。
+        <p className="epure__credit">
+          地球影像：NASA Blue Marble / MODIS（公有领域） · 国界与地区：Natural Earth（公有领域）
         </p>
-      </footer>
-
-      {/* A final, conventional way back. */}
-      <div className="epage__footer-nav">
-        <Link to="/" className="btn btn--line btn--md">
-          <Icon name="arrow-left" size={16} />
-          <span>返回主空间</span>
-        </Link>
-        <Link to="/photography" className="btn btn--ghost btn--md">
-          <span>去看摄影</span>
-          <SmartImage
-            src={PHOTOS[0]?.thumb ?? PHOTOS[0]?.src ?? ''}
-            alt=""
-            width={24}
-            height={16}
-            tone={PHOTOS[0]?.tone ?? '#101820'}
-            className="epage__footer-thumb"
-            failureLabel=""
-          />
-        </Link>
       </div>
+
+      {city ? (
+        <aside className="epure__city glass glass--depth" role="dialog" aria-modal={false} aria-label="城市信息">
+          <header className="epure__city-head">
+            <div>
+              <h2 className="epure__city-title">{cityLabel(city)}</h2>
+              {citySubLabel(city) ? <span className="epure__city-sub u-label">{citySubLabel(city)}</span> : null}
+            </div>
+            <button type="button" className="epure__city-close" onClick={closeCity} aria-label="关闭城市信息">
+              <Icon name="close" size={16} />
+            </button>
+          </header>
+          <dl className="epure__city-facts">
+            {city.country ? (
+              <div>
+                <dt className="u-label">国家 / 地区</dt>
+                <dd>{city.country}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt className="u-label">坐标</dt>
+              <dd className="u-mono">
+                {city.lat.toFixed(2)}, {city.lon.toFixed(2)}
+              </dd>
+            </div>
+            {city.pop ? (
+              <div>
+                <dt className="u-label">人口</dt>
+                <dd className="u-mono">{city.pop.toLocaleString('en-US')}</dd>
+              </div>
+            ) : null}
+          </dl>
+          <p className="epure__city-note">
+            城市坐标与人口来自 Natural Earth（公有领域）。这一版为精简基础层，并不覆盖全球所有城市。
+          </p>
+        </aside>
+      ) : null}
+
+      {selected ? (
+        <RegionPanel
+          region={selected}
+          label={regionLabel(selected.id, selected.nameEn)}
+          photosById={photosById}
+          province={selectedProvince}
+          onBackToCountry={() => setSelectedProvince(null)}
+          onClose={returnToGlobal}
+        />
+      ) : null}
+
+      <p className="visually-hidden">
+        三维地球。方向键左右旋转、上下缩放，Home 恢复视角，Enter 选中准星所在地区，Esc 关闭地区面板。
+      </p>
     </div>
   );
 }

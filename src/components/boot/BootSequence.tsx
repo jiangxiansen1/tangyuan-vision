@@ -33,7 +33,7 @@ export interface BootSequenceProps {
   mode?: 'full' | 'short';
 }
 
-const DURATION = { full: 1650, short: 620, reduced: 300 } as const;
+const DURATION = { full: 3800, short: 900, reduced: 300 } as const;
 
 /**
  * Decides between the full, shortened and skipped sequences.
@@ -59,7 +59,7 @@ export function BootSequence({ onDone, mode = 'full' }: BootSequenceProps) {
 
   const total = prefersReduced ? DURATION.reduced : DURATION[mode];
   // The sweep and highlight collapse to nothing when motion is reduced.
-  const scale = prefersReduced ? 0 : mode === 'full' ? 1 : 0.45;
+  const scale = prefersReduced ? 0 : mode === 'full' ? 2.3 : 0.55;
 
   const finish = useCallback(() => {
     if (finishedRef.current) return;

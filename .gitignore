@@ -56,3 +56,9 @@ supabase/.branches/
 # tools/verify-*.cjs while measuring a running site. They exist for the duration of
 # a check and must never be published.
 public/__*
+
+# Natural Earth source GeoJSON (tens of MB). Re-fetchable, and never shipped in the
+# front-end bundle. The DERIVED files that ARE shipped live in
+# public/assets/earth/admin1/ and src/features/earth/data/. See docs/DATA_SOURCES.md.
+tools/_data/
+

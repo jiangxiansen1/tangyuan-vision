@@ -37,13 +37,13 @@
     /* A cool nebula low and left, where the eye enters the row. */
     radial-gradient(
       58% 44% at 22% 78%,
-      color-mix(in srgb, #16324f 72%, transparent) 0%,
+      color-mix(in srgb, #16324f 42%, transparent) 0%,
       transparent 70%
     ),
     /* A second, dimmer source high right, so the field is not one-directional. */
     radial-gradient(
       46% 38% at 84% 16%,
-      color-mix(in srgb, #12283d 60%, transparent) 0%,
+      color-mix(in srgb, #12283d 34%, transparent) 0%,
       transparent 68%
     ),
     /* A very faint warm counterpoint, so the page does not read as blue plastic.
@@ -53,7 +53,9 @@
       color-mix(in srgb, #2a2118 46%, transparent) 0%,
       transparent 72%
     ),
-    linear-gradient(178deg, #070b12 0%, #05070a 46%, #04060a 100%);
+    linear-gradient(178deg, #070b12 0%, #05070a 46%, #04060a 100%),
+    /* Vignette: the corners fall away so the wordmark sits in light. */
+    radial-gradient(125% 105% at 50% 44%, transparent 42%, rgb(0 0 0 / 0.5) 100%);
 }
 
 /* ----------------------------------------------------------- L2 · photo -- */
@@ -70,8 +72,8 @@
   position: absolute;
   inset: 0;
   background-size: cover;
-  background-position: center 34%;
-  filter: saturate(0.55) contrast(1.02) brightness(0.72);
+  background-position: center 42%;
+  filter: saturate(0.62) contrast(1.05) brightness(0.9);
   opacity: calc(1 - var(--photo-overlay, 0.72));
   animation: vback-in 1400ms var(--ease-standard) both;
 }
@@ -98,8 +100,8 @@
   background:
     radial-gradient(
       56% 40% at 50% 42%,
-      color-mix(in srgb, #04060a 76%, transparent) 0%,
-      color-mix(in srgb, #04060a 40%, transparent) 46%,
+      color-mix(in srgb, #04060a 48%, transparent) 0%,
+      color-mix(in srgb, #04060a 22%, transparent) 46%,
       transparent 78%
     ),
     linear-gradient(

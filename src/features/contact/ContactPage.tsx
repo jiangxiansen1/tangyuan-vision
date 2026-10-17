@@ -30,12 +30,12 @@ import './contact.css';
 
 const route = NAVIGABLE_ROUTES.find((r) => r.id === 'contact')!;
 
-const CHANNEL_ICON: Record<string, 'signal' | 'arrow-out' | 'music' | 'sparkle' | 'journal'> = {
+/* The only three channels this site offers. Douyin → video, Email → signal,
+   GitHub → external arrow. Data lives in src/content/data/contact.json. */
+const CHANNEL_ICON: Record<string, 'signal' | 'arrow-out' | 'video'> = {
+  douyin: 'video',
   email: 'signal',
   github: 'arrow-out',
-  bilibili: 'music',
-  xiaohongshu: 'sparkle',
-  wechat: 'journal',
 };
 
 export default function ContactPage() {

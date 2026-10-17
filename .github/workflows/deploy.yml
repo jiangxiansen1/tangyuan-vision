@@ -14,15 +14,18 @@
 # pushing to a gh-pages branch. That is the current recommended approach and it
 # avoids a second branch entirely.
 #
-# IF YOUR DEFAULT BRANCH IS NOT `main`
-#   Change the branch name in the `on.push.branches` list below (and in the
-#   workflow_dispatch trigger, which needs no change).
+# BRANCHES
+#   The trigger listens on BOTH `main` and `master`, so either name deploys. This
+#   repository's current local branch is `master`; GitHub's default for a new repo
+#   is usually `main`. Listening on both removes the most common silent failure
+#   ("I pushed and nothing deployed"). If you settle on one name, you may narrow
+#   the list below — but there is no harm in keeping both.
 
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   # Lets you re-run a deploy from the Actions tab without pushing a commit.
   workflow_dispatch:
 
@@ -49,8 +52,12 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          # Keep this in step with the `packageManager` field if you add one.
-          version: 10
+          # Must match the pnpm major that owns pnpm-workspace.yaml (`allowBuilds`)
+          # and this lockfile: pnpm 11. pnpm 10 does not understand `allowBuilds`,
+          # so esbuild's postinstall would be blocked and the build would die with
+          # "esbuild binary not found". Verified 2026-10-11: node_modules was
+          # installed by pnpm@11.8.0 (see node_modules/.modules.yaml).
+          version: 11
 
       - name: Set up Node
         uses: actions/setup-node@v4

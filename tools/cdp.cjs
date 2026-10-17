@@ -148,7 +148,11 @@ async function withBrowser(fn, options = {}) {
   const profile = path.join(os.tmpdir(), `tv-cdp-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   fs.mkdirSync(profile, { recursive: true });
 
+  /* Test-only knob: extra Chromium flags (e.g. a fake camera device) without
+     changing any behaviour for normal runs. Comma-separated in TV_BROWSER_ARGS. */
+  const extraArgs = (process.env.TV_BROWSER_ARGS || '').split(',').map((s) => s.trim()).filter(Boolean);
   const args = [
+    ...extraArgs,
     '--headless=new',
     '--no-sandbox',
     '--disable-extensions',
@@ -158,6 +162,7 @@ async function withBrowser(fn, options = {}) {
     '--window-size=1440,1000',
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profile}`,
+    ...extraArgs,
     'about:blank',
   ];
 
