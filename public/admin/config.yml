@@ -51,25 +51,28 @@
 local_backend: true
 
 backend:
-  # 当前唯一实测可用的后端：decap-server 文件系统代理，写入本地工作副本。
+  # 线上后端：GitHub + 自建 OAuth 中转（2026-10-17 部署）
+  #
+  # 为什么需要中转：GitHub Pages 是纯静态主机，OAuth 的 code→token 交换必须带
+  # client secret，而 secret 不能出现在这个公开文件里。中转只做这一次交换，
+  # 不接触内容、不存 token。逐步搭建与验证见 docs/CMS-OAUTH-SETUP.md。
+  #
+  # base_url 是公开值，写在这里没问题；Client ID / Client Secret 只存在于
+  # Cloudflare Worker 的加密环境变量中，永远不进仓库。
+  name: github
+  repo: jiangxiansen1/tangyuan-vision
+  # 必须是 master：本仓库的默认分支就是 master（deploy.yml 同时监听 main 和
+  # master，但这里写错会表现为“登录成功却一个集合都读不到”，很难排查）。
+  branch: master
+  base_url: https://sveltia-cms-auth.jiangxiansen1.workers.dev
+  auth_endpoint: auth
+
+  # ---- 线上后端启用前的备用配置（本地专用）---------------------------------
+  # 若线上中转不可用，把上面几行换成下面两行即可回到本地文件系统代理：
+  #   name: proxy
+  #   proxy_url: http://localhost:8081/api/v1
   # 注意：'local' 不是任何 decap-cms 版本注册的后端名（实测 3.8.4→latest 均报
   # "Backend not found: local"）；官方名称是 proxy。
-  name: proxy
-  proxy_url: http://localhost:8081/api/v1
-
-  # ---- 线上生产后端模板：授权后再启用，禁止猜测或硬编码仓库信息 ----
-  # name: github
-  # repo: <OWNER>/<REPO>            # 创建 GitHub 仓库后填写
-  # branch: main                    # 须与 .github/workflows/deploy.yml 监听分支一致
-  # base_url: <OAuth 中转地址>       # 方案与步骤见 docs/cms-online-readiness.md §4/§5
-  # auth_endpoint: auth
-
-  # ---- To enable the GitHub backend, replace the two lines above with: -------
-  # name: github
-  # repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
-  # branch: main
-  # base_url: https://YOUR-OAUTH-RELAY.workers.dev
-  # auth_endpoint: auth
   #
   # DO NOT put a personal access token in this file. It is served publicly.
 
