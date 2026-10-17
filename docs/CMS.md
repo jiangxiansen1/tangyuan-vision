@@ -83,6 +83,11 @@ pnpm dev
 
 线上编辑需要一个 OAuth 中转。以下三种都是**免费且可维护**的。
 
+> **照着做就行的手册：[`docs/CMS-OAUTH-SETUP.md`](./CMS-OAUTH-SETUP.md)**
+> 那一份是本仓库专用的逐步操作手序：确切的仓库名/分支（`master`）、
+> `ALLOWED_DOMAINS` 的取值、callback URL 的准确格式、每个环境变量的名字，
+> 以及七种常见失败的对照表。本节只做方案对比，逐步操作看那一份。
+
 ### 选项 1 · Cloudflare Workers + sveltia-cms-auth（推荐）
 
 免费额度对个人站点绰绰有余，冷启动快。
