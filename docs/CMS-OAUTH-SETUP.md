@@ -5,6 +5,29 @@
 
 ---
 
+## 已完成的部分（2026-10-17 实测）
+
+| 项 | 状态 | 值 / 证据 |
+| --- | --- | --- |
+| OAuth 中转部署 | ✅ | `https://sveltia-cms-auth.jiangxiansen1.workers.dev` |
+| `ALLOWED_DOMAINS` | ✅ | `jiangxiansen1.github.io` |
+| `GITHUB_CLIENT_ID` | ✅ | Cloudflare 加密变量（长度 20） |
+| `GITHUB_CLIENT_SECRET` | ✅ | Cloudflare 加密变量（长度 40） |
+| `config.yml` 后端 | ✅ | `name: github` / `branch: master` / `base_url` 已指向该 Worker |
+| Decap 发起授权 | ✅ | 点「使用 GitHub 登录」请求 `/auth?provider=github&site_id=jiangxiansen1.github.io&scope=repo` |
+| Worker 响应 | ✅ | **302** → `github.com/login/oauth/authorize?client_id=…&scope=repo&state=…` |
+| GitHub 账号点 Authorize | ⬜ | **只能由仓库所有者本人完成**，见第 6 节 |
+
+> 排查记录（这段是有价值的部分，别删）：一开始 Worker 一直报 `MISCONFIGURED_CLIENT`。
+> 在 Worker 里临时加了 `/__debug_env` 端点读运行时 `env`，得到
+> `{hasClientId:true, clientIdLen:20, hasSecret:false, secretLen:0}` ——
+> **Secret 的名字在、类型对、`wrangler secret put` 也回执 Success，但值是空字符串**。
+> 原因是 `wrangler secret put` 的隐藏输入在 PowerShell 里粘贴时被吞掉了。
+> 用 `Read-Host -AsSecureString` 读出再管道传给 `wrangler secret put` 才成功（长度 40）。
+> 诊断端点用完已删除并重新部署（现为 404）。
+
+---
+
 ## 0. 先说清楚：为什么必须有中转
 
 GitHub Pages 是纯静态主机，没有任何服务端代码。OAuth 授权码换访问令牌这一步
