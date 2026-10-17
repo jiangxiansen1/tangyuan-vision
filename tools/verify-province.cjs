@@ -49,10 +49,27 @@ withBrowser(async (page) => {
   const provRows = [];
   for (const p of provs) {
     const r = await run(`return clickGeo(${p.geo[0]}, ${p.geo[1]});`);
-    await wait(450);
-    const dom = await panel();
-    const pass = !!(dom && dom.crumb === p.expect && r.province === p.expect && r.after && r.after.regionId === '156');
-    provRows.push({ geo: p.geo, expect: p.expect, probe: r.province, domCrumb: dom && dom.crumb, pass });
+    /*
+     * WAIT FOR THE UPGRADE, DO NOT RACE IT.
+     *
+     * A click that lands before the country's Admin-1 chunk has arrived selects
+     * the country and is upgraded to the province the moment the geometry loads
+     * (see EarthGlobe's pendingProvincePick). That upgrade is therefore
+     * asynchronous by design, and over a slow link the chunk can take seconds, so
+     * a fixed 450 ms read tested the download speed rather than the behaviour.
+     * Poll for the crumb instead, then assert on the globe's own lastClick record
+     * — which now has to carry a real province id, making the check stricter than
+     * the old one that only compared a pre-click probe.
+     */
+    let dom = null;
+    for (let i = 0; i < 20; i++) {
+      await wait(300);
+      dom = await panel();
+      if (dom && dom.crumb === p.expect) break;
+    }
+    const after = await run(`return __h().__earthAim.lastClick();`);
+    const pass = !!(dom && dom.crumb === p.expect && after && after.regionId === '156' && !!after.provinceId);
+    provRows.push({ geo: p.geo, expect: p.expect, probe: r.province, domCrumb: dom && dom.crumb, after, pass });
     if (!pass) report.ok = false;
   }
   note('provinceClicks', provRows);
