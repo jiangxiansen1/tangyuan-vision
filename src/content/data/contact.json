@@ -4,18 +4,18 @@
       "id": "douyin",
       "label": "抖音",
       "labelEn": "Douyin",
-      "handle": null,
-      "url": null,
-      "confirmed": false,
+      "handle": "汤圆Visfon",
+      "url": "https://v.douyin.com/JE_g6CkfDn0/ 2@4.com :4pm",
+      "confirmed": true,
       "note": "未提供。请把真实的抖音主页链接填到后台 CMS 的「联系方式」里（config.yml → settings → contact）。填写之前这里显示为待填写，不会伪造一个点不开的链接。"
     },
     {
       "id": "email",
       "label": "电子邮箱",
       "labelEn": "Email",
-      "handle": null,
+      "handle": "jiangxiansen1@gemail.com",
       "url": null,
-      "confirmed": false,
+      "confirmed": true,
       "note": "未提供。请在后台 CMS 的「联系方式」中填入你希望公开的邮箱；在填写之前，这里显示为待填写状态，而不是一个看起来像真的但发不出去的地址。"
     },
     {
