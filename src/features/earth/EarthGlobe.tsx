@@ -1032,6 +1032,23 @@ export function EarthGlobe({
       /* Test-only: what the last real click resolved to (region id + province id).
          Read through __earthAim.lastClick(); never used by the UI. */
       let lastClickInfo: { regionId: string; provinceId: string | null } | null = null;
+      /*
+       * A CLICK THAT ARRIVED BEFORE ITS PROVINCE GEOMETRY DID.
+       *
+       * Admin-1 chunks load on demand (CHN.json alone is ~700 KB), so the very
+       * first click on a country necessarily lands while `admin1` is still null
+       * for it: `resolvePick` correctly reports the country and no province, and
+       * the visitor sees the country panel even though they aimed at a province.
+       * Requiring a second click made "zoom in and open a province" look broken,
+       * because the second click on an already-selected country is a TOGGLE that
+       * closes the panel.
+       *
+       * So the click is remembered here, and the moment Admin-1 for that same
+       * country is available the ray is resolved again against the very
+       * coordinate that was clicked. A hit upgrades the panel to the province; a
+       * miss (ocean, a country with no Admin-1 data) changes nothing.
+       */
+      let pendingProvincePick: { countryId: string; lon: number; lat: number } | null = null;
       const onPointerDown = (e: PointerEvent) => {
         /*
          * Capture is an optimisation, not a requirement: a pointer that is
@@ -1107,12 +1124,20 @@ export function EarthGlobe({
           if (res) {
             lastClickInfo = { regionId: res.region.id, provinceId: res.province ? res.province.id : null };
             if (res.province) {
+              pendingProvincePick = null;
               onSelectProvinceRef.current?.(res.region.id, res.province);
               return;
             }
+            // No province yet. If this country has Admin-1 data it is almost
+            // certainly still in flight, so remember the exact coordinate and let
+            // the render loop upgrade the selection when the chunk lands.
+            pendingProvincePick = { countryId: res.region.id, lon: res.longitude, lat: res.latitude };
             onSelectRef.current?.(res.region.id);
             return;
           }
+          // A click on empty space cancels any pending upgrade: the visitor has
+          // moved on, and resolving it later would select something they did not aim at.
+          pendingProvincePick = null;
         }
         // Resume slow auto-rotation only if the visitor has left it alone.
         autoRotate = true;
@@ -1294,6 +1319,23 @@ export function EarthGlobe({
         /* Admin-1 boundaries: real geometry, shown only when zoomed in. */
         syncAdmin1();
         admin1Group.visible = distance < ADMIN1_SHOW_DISTANCE;
+
+        /*
+         * Settle a click that was made before its province geometry arrived.
+         * Runs only while a click is actually pending, so the per-frame cost in
+         * the normal case is one null check. The country must still match, so a
+         * chunk that arrives after the visitor has selected something else can
+         * never retroactively move the selection.
+         */
+        if (pendingProvincePick && admin1Ref.current && admin1CountryRef.current === pendingProvincePick.countryId) {
+          const pend = pendingProvincePick;
+          pendingProvincePick = null;
+          const province = pickProvince(admin1Ref.current, pend.lon, pend.lat);
+          if (province) {
+            lastClickInfo = { regionId: pend.countryId, provinceId: province.id };
+            onSelectProvinceRef.current?.(pend.countryId, province);
+          }
+        }
 
         renderer.render(scene, camera);
       };

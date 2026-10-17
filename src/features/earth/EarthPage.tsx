@@ -85,10 +85,56 @@ export default function EarthPage() {
   /** The real Admin-1 province the visitor activated, or null (country level). */
   const [selectedProvince, setSelectedProvince] = useState<Admin1Item | null>(null);
 
+  /*
+   * Real Admin-1 geometry for the SELECTED country (loaded on demand, cached).
+   * The country id travels WITH the geometry so the globe can never test a click
+   * on one country against another country's province polygons. Stale geometry is
+   * cleared the instant the selection changes, so a fast switch cannot pick a
+   * province from the country that was selected a moment ago.
+   */
+  const [admin1, setAdmin1] = useState<{ countryId: string; items: Admin1Item[] } | null>(null);
+  /*
+   * Read inside the click callback WITHOUT making that callback depend on the
+   * geometry: a new callback identity on every load would be churn, and the
+   * callback needs the LATEST value at click time, not the one captured when the
+   * globe's listeners were bound.
+   */
+  const admin1Ref = useRef<{ countryId: string; items: Admin1Item[] } | null>(null);
+  admin1Ref.current = admin1;
+
+  useEffect(() => {
+    if (!selectedId) { setAdmin1(null); return; }
+    let alive = true;
+    setAdmin1(null);
+    void loadAdmin1ForCountry(selectedId).then((c) => {
+      if (alive) setAdmin1(c ? { countryId: selectedId, items: c.items } : null);
+    });
+    return () => { alive = false; };
+  }, [selectedId]);
+
+  /**
+   * A country was clicked.
+   *
+   * THE TOGGLE IS CONDITIONAL, AND THAT IS THE FIX.
+   *
+   * Plain toggling (`cur === id ? null : id`) is right for a country with no
+   * Admin-1 data: clicking it again is the only way to dismiss its panel.
+   *
+   * It is wrong for a country that HAS provinces, because the natural way to go
+   * deeper is to click the country you are already looking at. That second click
+   * used to be read as "close", so the panel vanished exactly when the visitor
+   * was trying to drill in — and with the Admin-1 chunk still loading on the
+   * first click, drilling in looked impossible. Keeping the selection while
+   * province data exists lets the click land as a province pick instead.
+   */
   const handleSelectRegion = useCallback((id: string) => {
     setCity(null);
     setSelectedProvince(null);
-    setSelectedId((cur) => (cur === id ? null : id));
+    setSelectedId((cur) => {
+      if (cur !== id) return id;
+      // Already selected: keep it open only when this country can show provinces.
+      return admin1Ref.current?.countryId === id ? cur : null;
+    });
   }, []);
 
   /**
@@ -111,24 +157,6 @@ export default function EarthPage() {
   }, []);
 
   const closeCity = useCallback(() => setCity(null), []);
-
-  /*
-   * Real Admin-1 geometry for the SELECTED country (loaded on demand, cached).
-   * The country id travels WITH the geometry so the globe can never test a click
-   * on one country against another country's province polygons. Stale geometry is
-   * cleared the instant the selection changes, so a fast switch cannot pick a
-   * province from the country that was selected a moment ago.
-   */
-  const [admin1, setAdmin1] = useState<{ countryId: string; items: Admin1Item[] } | null>(null);
-  useEffect(() => {
-    if (!selectedId) { setAdmin1(null); return; }
-    let alive = true;
-    setAdmin1(null);
-    void loadAdmin1ForCountry(selectedId).then((c) => {
-      if (alive) setAdmin1(c ? { countryId: selectedId, items: c.items } : null);
-    });
-    return () => { alive = false; };
-  }, [selectedId]);
 
   /* Region id -> label, for the reticle's name readout. */
   const labelOf = useCallback(

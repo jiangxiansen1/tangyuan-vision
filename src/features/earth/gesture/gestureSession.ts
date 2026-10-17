@@ -49,6 +49,42 @@ export interface GestureSnapshot {
 
 const DETECT_INTERVAL_MS = 42;
 const DETACH_GRACE_MS = 700;
+/*
+ * HOW LONG THE GPU DELEGATE GETS BEFORE WE GIVE UP ON IT — measured, not guessed.
+ *
+ * `HandLandmarker.createFromOptions({ delegate: 'GPU' })` does not always reject
+ * when the GPU path is unusable: on a machine with a perfectly good WebGL2
+ * context (measured on an NVIDIA RTX 5060 / D3D11) it simply NEVER SETTLES. The
+ * promise stays pending forever, so a bare `await` hangs, `enable()` never
+ * reaches `setStatus('running')`, and the HUD sits on "启动中/正在请求摄像头…"
+ * with no error to explain it. That is the whole "手势打不开" symptom.
+ *
+ * A try/catch cannot recover from a hang, so the GPU attempt is raced against a
+ * deadline and the CPU delegate — measured at ~2.0 s — takes over. Once the GPU
+ * path has failed this way once, it is not retried for the rest of the page
+ * session, so a second enable starts fast instead of waiting out the deadline
+ * again.
+ */
+const GPU_INIT_TIMEOUT_MS = 6000;
+const CPU_INIT_TIMEOUT_MS = 25000;
+let gpuDelegateUnusable = false;
+
+/** Reject rather than hang: a delegate that never settles must not wedge enable(). */
+function withDeadline<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${what} 超过 ${ms}ms 未完成`)), ms);
+    p.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      }
+    );
+  });
+}
 /* Auto-rotation resumes this long after the last detected hand. */
 const HAND_LOST_GRACE_MS = 1500;
 const BASE = import.meta.env.BASE_URL || '/';
@@ -452,10 +488,36 @@ function createSession(): GestureSession {
             runningMode: 'VIDEO',
             numHands: 2,
           });
-          try {
-            detector = await mod.HandLandmarker.createFromOptions(fileset, options('GPU'));
-          } catch {
-            detector = await mod.HandLandmarker.createFromOptions(fileset, options('CPU'));
+          /*
+           * GPU FIRST, BUT NEVER FOREVER.
+           *
+           * The old shape here was `try { GPU } catch { CPU }`, which assumes an
+           * unusable GPU delegate REJECTS. It does not always — it can hang
+           * indefinitely (see GPU_INIT_TIMEOUT_MS above), and then the catch never
+           * ran and the session was stuck in 'requesting' with no error. Racing
+           * each attempt against a deadline makes a hang indistinguishable from a
+           * failure, which is exactly what the fallback needs.
+           */
+          if (!gpuDelegateUnusable) {
+            try {
+              detector = await withDeadline(
+                mod.HandLandmarker.createFromOptions(fileset, options('GPU')),
+                GPU_INIT_TIMEOUT_MS,
+                'GPU 识别器初始化'
+              );
+            } catch (gpuErr) {
+              gpuDelegateUnusable = true;
+              console.warn('[gesture] GPU delegate unusable, falling back to CPU:', messageOf(gpuErr));
+              detector = null;
+            }
+            if (token !== enableToken) return;
+          }
+          if (!detector) {
+            detector = await withDeadline(
+              mod.HandLandmarker.createFromOptions(fileset, options('CPU')),
+              CPU_INIT_TIMEOUT_MS,
+              'CPU 识别器初始化'
+            );
           }
         } catch (err) {
           if (token === enableToken) {
