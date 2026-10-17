@@ -63,6 +63,14 @@ function resolveFile(urlPath) {
   rel = decodeURIComponent(rel.split('?')[0].split('#')[0]);
   if (rel === '' || rel.endsWith('/')) rel += 'index.html';
 
+  // Strip the leading separator BEFORE resolving. On Windows, path.resolve()
+  // treats "/index.html" as "current drive root" and returns C:\index.html,
+  // which fails the DIST containment check below — every request 404s, the fake
+  // host serves 404.html for everything, and the fallback redirect loops
+  // forever. That made the round-trip assertions fail for a reason that had
+  // nothing to do with dist/404.html.
+  rel = rel.replace(/^[\\/]+/, '');
+
   const abs = path.resolve(DIST, rel);
   if (!abs.startsWith(DIST)) return null;
   return fs.existsSync(abs) && fs.statSync(abs).isFile() ? abs : null;
