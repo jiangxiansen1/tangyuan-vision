@@ -51,6 +51,14 @@ export function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProp
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const [zoomed, setZoomed] = useState(false);
+  /**
+   * Continuous zoom driven by the mouse wheel (1 = fit to stage).
+   *
+   * The existing space/tap toggle jumps straight to 1:1 pixels, which is a
+   * different gesture with a different purpose. A wheel gives the graduated
+   * control people expect from an image viewer, so both are kept.
+   */
+  const [wheelZoom, setWheelZoom] = useState(1);
 
   const total = photos.length;
 
@@ -126,7 +134,29 @@ export function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProp
   /* ---- reset zoom when the photo changes ---- */
   useEffect(() => {
     setZoomed(false);
+    setWheelZoom(1);
   }, [index]);
+
+  /* ---- mouse wheel zooms the photograph (1x .. 4x) ----
+     Bound to the stage rather than the image so the gesture works wherever the
+     pointer is over the picture area, and non-passive so the page behind cannot
+     scroll underneath a full-screen viewer. Horizontal trackpad swipes are
+     ignored: they belong to the swipe-to-navigate gesture, not to zoom. */
+  useEffect(() => {
+    if (!open) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
+      event.preventDefault();
+      setWheelZoom((z) => {
+        const next = z * (event.deltaY < 0 ? 1.12 : 1 / 1.12);
+        return Math.min(4, Math.max(1, Number(next.toFixed(3))));
+      });
+    };
+    stage.addEventListener('wheel', onWheel, { passive: false });
+    return () => stage.removeEventListener('wheel', onWheel);
+  }, [open]);
 
   /* ---- touch gestures: horizontal swipe to navigate ---- */
   useEffect(() => {
@@ -253,6 +283,8 @@ export function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProp
             onClick={() => setZoomed((z) => !z)}
             aria-label={zoomed ? '缩小图像' : '放大图像'}
             data-zoomed={zoomed || undefined}
+            data-zoom={wheelZoom > 1.001 ? 'in' : undefined}
+            style={{ ['--lb-zoom' as string]: String(wheelZoom) }}
           >
             <SmartImage
               // Remounting on index change is what re-triggers the loading state,

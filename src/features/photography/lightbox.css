@@ -371,3 +371,18 @@
     padding-right: var(--sp-3);
   }
 }
+
+/* ------------------------------------------------ wheel zoom (1x .. 4x) --
+   --lb-zoom is set inline from the wheel handler. Scaling the frame keeps the
+   existing fit/1:1 toggle intact: that one changes the box, this one magnifies
+   it, and the two never fight because only one is active at a time. */
+.lightbox__image-button[data-zoom] {
+  cursor: zoom-in;
+}
+
+.lightbox__image-button[data-zoom] .lightbox__image {
+  transform: scale(var(--lb-zoom, 1));
+  transform-origin: center center;
+  transition: transform 110ms ease-out;
+  will-change: transform;
+}
