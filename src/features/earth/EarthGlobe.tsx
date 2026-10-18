@@ -790,7 +790,7 @@ export function EarthGlobe({
       globe.add(admin1Group);
       let admin1Key = '';
       let admin1Lines: import('three').LineSegments | null = null;
-      let admin1Fill: import('three').Points | null = null;
+      let admin1Fill: import('three').Mesh | null = null;
       const a1v = new THREE.Vector3();
       const pushRing = (ring: number[][], out: number[]) => {
         for (let i = 1; i < ring.length; i++) {
@@ -879,67 +879,69 @@ export function EarthGlobe({
                 ? [g.coordinates as number[][][]]
                 : (g.coordinates as number[][][][]);
 
+            const project = (lon: number, lat: number, out: number[]) => {
+              const lonR = ((-180 - lon) * Math.PI) / 180;
+              const latR = (lat * Math.PI) / 180;
+              a1v
+                .set(0, 0, ADMIN1_R + 0.0015)
+                .applyAxisAngle(X_AXIS, -latR)
+                .applyAxisAngle(Y_AXIS, -lonR);
+              out.push(a1v.x, a1v.y, a1v.z);
+            };
+
             for (const poly of polys) {
               const rings = poly as number[][][];
               if (!rings.length) continue;
 
-              let minLon = 180;
-              let maxLon = -180;
-              let minLat = 90;
-              let maxLat = -90;
-              for (const ring of rings) {
-                for (const c of ring) {
-                  if (c[0] < minLon) minLon = c[0];
-                  if (c[0] > maxLon) maxLon = c[0];
-                  if (c[1] < minLat) minLat = c[1];
-                  if (c[1] > maxLat) maxLat = c[1];
-                }
-              }
+              /*
+               * SOLID FILL, not a spray of points.
+               *
+               * The lattice read as dots rather than as a region, which is not how
+               * a travelled-through area looks on a map. The polygon is
+               * triangulated in lon/lat space with three's own triangulator — it
+               * handles concavity and holes, so enclaves and lakes stay unfilled —
+               * and only the resulting triangles are projected onto the sphere.
+               * At province scale the chord-vs-arc error of that projection is
+               * far below a pixel.
+               */
+              const outer = rings[0].map((p) => new THREE.Vector2(p[0], p[1]));
+              const holes = rings
+                .slice(1)
+                .map((ring) => ring.map((p) => new THREE.Vector2(p[0], p[1])));
+              if (outer.length < 3) continue;
 
-              const STEP = 0.22;
-              for (let lon = minLon; lon <= maxLon; lon += STEP) {
-                for (let lat = minLat; lat <= maxLat; lat += STEP) {
-                  // Even-odd over every ring, so holes and islands behave.
-                  let inside = false;
-                  for (const ring of rings) {
-                    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-                      const xi = ring[i][0];
-                      const yi = ring[i][1];
-                      const xj = ring[j][0];
-                      const yj = ring[j][1];
-                      if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
-                        inside = !inside;
-                      }
-                    }
-                  }
-                  if (!inside) continue;
-                  const lonR = ((-180 - lon) * Math.PI) / 180;
-                  const latR = (lat * Math.PI) / 180;
-                  a1v
-                    .set(0, 0, ADMIN1_R + 0.0015)
-                    .applyAxisAngle(X_AXIS, -latR)
-                    .applyAxisAngle(Y_AXIS, -lonR);
-                  fill.push(a1v.x, a1v.y, a1v.z);
-                  if (fill.length > 90000) break;
-                }
-                if (fill.length > 90000) break;
+              let faces: number[][] = [];
+              try {
+                faces = THREE.ShapeUtils.triangulateShape(outer, holes) as number[][];
+              } catch {
+                faces = [];
               }
+              if (!faces.length) continue;
+
+              const all = outer.concat(...holes);
+              for (const tri of faces) {
+                for (const idx of tri) {
+                  const v = all[idx];
+                  if (v) project(v.x, v.y, fill);
+                }
+                if (fill.length > 120000) break;
+              }
+              if (fill.length > 120000) break;
             }
           }
 
           if (fill.length) {
             const fgeo = new THREE.BufferGeometry();
             fgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(fill), 3));
-            const fmat = new THREE.PointsMaterial({
-              color: 0x5fd0ff,
-              size: 0.011,
-              sizeAttenuation: true,
+            const fmat = new THREE.MeshBasicMaterial({
+              color: 0x4fc3ff,
               transparent: true,
-              opacity: 0.5,
+              opacity: 0.3,
               depthWrite: false,
+              side: THREE.DoubleSide,
               blending: THREE.AdditiveBlending,
             });
-            admin1Fill = new THREE.Points(fgeo, fmat);
+            admin1Fill = new THREE.Mesh(fgeo, fmat);
             admin1Group.add(admin1Fill);
           }
         }
@@ -1180,15 +1182,6 @@ export function EarthGlobe({
       let pointerDownAt = { x: 0, y: 0, t: 0 };
       let distance = CAMERA_HOME.z;
       let targetDistance = distance;
-      /*
-       * Which focus the camera distance was last applied for.
-       *
-       * The render loop used to set targetDistance from the focus on EVERY frame,
-       * which silently overrode the wheel: selecting a country pinned the camera
-       * at 2.6 * focus.distance and scrolling could never move it again. That is
-       * why the province layer and the photo thumbnails looked unreachable.
-       */
-      let lastFocusKey = '';
 
       const applyRotation = () => {
         // The globe rotates; the sun stays fixed in world space. That is what
@@ -1485,48 +1478,23 @@ export function EarthGlobe({
         const t = clock.elapsedTime;
 
         /*
-         * FOCUS — turn toward a real coordinate and hold there.
+         * A SELECTED REGION DOES NOT MOVE THE CAMERA.
          *
-         * The rotation convention above derives rotation.y from longitude as
-         * (-90 - lon) degrees, so the same mapping is used here instead of a
-         * second guess. The shortest angular path keeps the turn from
-         * unwinding 350° when the target sits either side of the seam.
-         * Damping is exponential in dt, so the arrival feels identical at 60
-         * and 144 Hz; auto-rotation yields while a focus is held.
+         * This block used to damp the globe toward the region's centre and reset
+         * the distance every frame. Two things followed from that: after a click
+         * the view slid away from wherever the visitor had zoomed to, and the
+         * distance reset silently overrode both the wheel and the 重置视角 button
+         * on the very next frame — so the button looked broken.
+         *
+         * The visitor's own view now wins. Selecting a place updates the panel
+         * and nothing else; idle auto-rotation stays off while a selection is
+         * held (see the autoRotate guard further down), so the globe holds still
+         * exactly where it was left.
          */
         const f = focusRef.current;
         if (f && !dragging) {
-          /*
-           * MEASURED MAPPING, not a guess: a brute-force scan (face() over
-           * rotation space + pickAt at the crosshair) showed the rotation that
-           * centres a place is lon = -180 - geographicLon, lat = +geographicLat
-           * — 4/4 targets agreed (Ghana -1 -> -180, Mexico -102.5 -> -90,
-           * Norway 8.5 -> 174, Australia 134 -> 30). The previous -90 offset
-           * turned the globe to a place ~90° away, which is why the crosshair
-           * left the selected region and a repeated Enter had nothing to act on.
-           */
-          const desiredLon = -180 - f.lon;
-          const dLon = ((desiredLon - rotation.lon) % 360 + 540) % 360 - 180;
-          const dLat = f.lat - rotation.lat;
-          const k = Math.min(1, dt * 2.2);
-          if (Math.abs(dLon) > 0.2 || Math.abs(dLat) > 0.2) {
-            rotation.lon += dLon * k;
-            rotation.lat = Math.max(-72, Math.min(72, rotation.lat + dLat * k));
-            applyRotation();
-          }
           velocity.lon = 0;
           velocity.lat = 0;
-          /*
-           * Apply the focus distance ONCE, not every frame. It still pulls the
-           * camera in when a region is selected; it simply stops fighting the
-           * wheel afterwards, so the visitor can keep zooming to the province and
-           * photo layers.
-           */
-          const focusKey = `${f.lon.toFixed(3)},${f.lat.toFixed(3)},${(f.distance ?? 1).toFixed(3)}`;
-          if (focusKey !== lastFocusKey) {
-            lastFocusKey = focusKey;
-            targetDistance = Math.max(1.52, Math.min(6.2, 2.6 * (f.distance ?? 1)));
-          }
         }
 
         if (dragging) {
