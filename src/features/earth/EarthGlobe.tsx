@@ -412,6 +412,17 @@ export function EarthGlobe({
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 2000);
       const CAMERA_HOME = new THREE.Vector3(0, 0, 3.3);
+
+/*
+ * Camera dolly limits.
+ *
+ * The floor used to be 1.52, which left the visitor well outside the surface and
+ * stopped the zoom before the province and photo layers were really readable.
+ * The globe has radius 1 and the camera's near plane is 0.1, so 1.10 pushes right
+ * up against the surface without clipping through it.
+ */
+const MIN_DISTANCE = 1.1;
+const MAX_DISTANCE = 6.2;
       camera.position.copy(CAMERA_HOME);
 
       /* ---- lighting-free setup ----
@@ -1355,14 +1366,16 @@ export function EarthGlobe({
           // consistent fraction regardless of how large the canvas is drawn.
           const rect = hostEl.getBoundingClientRect();
           /*
-           * Zoom-aware drag gain.
+           * Zoom-aware drag gain, and it is a CURVE, not a line.
            *
-           * The same mouse travel should not turn the globe further just because
-           * the camera moved closer: at 1.52 a 200px drag swept roughly twice the
-           * ground distance it did at 3.3, which read as twitchy. The gain now
-           * follows the camera distance, floored so it never becomes sluggish.
+           * A linear factor (the previous attempt, floored at 0.35) still felt
+           * twitchy once zoomed in: the rendered globe covers far more screen per
+           * unit of latitude the closer you are, so the same pixel of mouse travel
+           * sweeps a much larger apparent rotation. Raising the ratio to ~1.9
+           * keeps the opening view exactly as it was (gain 1.0 at 3.3) while
+           * dropping to ~0.23 at the old floor and ~0.16 at the new one.
            */
-          const distanceGain = Math.max(0.35, Math.min(1, distance / CAMERA_HOME.z));
+          const distanceGain = Math.max(0.16, Math.min(1, Math.pow(distance / CAMERA_HOME.z, 1.9)));
           const scale = (180 / Math.max(rect.width, 1)) * distanceGain;
           rotation.lon += dx * scale;
           rotation.lat = Math.max(-72, Math.min(72, rotation.lat + dy * scale * 0.7));
@@ -1445,7 +1458,7 @@ export function EarthGlobe({
          * fraction at every distance, which is what makes fine framing possible.
          */
         const wheelStep = Math.exp(e.deltaY * 0.00085);
-        targetDistance = Math.max(1.52, Math.min(6.2, targetDistance * wheelStep));
+        targetDistance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, targetDistance * wheelStep));
       };
 
       /*
@@ -1766,7 +1779,7 @@ export function EarthGlobe({
           threshold: PHOTO_PIN_DISTANCE,
         }),
         zoom: (d: number) => {
-          targetDistance = Math.max(1.52, Math.min(6.2, d));
+          targetDistance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, d));
         },
       };
 
@@ -1833,7 +1846,7 @@ export function EarthGlobe({
           applyRotation();
         },
         zoomBy: (factor: number) => {
-          targetDistance = Math.max(1.52, Math.min(6.2, targetDistance * factor));
+          targetDistance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, targetDistance * factor));
         },
         setAutoRotate: (on: boolean) => {
           // The gesture session pauses idle rotation while a hand is in frame;
