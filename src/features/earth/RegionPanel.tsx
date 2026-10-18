@@ -272,6 +272,32 @@ export function RegionPanel({ region, label, photosById, province = null, onBack
               记录坐标 {travel.latitude.toFixed(4)}, {travel.longitude.toFixed(4)}
             </p>
           ) : null}
+
+          {/*
+            City-level visits. A country record is one entry, which cannot express
+            "twelve cities in Hainan"; this list can. Grouped by province because
+            that is how a trip is actually recalled.
+          */}
+          {travel.places && travel.places.length > 0 ? (
+            <section className="rpanel__section" aria-labelledby="rpanel-places">
+              <h3 id="rpanel-places" className="u-label">
+                到访城市 <span className="rpanel__place-count u-mono">{travel.places.length}</span>
+              </h3>
+              <ul className="rpanel__places">
+                {travel.places.map((place) => (
+                  <li key={`${place.province ?? ''}-${place.name}`} className="rpanel__place">
+                    <span className="rpanel__place-name">{place.name}</span>
+                    {place.province ? (
+                      <span className="rpanel__place-province">{place.province}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              <p className="rpanel__fact-note">
+                城市坐标来自常见地理资料，用于在地球上定位；它们不是 GPS 记录，可能与实际落脚点有偏差。
+              </p>
+            </section>
+          ) : null}
         </section>
       ) : null}
 

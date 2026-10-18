@@ -444,6 +444,22 @@ collections:
                 field: { name: photoId, label: 作品 id, widget: string }
               - { name: latitude, label: '纬度（可选）', widget: number, required: false, valueType: float }
               - { name: longitude, label: '经度（可选）', widget: number, required: false, valueType: float }
+              # 城市级到访。一个国家只能有一条记录，所以「去了哪些城市」必须单独列，
+              # 否则「在海南走过十二个地方」会被压成「中国」一句话。
+              - name: places
+                label: '到访城市（可选）'
+                widget: list
+                required: false
+                summary: '{{fields.name}}'
+                hint: >-
+                  每个城市一行，会在地球上单独打点，也会在地区面板里列出。
+                  lat / lon 用于定位；留空则该城市只在面板里显示名字、不在地球上打点。
+                  坐标请填真实值——填错会让标记落到错误的位置。
+                fields:
+                  - { name: name, label: 城市名, widget: string }
+                  - { name: province, label: '省份（可选）', widget: string, required: false }
+                  - { name: lat, label: '纬度（可选）', widget: number, required: false, value_type: float }
+                  - { name: lon, label: '经度（可选）', widget: number, required: false, value_type: float }
               - { name: published, label: 公开显示, widget: boolean, default: false }
   # ================================================================== contact
   - name: contact

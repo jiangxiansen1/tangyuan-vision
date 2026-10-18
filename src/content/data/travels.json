@@ -38,7 +38,254 @@
       ],
       "latitude": 25.717763,
       "longitude": 100.193442,
-      "published": true
+      "published": true,
+      "places": [
+        {
+          "name": "昆明市",
+          "province": "云南",
+          "lat": 25.04,
+          "lon": 102.71,
+          "source": "approx"
+        },
+        {
+          "name": "楚雄市",
+          "province": "云南",
+          "lat": 25.03,
+          "lon": 101.55,
+          "source": "approx"
+        },
+        {
+          "name": "大理市",
+          "province": "云南",
+          "lat": 25.61,
+          "lon": 100.27,
+          "source": "approx"
+        },
+        {
+          "name": "丽江市",
+          "province": "云南",
+          "lat": 26.86,
+          "lon": 100.23,
+          "source": "approx"
+        },
+        {
+          "name": "迪庆藏族自治州",
+          "province": "云南",
+          "lat": 27.83,
+          "lon": 99.7,
+          "source": "approx"
+        },
+        {
+          "name": "玉溪市",
+          "province": "云南",
+          "lat": 24.35,
+          "lon": 102.54,
+          "source": "approx"
+        },
+        {
+          "name": "曲靖市",
+          "province": "云南",
+          "lat": 25.49,
+          "lon": 103.8,
+          "source": "approx"
+        },
+        {
+          "name": "昭通市",
+          "province": "云南",
+          "lat": 27.34,
+          "lon": 103.72,
+          "source": "approx"
+        },
+        {
+          "name": "红河哈尼族彝族自治州",
+          "province": "云南",
+          "lat": 23.36,
+          "lon": 103.38,
+          "source": "approx"
+        },
+        {
+          "name": "文山壮族苗族自治州",
+          "province": "云南",
+          "lat": 23.37,
+          "lon": 104.24,
+          "source": "approx"
+        },
+        {
+          "name": "攀枝花市",
+          "province": "四川",
+          "lat": 26.58,
+          "lon": 101.72,
+          "source": "approx"
+        },
+        {
+          "name": "六盘水市",
+          "province": "贵州",
+          "lat": 26.59,
+          "lon": 104.83,
+          "source": "approx"
+        },
+        {
+          "name": "安顺市",
+          "province": "贵州",
+          "lat": 26.25,
+          "lon": 105.95,
+          "source": "approx"
+        },
+        {
+          "name": "贵阳市",
+          "province": "贵州",
+          "lat": 26.65,
+          "lon": 106.63,
+          "source": "approx"
+        },
+        {
+          "name": "遵义市",
+          "province": "贵州",
+          "lat": 27.73,
+          "lon": 106.93,
+          "source": "approx"
+        },
+        {
+          "name": "重庆市",
+          "province": "重庆",
+          "lat": 29.56,
+          "lon": 106.55,
+          "source": "approx"
+        },
+        {
+          "name": "百色市",
+          "province": "广西",
+          "lat": 23.9,
+          "lon": 106.62,
+          "source": "approx"
+        },
+        {
+          "name": "崇左市",
+          "province": "广西",
+          "lat": 22.38,
+          "lon": 107.36,
+          "source": "approx"
+        },
+        {
+          "name": "防城港市",
+          "province": "广西",
+          "lat": 21.69,
+          "lon": 108.35,
+          "source": "approx"
+        },
+        {
+          "name": "钦州市",
+          "province": "广西",
+          "lat": 21.98,
+          "lon": 108.65,
+          "source": "approx"
+        },
+        {
+          "name": "北海市",
+          "province": "广西",
+          "lat": 21.48,
+          "lon": 109.12,
+          "source": "approx"
+        },
+        {
+          "name": "湛江市",
+          "province": "广东",
+          "lat": 21.27,
+          "lon": 110.36,
+          "source": "approx"
+        },
+        {
+          "name": "海口市",
+          "province": "海南",
+          "lat": 20.04,
+          "lon": 110.32,
+          "source": "approx"
+        },
+        {
+          "name": "文昌市",
+          "province": "海南",
+          "lat": 19.61,
+          "lon": 110.75,
+          "source": "approx"
+        },
+        {
+          "name": "琼海市",
+          "province": "海南",
+          "lat": 19.26,
+          "lon": 110.47,
+          "source": "approx"
+        },
+        {
+          "name": "万宁市",
+          "province": "海南",
+          "lat": 18.8,
+          "lon": 110.39,
+          "source": "approx"
+        },
+        {
+          "name": "陵水黎族自治县",
+          "province": "海南",
+          "lat": 18.51,
+          "lon": 110.04,
+          "source": "approx"
+        },
+        {
+          "name": "三亚市",
+          "province": "海南",
+          "lat": 18.25,
+          "lon": 109.51,
+          "source": "approx"
+        },
+        {
+          "name": "乐东黎族自治县",
+          "province": "海南",
+          "lat": 18.75,
+          "lon": 109.17,
+          "source": "approx"
+        },
+        {
+          "name": "东方市",
+          "province": "海南",
+          "lat": 19.1,
+          "lon": 108.65,
+          "source": "approx"
+        },
+        {
+          "name": "昌江黎族自治县",
+          "province": "海南",
+          "lat": 19.3,
+          "lon": 109.05,
+          "source": "approx"
+        },
+        {
+          "name": "白沙黎族自治县",
+          "province": "海南",
+          "lat": 19.23,
+          "lon": 109.45,
+          "source": "approx"
+        },
+        {
+          "name": "临高县",
+          "province": "海南",
+          "lat": 19.91,
+          "lon": 109.69,
+          "source": "approx"
+        },
+        {
+          "name": "澄迈县",
+          "province": "海南",
+          "lat": 19.74,
+          "lon": 110,
+          "source": "approx"
+        },
+        {
+          "name": "漳州市",
+          "province": "福建",
+          "lat": 24.51,
+          "lon": 117.65,
+          "source": "approx"
+        }
+      ]
     }
   ],
   "notes": [

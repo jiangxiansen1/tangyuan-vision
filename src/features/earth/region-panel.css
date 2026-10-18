@@ -341,3 +341,44 @@
   color: var(--c-fog, #c7d0dc);
   opacity: 0.6;
 }
+
+/* ------------------------------------------------ city-level visits (places) --
+   A visited country can hold many cities. Rendered as compact chips grouped by
+   province: readable at a glance, and it never pretends to be a precise map. */
+
+.rpanel__place-count {
+  margin-left: 6px;
+  color: var(--c-silver, #aab6c6);
+  font-size: 11px;
+}
+
+.rpanel__places {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rpanel__place {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.rpanel__place-name {
+  font-size: 12px;
+  color: var(--c-frost, #eef4fb);
+}
+
+.rpanel__place-province {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--c-fog, #c7d0dc);
+  opacity: 0.75;
+}

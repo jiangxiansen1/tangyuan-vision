@@ -171,6 +171,27 @@ const REGION_LABELS: Record<string, string> = {
 
 export type VisitStatus = 'visited' | 'planned' | 'unrecorded';
 
+/**
+ * One visited city inside a country.
+ *
+ * Travel records are keyed by COUNTRY, so a single record per country cannot say
+ * that the visitor covered thirty-five cities inside it. `places` carries them.
+ *
+ * `source` exists because a coordinate can come from two very different places:
+ * a GPS fix recorded at capture time, or a value typed in by hand from a map. They
+ * must never be presented as equivalent.
+ */
+export interface PlaceVisit {
+  /** City / prefecture name as the visitor wrote it. */
+  name: string;
+  /** Province grouping, for display only. */
+  province?: string;
+  lat?: number;
+  lon?: number;
+  /** 'gps' | 'manual' | 'approx' — how the coordinate was obtained. */
+  source?: string;
+}
+
 export interface RegionTravel {
   /** ISO 3166-1 numeric, matching the geometry dataset. */
   regionId: string;
@@ -188,6 +209,8 @@ export interface RegionTravel {
   /** Real coordinates, only when the author recorded a specific place. */
   latitude?: number;
   longitude?: number;
+  /** City-level visits inside this country. */
+  places?: PlaceVisit[];
   /** Whether the CMS entry should be publicly listed. */
   published: boolean;
 }
