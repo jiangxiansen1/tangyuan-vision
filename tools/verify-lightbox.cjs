@@ -19,7 +19,15 @@ withBrowser(async (page) => {
   const note = (k, v) => report.steps.push({ [k]: v });
   const e = (b) => page.evaluate('(function(){ ' + b + ' })()');
 
-  note('railCount', await e(`return document.querySelectorAll('.ph__rail-btn').length;`));
+  /*
+   * Everything below derives from the ACTUAL number of photographs. The previous
+   * version hard-coded 11 (one step count of 10, one '04 / 11' label), so the
+   * moment the collection grew from 11 to 43 the walk stopped at step 30 and the
+   * test reported a failure that did not exist. A count-based test cannot go
+   * stale when content is added.
+   */
+  const railCount = await e(`return document.querySelectorAll('.ph__rail-btn').length;`);
+  note('railCount', railCount);
   await e(`var b=document.querySelector('.ph__stage-button'); if(b) b.click(); return true;`);
   await wait(500);
   const open = await e(`var l=document.querySelector('.lightbox'); if(!l) return null; return {counter:(l.querySelector('.lightbox__counter')||{}).textContent, film:l.querySelectorAll('.lightbox__film-btn').length, prevDisabled:(l.querySelector('.lightbox__nav--prev')||{}).disabled, nextDisabled:(l.querySelector('.lightbox__nav--next')||{}).disabled};`);
@@ -27,7 +35,7 @@ withBrowser(async (page) => {
   if (!open || open.film < 2 || open.prevDisabled !== true) report.ok = false;
 
   let steps = 0;
-  while (steps < 30) {
+  while (steps < railCount + 5) {
     const nd = await e(`var b=document.querySelector('.lightbox__nav--next'); return b ? b.disabled : true;`);
     if (nd) break;
     await e(`document.querySelector('.lightbox__nav--next').click(); return true;`);
@@ -36,7 +44,7 @@ withBrowser(async (page) => {
   }
   const endState = await e(`var l=document.querySelector('.lightbox'); return {counter:(l.querySelector('.lightbox__counter')||{}).textContent, nextDisabled:(l.querySelector('.lightbox__nav--next')||{}).disabled, prevDisabled:(l.querySelector('.lightbox__nav--prev')||{}).disabled};`);
   note('atEnd', { steps, endState });
-  if (steps !== 10 || endState.nextDisabled !== true) report.ok = false;
+  if (steps !== railCount - 1 || endState.nextDisabled !== true) report.ok = false;
 
   await e(`var b=document.querySelector('.lightbox__nav--next'); if(b && !b.disabled) b.click(); return true;`);
   await wait(220);
@@ -48,7 +56,7 @@ withBrowser(async (page) => {
   await wait(320);
   const jumped = await e(`return {counter: document.querySelector('.lightbox__counter').textContent, title: document.querySelector('.lightbox__title').textContent};`);
   note('filmJump', jumped);
-  if (jumped.counter !== '04 / 11') report.ok = false;
+  if (jumped.counter !== `04 / ${railCount}`) report.ok = false;
 
   await e(`(document.activeElement||document.body).dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); return true;`);
   await wait(400);
