@@ -178,3 +178,46 @@ cd C:\Users\pc\Documents\deepseek-harness\default-workspace\tangyuan-vision
 # 写入
 & $PY tools\import-photos.py "C:\Users\pc\Pictures\待导入" --apply
 ```
+
+## 四、按文件夹自动分类（人像 / 风光）
+
+脚本会**从子文件夹名读出分类**，所以一次导入就能把两类放好，不用分两批、也不用每次传参数。
+
+支持的文件夹名（中英文都认）：
+
+```
+待导入/
+├── 人像/          → category: portrait   （也可命名 portrait）
+│   ├── P001.jpg
+│   └── P002.jpg
+├── 风光/          → category: landscape  （也可命名 风景 / landscape）
+│   ├── L001.jpg
+│   └── L002.jpg
+└── 其他直接放根目录的 → 用 --category 的默认值（landscape）
+```
+
+或者英文目录名：
+
+```
+待导入/
+├── portrait/
+└── landscape/
+```
+
+判定规则是按**文件的相对路径**做包含匹配，所以 `旅行/2026海南/人像/xxx.jpg` 这种多层嵌套也能正确归到 portrait。
+
+验证过：
+
+```
+文件 root-01.jpg      分类 landscape   （根目录，默认）
+文件 portrait-01.jpg  分类 portrait    （人像/）
+文件 landscape-01.jpg 分类 landscape   （风光/）
+```
+
+导入命令不变，一条就够：
+
+```powershell
+& $PY tools\import-photos.py "C:\Users\pc\Pictures\待导入" --apply
+```
+
+之后在后台「摄影作品」里，`category` 字段就是分好类的，可以再手工调整。

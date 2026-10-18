@@ -334,6 +334,24 @@ def read_exif(path: Path):
 #  导出
 # --------------------------------------------------------------------------- #
 
+def guess_category(path: Path, root: Path, fallback: str) -> str:
+    """Infer the category from the folder the photo lives in.
+
+    Chinese and English folder names are both accepted because the same batch can
+    arrive as 人像/风光 or portrait/landscape. A file directly in the root keeps
+    the --category value, so the old single-folder workflow is unchanged.
+    """
+    try:
+        rel = str(path.relative_to(root)).lower()
+    except ValueError:
+        return fallback
+    if '人像' in rel or 'portrait' in rel:
+        return 'portrait'
+    if '风光' in rel or '风景' in rel or 'landscape' in rel:
+        return 'landscape'
+    return fallback
+
+
 def slugify(text: str) -> str:
     keep = []
     for ch in text.lower():
@@ -469,7 +487,7 @@ def main() -> int:
         entry = {
             "id": photo_id,
             "title": title,
-            "category": args.category,
+            "category": guess_category(path, src_dir, args.category),
             "src": f"/assets/photography/{photo_id}.jpg",
             "thumb": f"/assets/photography/{photo_id}@thumb.jpg",
             "width": int(width),
@@ -516,6 +534,7 @@ def main() -> int:
                 "id": photo_id,
                 "file": path.name,
                 "size": f"{width}x{height}",
+                "category": entry["category"],
                 "takenAt": info["taken_at"],
                 "camera": cam,
                 "gps": (info["lat"], info["lon"]) if info["lat"] is not None else None,
@@ -586,7 +605,7 @@ def main() -> int:
             gps = f'{row["gps"][0]:.4f}, {row["gps"][1]:.4f}' if row["gps"] else "无 GPS"
             country = row["country"] or "—"
             print(f'  {row["id"]}')
-            print(f'    文件 {row["file"]}   {row["size"]}   拍摄 {row["takenAt"] or "未知"}')
+            print(f'    文件 {row["file"]}   {row["size"]}   分类 {row.get("category", "?")}   拍摄 {row["takenAt"] or "未知"}')
             print(f'    GPS  {gps}   国家 {country} (ISO {row["iso"] or "?"})')
             if row["camera"]:
                 print(f'    器材 {row["camera"]}')
