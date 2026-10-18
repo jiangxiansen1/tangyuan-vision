@@ -77,8 +77,14 @@ export const HAND = {
   HINT_MS: 2000,
   RESET_MS: 1000,
   MOVE_DZ: 0.004,
-  ROTATE_GAIN: 520,
-  MAX_ROT_STEP: 9,
+  /*
+   * Raised from 520 on the visitor's request: the previous gain needed a wide
+   * sweep of the arm to turn the globe a useful amount. MAX_ROT_STEP rose with
+   * it, otherwise the higher gain would simply clip against the old per-frame
+   * ceiling and feel identical.
+   */
+  ROTATE_GAIN: 950,
+  MAX_ROT_STEP: 15,
   INERTIA_HALFLIFE: 0.5,
   MIN_INERTIA_VEL: 12,
   SPAN_DZ: 0.02,
@@ -193,9 +199,9 @@ export function createHandMachine(): HandMachine {
          * not.
          */
         out.tiltDeg = clamp(
-          dy * HAND.ROTATE_GAIN * 0.55,
-          -HAND.MAX_ROT_STEP * 0.55,
-          HAND.MAX_ROT_STEP * 0.55
+          dy * HAND.ROTATE_GAIN * 0.85,
+          -HAND.MAX_ROT_STEP * 0.85,
+          HAND.MAX_ROT_STEP * 0.85
         );
         const stepDeg = clamp(dx * HAND.ROTATE_GAIN, -HAND.MAX_ROT_STEP, HAND.MAX_ROT_STEP);
         vel = stepDeg / dt;

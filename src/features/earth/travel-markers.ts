@@ -55,25 +55,23 @@ export function deriveMarkers(records: readonly TravelRecordLike[], geoIndex: Ge
     const shape = geoIndex ? geoIndex.lookupById(r.regionId) : undefined;
 
     /*
-     * When a record carries places, they ARE the detail: a country-centre dot
-     * would sit somewhere the visitor never went and make the city dots look
-     * scattered around a fictional centre. So the region marker is dropped in
-     * that case, unless the record has an explicitly recorded coordinate.
+     * City-level places do NOT produce globe markers any more.
+     *
+     * They used to, one dot per city, which put thirty-odd bright points on top
+     * of a province fill that already says "visited" — two statements of the same
+     * fact, and the dots were the noisier one. Places still drive the province
+     * fill and the panel's city list; the globe shows the region, not the pins.
      */
     const places = Array.isArray(r.places) ? r.places : [];
-    const placeMarkers: GlobeMarker[] = [];
-    for (const p of places) {
-      if (!p || typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
-      placeMarkers.push({ lon: p.lon, lat: p.lat, label: p.name, kind: 'place' });
-    }
+    const hasPlaces = places.length > 0;
 
     const lon = typeof r.longitude === 'number' ? r.longitude : shape?.center.lon;
     const lat = typeof r.latitude === 'number' ? r.latitude : shape?.center.lat;
 
-    if (placeMarkers.length > 0) {
-      out.push(...placeMarkers);
-      continue;
-    }
+    // A record whose detail is already carried by a filled province needs no
+    // country-centre dot either: the centre of China is not a place anyone went.
+    if (hasPlaces) continue;
+
     if (typeof lon !== 'number' || typeof lat !== 'number') continue;
     out.push({
       lon,

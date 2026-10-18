@@ -147,9 +147,8 @@ export interface EarthGlobeProps {
 /** Angular size of the day/night crossfade, in dot-product units. */
 const TERMINATOR_SOFTNESS = 0.09;
 
-/** Admin-1 boundary layer: sphere offset & the zoom level it appears at. */
+/** Admin-1 boundary layer: sphere offset. The layer is always visible. */
 const ADMIN1_R = 1.008;
-const ADMIN1_SHOW_DISTANCE = 2.6;
 
 /**
  * Photo thumbnails pinned at their capture coordinates.
@@ -1006,11 +1005,17 @@ export function EarthGlobe({
            * missing feature rather than a slow image.
            */
           const mat = new THREE.SpriteMaterial({
-            color: 0x5fd0ff,
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.92,
+            opacity: 0.97,
             depthTest: true,
             depthWrite: false,
+            /*
+             * Hidden until the thumbnail actually decodes. A visible placeholder
+             * bead reads as a stray blue dot floating on the globe — exactly the
+             * clutter this layer exists to avoid.
+             */
+            visible: false,
           });
           const sprite = new THREE.Sprite(mat);
           const lonR = ((-180 - p.lon) * Math.PI) / 180;
@@ -1028,7 +1033,7 @@ export function EarthGlobe({
           const tex = p.thumb ? pinTextures.get(p.thumb) : undefined;
           if (tex) {
             mat.map = tex;
-            mat.color.setHex(0xffffff);
+            mat.visible = true;
             mat.needsUpdate = true;
           } else if (p.thumb) {
             const url = assetUrl(p.thumb);
@@ -1040,7 +1045,7 @@ export function EarthGlobe({
                   loaded.minFilter = THREE.LinearFilter;
                   pinTextures.set(p.thumb!, loaded);
                   mat.map = loaded;
-                  mat.color.setHex(0xffffff);
+                  mat.visible = true;
                   mat.needsUpdate = true;
                 },
                 undefined,
@@ -1570,7 +1575,17 @@ export function EarthGlobe({
 
         /* Admin-1 boundaries: real geometry, shown only when zoomed in. */
         syncAdmin1();
-        admin1Group.visible = distance < ADMIN1_SHOW_DISTANCE;
+        /*
+         * Borders are no longer zoom-gated.
+         *
+         * They used to appear only past a distance threshold, so at the opening view
+         * the selected country read as a blank shape with a fill colour and no
+         * internal structure. A road map never hides its administrative borders until
+         * you zoom — they are always there, and the FILL is what carries the
+         * "been there" information. They still only exist once the selected
+         * country's geometry has loaded.
+         */
+        admin1Group.visible = true;
 
         /* Photo thumbnails: only for photographs with a real capture coordinate,
            and only once the camera is close enough for them to mean anything. */
