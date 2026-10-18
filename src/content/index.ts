@@ -170,6 +170,13 @@ function toPhoto(raw: Record<string, unknown>, i: number): Photo | null {
     tone: optionalString(raw, 'tone') ?? '#101820',
     takenAt: optionalString(raw, 'takenAt'),
     location: optionalString(raw, 'location'),
+    /*
+     * The capture coordinate. It MUST be carried through here: the globe places
+     * photo thumbnails from these two numbers, and the parser is a whitelist, so
+     * a field it forgets silently vanishes from the whole site with no error.
+     */
+    latitude: optionalNumber(raw, 'latitude'),
+    longitude: optionalNumber(raw, 'longitude'),
     camera: optionalString(raw, 'camera'),
     lens: optionalString(raw, 'lens'),
     exif: undefined,

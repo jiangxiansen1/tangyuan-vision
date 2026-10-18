@@ -79,6 +79,23 @@ export default function EarthPage() {
     return [...set];
   }, [records]);
   const markers = useMemo(() => deriveMarkers(records, geoIndex), [records, geoIndex]);
+  /**
+   * Photographs with a real capture coordinate, for the globe's thumbnail layer.
+   * Derived from the photography collection, so the globe and the gallery can
+   * never disagree about where a shot was taken.
+   */
+  const photoPins = useMemo(
+    () =>
+      PHOTOS.filter(
+        (p) => typeof p.latitude === 'number' && typeof p.longitude === 'number'
+      ).map((p) => ({
+        lat: p.latitude as number,
+        lon: p.longitude as number,
+        thumb: p.thumb ?? p.src,
+        title: p.title,
+      })),
+    []
+  );
   const photosById = useMemo(
     () =>
       new Map(
@@ -230,6 +247,7 @@ export default function EarthPage() {
           admin1Country={admin1?.countryId ?? null}
           onSelectProvince={handleSelectProvince}
           visitedProvinces={visitedProvinces}
+          photoPins={photoPins}
         />
         <Reticle labelOf={labelOf} />
       </div>

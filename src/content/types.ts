@@ -90,6 +90,15 @@ export interface Photo {
   location?: string;
   camera?: string;
   lens?: string;
+  /**
+   * Real capture coordinate, read from the file's own EXIF.
+   *
+   * Present only when the photograph carried a GPS fix. The globe uses it to
+   * place the photo where it was actually taken; a photograph without one simply
+   * has no marker, because a guessed coordinate on a travel map is a lie.
+   */
+  latitude?: number;
+  longitude?: number;
   exif?: Record<string, string>;
   /**
    * 1-based grid span hints for the asymmetric editorial layout. Optional: the

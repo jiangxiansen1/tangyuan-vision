@@ -123,6 +123,14 @@ export interface EarthGlobeProps {
    */
   visitedProvinces?: string[] | null;
   /**
+   * Photographs to pin on the globe at their real capture coordinate.
+   *
+   * These appear only once the visitor has zoomed in past a threshold: at world
+   * scale thirty thumbnails would be an unreadable cloud, and their point is to
+   * show WHICH shots came from the place you are now looking at.
+   */
+  photoPins?: { lat: number; lon: number; thumb?: string; title?: string }[] | null;
+  /**
    * Return-to-opening-view request. The scene bumps this counter (panel closed,
    * “返回全球”) and the globe re-aims through its own resetView(): the same
    * single WebGL instance, the same textures, no remount — only the camera
@@ -140,6 +148,17 @@ const TERMINATOR_SOFTNESS = 0.09;
 /** Admin-1 boundary layer: sphere offset & the zoom level it appears at. */
 const ADMIN1_R = 1.008;
 const ADMIN1_SHOW_DISTANCE = 2.6;
+
+/**
+ * Photo thumbnails pinned at their capture coordinates.
+ *
+ * Closer than the Admin-1 threshold on purpose: at world scale a cloud of
+ * thumbnails is unreadable, and the point of them is to show which shots came
+ * from the patch of ground you have just zoomed into.
+ */
+const PHOTO_PIN_R = 1.014;
+const PHOTO_PIN_DISTANCE = 1.98;
+const PHOTO_PIN_MAX = 60;
 
 /** Degrees per second of idle rotation. One revolution ≈ 2.5 minutes. */
 const AUTO_ROTATE_SPEED = 2.4;
@@ -165,6 +184,7 @@ export function EarthGlobe({
   admin1Country = null,
   onSelectProvince,
   visitedProvinces = null,
+  photoPins = null,
   resetSignal,
   controlRef,
   className,
@@ -190,6 +210,8 @@ export function EarthGlobe({
   onSelectProvinceRef.current = onSelectProvince;
   const visitedProvincesRef = useRef(visitedProvinces);
   visitedProvincesRef.current = visitedProvinces;
+  const photoPinsRef = useRef(photoPins);
+  photoPinsRef.current = photoPins;
   /*
    * Selection is read through a ref for a measured reason: `onSelectRegion`
    * arrives as a fresh arrow function on every parent render, and it used to
@@ -928,6 +950,113 @@ export function EarthGlobe({
         globe.remove(admin1Group);
       });
 
+      /* ---- photo thumbnails, pinned where the photograph was taken -----------
+         Each sprite sits at the photograph's own EXIF coordinate on the sphere
+         surface. Only visible past PHOTO_PIN_DISTANCE, and only for photos that
+         actually carry a fix: nothing is placed approximately. */
+      const photoPinGroup = new THREE.Group();
+      photoPinGroup.visible = false;
+      globe.add(photoPinGroup);
+      let photoPinKey = '';
+      const pinTextures = new Map<string, import('three').Texture>();
+      const pinLoader = new THREE.TextureLoader();
+
+      const syncPhotoPins = () => {
+        /*
+         * Cluster by ~0.1 degree (about 11 km) before placing sprites.
+         *
+         * A single trip produces many shots from nearly the same spot - this set
+         * has a dozen inside a few kilometres of Lijiang. Drawn one sprite each,
+         * they pile into an unreadable stack, so one representative thumbnail is
+         * shown per cluster while every photo still exists in the gallery. The
+         * record of what was taken where is never lost; only the drawing is
+         * de-duplicated.
+         */
+        const seen = new Set<string>();
+        const pins = (photoPinsRef.current ?? [])
+          .filter((p) => {
+            const k = `${p.lat.toFixed(1)},${p.lon.toFixed(1)}`;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          })
+          .slice(0, PHOTO_PIN_MAX);
+        const key = pins.map((p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)},${p.thumb ?? ''}`).join('|');
+        if (key === photoPinKey) return;
+        photoPinKey = key;
+
+        for (const child of [...photoPinGroup.children]) {
+          photoPinGroup.remove(child);
+          const sp = child as import('three').Sprite;
+          (sp.material as import('three').Material).dispose();
+        }
+        if (!pins.length) return;
+
+        for (const p of pins) {
+          /*
+           * Start as a glowing bead and swap in the thumbnail when the texture
+           * actually arrives. Creating a SpriteMaterial with a texture whose
+           * image has not decoded yet renders nothing at all, which reads as a
+           * missing feature rather than a slow image.
+           */
+          const mat = new THREE.SpriteMaterial({
+            color: 0x5fd0ff,
+            transparent: true,
+            opacity: 0.92,
+            depthTest: true,
+            depthWrite: false,
+          });
+          const sprite = new THREE.Sprite(mat);
+          const lonR = ((-180 - p.lon) * Math.PI) / 180;
+          const latR = (p.lat * Math.PI) / 180;
+          sprite.position
+            .set(0, 0, PHOTO_PIN_R)
+            .applyAxisAngle(X_AXIS, -latR)
+            .applyAxisAngle(Y_AXIS, -lonR);
+          // Small on purpose: neighbouring clusters are only a few degrees apart,
+          // so a larger sprite would overlap the next one. The position is the
+          // photo's real coordinate and is never nudged to dodge a neighbour.
+          sprite.scale.set(0.045, 0.045, 1);
+          photoPinGroup.add(sprite);
+
+          const tex = p.thumb ? pinTextures.get(p.thumb) : undefined;
+          if (tex) {
+            mat.map = tex;
+            mat.color.setHex(0xffffff);
+            mat.needsUpdate = true;
+          } else if (p.thumb) {
+            const url = assetUrl(p.thumb);
+            if (url) {
+              pinLoader.load(
+                url,
+                (loaded) => {
+                  loaded.colorSpace = THREE.SRGBColorSpace;
+                  loaded.minFilter = THREE.LinearFilter;
+                  pinTextures.set(p.thumb!, loaded);
+                  mat.map = loaded;
+                  mat.color.setHex(0xffffff);
+                  mat.needsUpdate = true;
+                },
+                undefined,
+                () => {
+                  /* keep the bead: a failed thumbnail must not vanish silently */
+                }
+              );
+            }
+          }
+        }
+      };
+
+      cleanups.push(() => {
+        for (const child of [...photoPinGroup.children]) {
+          const sp = child as import('three').Sprite;
+          (sp.material as import('three').Material).dispose();
+        }
+        for (const tex of pinTextures.values()) tex.dispose();
+        pinTextures.clear();
+        globe.remove(photoPinGroup);
+      });
+
       /* ---- companion bodies ----
          Two small decorative bodies. They exist to give a sense of scale and
          distance behind the globe; they are explicitly NOT to scale, NOT
@@ -1051,6 +1180,15 @@ export function EarthGlobe({
       let pointerDownAt = { x: 0, y: 0, t: 0 };
       let distance = CAMERA_HOME.z;
       let targetDistance = distance;
+      /*
+       * Which focus the camera distance was last applied for.
+       *
+       * The render loop used to set targetDistance from the focus on EVERY frame,
+       * which silently overrode the wheel: selecting a country pinned the camera
+       * at 2.6 * focus.distance and scrolling could never move it again. That is
+       * why the province layer and the photo thumbnails looked unreachable.
+       */
+      let lastFocusKey = '';
 
       const applyRotation = () => {
         // The globe rotates; the sun stays fixed in world space. That is what
@@ -1378,7 +1516,17 @@ export function EarthGlobe({
           }
           velocity.lon = 0;
           velocity.lat = 0;
-          targetDistance = Math.max(1.52, Math.min(6.2, 2.6 * (f.distance ?? 1)));
+          /*
+           * Apply the focus distance ONCE, not every frame. It still pulls the
+           * camera in when a region is selected; it simply stops fighting the
+           * wheel afterwards, so the visitor can keep zooming to the province and
+           * photo layers.
+           */
+          const focusKey = `${f.lon.toFixed(3)},${f.lat.toFixed(3)},${(f.distance ?? 1).toFixed(3)}`;
+          if (focusKey !== lastFocusKey) {
+            lastFocusKey = focusKey;
+            targetDistance = Math.max(1.52, Math.min(6.2, 2.6 * (f.distance ?? 1)));
+          }
         }
 
         if (dragging) {
@@ -1451,6 +1599,11 @@ export function EarthGlobe({
         /* Admin-1 boundaries: real geometry, shown only when zoomed in. */
         syncAdmin1();
         admin1Group.visible = distance < ADMIN1_SHOW_DISTANCE;
+
+        /* Photo thumbnails: only for photographs with a real capture coordinate,
+           and only once the camera is close enough for them to mean anything. */
+        syncPhotoPins();
+        photoPinGroup.visible = distance < PHOTO_PIN_DISTANCE;
 
         /*
          * Settle a click that was made before its province geometry arrived.
@@ -1601,6 +1754,12 @@ export function EarthGlobe({
           return c ? { id: c.id, name: c.name, nameZh: c.nameZh ?? null, country: c.country, pop: c.pop } : null;
         },
         /** Set the camera distance directly (test/verification helper). */
+        photoPins: () => ({
+          count: photoPinGroup.children.length,
+          visible: photoPinGroup.visible,
+          distance,
+          threshold: PHOTO_PIN_DISTANCE,
+        }),
         zoom: (d: number) => {
           targetDistance = Math.max(1.52, Math.min(6.2, d));
         },

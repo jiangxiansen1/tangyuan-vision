@@ -161,7 +161,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/76s ISO 125",
       "takenAt": "2025-11-13",
-      "location": "China"
+      "location": "China",
+      "latitude": 25.717763,
+      "longitude": 100.193442
     },
     {
       "id": "2025-11-13-img-20251113-072808",
@@ -178,7 +180,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/108s ISO 125",
       "takenAt": "2025-11-13",
-      "location": "China"
+      "location": "China",
+      "latitude": 25.717763,
+      "longitude": 100.193442
     },
     {
       "id": "2025-11-13-img-20251113-072915",
@@ -195,7 +199,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/100s ISO 160",
       "takenAt": "2025-11-13",
-      "location": "China"
+      "location": "China",
+      "latitude": 25.717701,
+      "longitude": 100.193432
     },
     {
       "id": "2025-11-13-img-20251113-080221",
@@ -212,7 +218,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/61s ISO 400",
       "takenAt": "2025-11-13",
-      "location": "China"
+      "location": "China",
+      "latitude": 25.724463,
+      "longitude": 100.19087
     },
     {
       "id": "2025-11-14-img-20251114-075340",
@@ -229,7 +237,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/344s ISO 50",
       "takenAt": "2025-11-14",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.017781,
+      "longitude": 100.241171
     },
     {
       "id": "2025-11-14-img-20251114-104832",
@@ -246,7 +256,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 2mm f/2.2 1/720s ISO 50",
       "takenAt": "2025-11-14",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.02185,
+      "longitude": 100.221874
     },
     {
       "id": "2025-11-14-img-20251114-134215",
@@ -263,7 +275,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/1707s ISO 50",
       "takenAt": "2025-11-14",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.034,
+      "longitude": 100.251429
     },
     {
       "id": "2025-11-14-img-20251114-163546",
@@ -280,7 +294,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/679s ISO 50",
       "takenAt": "2025-11-14",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.128772,
+      "longitude": 100.245694
     },
     {
       "id": "2025-11-14-img-20251114-195447",
@@ -297,7 +313,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/2026s ISO 50",
       "takenAt": "2025-11-14",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.128772,
+      "longitude": 100.245694
     },
     {
       "id": "2025-11-14-img-20251114-195447-2",
@@ -314,7 +332,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/2026s ISO 50",
       "takenAt": "2025-11-14",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.128772,
+      "longitude": 100.245694
     },
     {
       "id": "2025-11-14-img-20251114-203439",
@@ -331,7 +351,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/764s ISO 50",
       "takenAt": "2025-11-14",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.021895,
+      "longitude": 100.221929
     },
     {
       "id": "2025-11-15-img-20251115-190249",
@@ -348,7 +370,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/33s ISO 640",
       "takenAt": "2025-11-15",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.813143,
+      "longitude": 99.705061
     },
     {
       "id": "2025-11-15-img-20251115-190749",
@@ -365,7 +389,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/17s ISO 1000",
       "takenAt": "2025-11-15",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.812676,
+      "longitude": 99.704709
     },
     {
       "id": "2025-11-15-img-20251115-191022",
@@ -382,7 +408,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/17s ISO 2000",
       "takenAt": "2025-11-15",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.81352,
+      "longitude": 99.705101
     },
     {
       "id": "2025-11-22-img-20251122-170505",
@@ -399,7 +427,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/22539s ISO 50",
       "takenAt": "2025-11-22",
-      "location": "China"
+      "location": "China",
+      "latitude": 24.923227,
+      "longitude": 102.693032
     },
     {
       "id": "2025-11-22-img-20251122-170639",
@@ -416,7 +446,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/4306s ISO 50",
       "takenAt": "2025-11-22",
-      "location": "China"
+      "location": "China",
+      "latitude": 24.922065,
+      "longitude": 102.692969
     },
     {
       "id": "2025-11-22-img-20251122-195930",
@@ -433,7 +465,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/1073s ISO 50",
       "takenAt": "2025-11-22",
-      "location": "China"
+      "location": "China",
+      "latitude": 24.922057,
+      "longitude": 102.694377
     },
     {
       "id": "2025-11-15-img-20251209-193227",
@@ -450,7 +484,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/17s ISO 1250",
       "takenAt": "2025-11-15",
-      "location": "China"
+      "location": "China",
+      "latitude": 27.812676,
+      "longitude": 99.704709
     },
     {
       "id": "2026-01-19-img-20260119-214609",
@@ -467,7 +503,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/14s ISO 2500",
       "takenAt": "2026-01-19",
-      "location": "China"
+      "location": "China",
+      "latitude": 26.422467,
+      "longitude": 103.295485
     },
     {
       "id": "2026-01-19-img-20260119-214630",
@@ -484,7 +522,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/13s ISO 2000",
       "takenAt": "2026-01-19",
-      "location": "China"
+      "location": "China",
+      "latitude": 26.422724,
+      "longitude": 103.295375
     },
     {
       "id": "2026-01-19-img-20260119-214928",
@@ -501,7 +541,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/25s ISO 1250",
       "takenAt": "2026-01-19",
-      "location": "China"
+      "location": "China",
+      "latitude": 26.423778,
+      "longitude": 103.295132
     },
     {
       "id": "2025-11-13-mvimg-20251113-071601",
@@ -518,7 +560,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/72s ISO 500",
       "takenAt": "2025-11-13",
-      "location": "China"
+      "location": "China",
+      "latitude": 25.724463,
+      "longitude": 100.19087
     },
     {
       "id": "2026-03-01-mvimg-20260301-132538-1",
@@ -535,7 +579,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/4059s ISO 50",
       "takenAt": "2026-03-01",
-      "location": "China"
+      "location": "China",
+      "latitude": 18.782166,
+      "longitude": 110.504289
     },
     {
       "id": "2026-03-01-mvimg-20260301-162750",
@@ -552,7 +598,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/699s ISO 50",
       "takenAt": "2026-03-01",
-      "location": "China"
+      "location": "China",
+      "latitude": 18.62711,
+      "longitude": 110.209735
     },
     {
       "id": "2026-03-01-mvimg-20260301-162751",
@@ -569,7 +617,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/926s ISO 50",
       "takenAt": "2026-03-01",
-      "location": "China"
+      "location": "China",
+      "latitude": 18.62711,
+      "longitude": 110.209735
     },
     {
       "id": "2026-03-01-mvimg-20260301-162802",
@@ -586,7 +636,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/997s ISO 50",
       "takenAt": "2026-03-01",
-      "location": "China"
+      "location": "China",
+      "latitude": 18.62711,
+      "longitude": 110.209735
     },
     {
       "id": "2026-03-02-mvimg-20260302-073425",
@@ -603,7 +655,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/3501s ISO 50",
       "takenAt": "2026-03-02",
-      "location": "18.2330, 109.6517"
+      "location": "18.2330, 109.6517",
+      "latitude": 18.233028,
+      "longitude": 109.651699
     },
     {
       "id": "2026-03-02-mvimg-20260302-073530",
@@ -620,7 +674,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 2mm f/2.2 1/260s ISO 50",
       "takenAt": "2026-03-02",
-      "location": "18.2331, 109.6517"
+      "location": "18.2331, 109.6517",
+      "latitude": 18.233086,
+      "longitude": 109.651678
     },
     {
       "id": "2026-03-02-mvimg-20260302-160451",
@@ -637,7 +693,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/8373s ISO 50",
       "takenAt": "2026-03-02",
-      "location": "China"
+      "location": "China",
+      "latitude": 18.296437,
+      "longitude": 109.343524
     },
     {
       "id": "2026-03-02-mvimg-20260302-160834",
@@ -654,7 +712,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 19mm f/2.5 1/3020s ISO 50",
       "takenAt": "2026-03-02",
-      "location": "China"
+      "location": "China",
+      "latitude": 18.296425,
+      "longitude": 109.343482
     },
     {
       "id": "2026-03-02-mvimg-20260302-180316",
@@ -671,7 +731,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 7mm f/1.4 1/1027s ISO 50",
       "takenAt": "2026-03-02",
-      "location": "18.2957, 109.2121"
+      "location": "18.2957, 109.2121",
+      "latitude": 18.29571,
+      "longitude": 109.212141
     },
     {
       "id": "2026-03-02-mvimg-20260302-180705",
@@ -688,7 +750,9 @@
       "provenance": "real",
       "camera": "Xiaomi 15 Pro · 2mm f/2.2 1/710s ISO 50",
       "takenAt": "2026-03-02",
-      "location": "18.2936, 109.2103"
+      "location": "18.2936, 109.2103",
+      "latitude": 18.293578,
+      "longitude": 109.210262
     }
   ]
 }
