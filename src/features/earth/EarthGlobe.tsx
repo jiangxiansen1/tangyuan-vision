@@ -826,6 +826,7 @@ const MAX_DISTANCE = 6.2;
          once zoomed in: 200 labels at world scale is noise, not information. */
       const labelSpans: HTMLSpanElement[] = [];
       const labelVec = new THREE.Vector3();
+      const labelToCam = new THREE.Vector3();
       let labelFrame = 0;
       let labelCityList: City[] | null = null;
       let labelCityKey = -1;
@@ -872,11 +873,27 @@ const MAX_DISTANCE = 6.2;
             .set(0, 0, CITY_R + 0.004)
             .applyAxisAngle(X_AXIS, -latR)
             .applyAxisAngle(Y_AXIS, -lonR)
-            .applyMatrix4(globe.matrixWorld)
-            .project(camera);
+            .applyMatrix4(globe.matrixWorld);
 
-          // z > 1 means behind the camera; a label on the far hemisphere would be
-          // drawn through the planet, which is worse than no label.
+          /*
+           * HEMISPHERE TEST, not a depth test.
+           *
+           * Checking the projected z only rejects points behind the CAMERA; a city
+           * on the far side of the planet still projects inside the viewport, so
+           * its name was drawn straight through the globe and the two hemispheres'
+           * labels overlapped into a mess. A surface point faces us exactly when its
+           * outward normal points toward the camera, i.e. dot(p, toCamera) > 0. The
+           * small positive threshold also drops labels right at the limb, where
+           * they would sit on the silhouette and be unreadable anyway.
+           */
+          labelToCam.copy(camera.position).sub(labelVec);
+          const facing = labelVec.clone().normalize().dot(labelToCam.normalize());
+          if (facing <= 0.06) {
+            span.style.display = 'none';
+            continue;
+          }
+
+          labelVec.project(camera);
           if (labelVec.z > 1) {
             span.style.display = 'none';
             continue;
