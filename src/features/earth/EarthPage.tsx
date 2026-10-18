@@ -136,15 +136,31 @@ export default function EarthPage() {
   const admin1Ref = useRef<{ countryId: string; items: Admin1Item[] } | null>(null);
   admin1Ref.current = admin1;
 
+  /*
+   * Which country's provinces are drawn when nothing is selected.
+   *
+   * Borders used to exist ONLY for the currently selected country, so the globe
+   * looked borderless until you clicked something. The visitor's expectation is
+   * that a map always shows its administrative divisions. Admin-1 is loaded per
+   * country on demand, so the honest default is: draw the provinces of the
+   * countries that actually have a travel record. That is a handful of files, it
+   * is exactly the region the map is "about", and it needs no click.
+   */
+  const defaultAdmin1Country = useMemo(() => {
+    const visited = records.filter((r) => r.status === 'visited' && r.published !== false && r.regionId);
+    return visited.length ? visited[0].regionId! : null;
+  }, [records]);
+
   useEffect(() => {
-    if (!selectedId) { setAdmin1(null); return; }
+    const countryId = selectedId ?? defaultAdmin1Country;
+    if (!countryId) { setAdmin1(null); return; }
     let alive = true;
     setAdmin1(null);
-    void loadAdmin1ForCountry(selectedId).then((c) => {
-      if (alive) setAdmin1(c ? { countryId: selectedId, items: c.items } : null);
+    void loadAdmin1ForCountry(countryId).then((c) => {
+      if (alive) setAdmin1(c ? { countryId, items: c.items } : null);
     });
     return () => { alive = false; };
-  }, [selectedId]);
+  }, [selectedId, defaultAdmin1Country]);
 
   /**
    * A country was clicked.

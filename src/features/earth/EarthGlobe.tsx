@@ -1354,7 +1354,16 @@ export function EarthGlobe({
           // Scale by the canvas size so a drag across the globe turns it by a
           // consistent fraction regardless of how large the canvas is drawn.
           const rect = hostEl.getBoundingClientRect();
-          const scale = 180 / Math.max(rect.width, 1);
+          /*
+           * Zoom-aware drag gain.
+           *
+           * The same mouse travel should not turn the globe further just because
+           * the camera moved closer: at 1.52 a 200px drag swept roughly twice the
+           * ground distance it did at 3.3, which read as twitchy. The gain now
+           * follows the camera distance, floored so it never becomes sluggish.
+           */
+          const distanceGain = Math.max(0.35, Math.min(1, distance / CAMERA_HOME.z));
+          const scale = (180 / Math.max(rect.width, 1)) * distanceGain;
           rotation.lon += dx * scale;
           rotation.lat = Math.max(-72, Math.min(72, rotation.lat + dy * scale * 0.7));
           velocity.lon = dx * scale;
@@ -1427,7 +1436,16 @@ export function EarthGlobe({
         e.preventDefault();
         // Clamped: outside this range the globe is either a dot or clips the
         // camera near-plane.
-        targetDistance = Math.max(1.52, Math.min(6.2, targetDistance + e.deltaY * 0.0016));
+        /*
+         * PROPORTIONAL zoom, not additive.
+         *
+         * A fixed step meant one wheel notch moved 0.19 world units whether the
+         * camera was at 6.2 (3% of the distance) or at 1.6 (12%) — so the closer you
+         * got, the more violent each notch felt. A multiplicative step is the same
+         * fraction at every distance, which is what makes fine framing possible.
+         */
+        const wheelStep = Math.exp(e.deltaY * 0.00085);
+        targetDistance = Math.max(1.52, Math.min(6.2, targetDistance * wheelStep));
       };
 
       /*
