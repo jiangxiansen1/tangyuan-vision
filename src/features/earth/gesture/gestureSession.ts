@@ -399,6 +399,12 @@ function createSession(): GestureSession {
          between the state machine and the Three.js API (the machine's own units and
          magnitude are unchanged; only the sign flips). */
       if (lastHandOut.rotateDeg) api.rotateBy(-lastHandOut.rotateDeg);
+      /*
+       * Vertical follows the hand directly (no mirror): dragging the hand down
+       * pulls the globe's northern hemisphere into view, the same relationship a
+       * touch drag has. Horizontal is mirrored because the self-view is mirrored.
+       */
+      if (lastHandOut.tiltDeg) api.tiltBy(lastHandOut.tiltDeg);
       if (lastHandOut.zoomFactor !== 1) api.zoomBy(lastHandOut.zoomFactor);
       if (lastHandOut.reset) api.reset();
     }

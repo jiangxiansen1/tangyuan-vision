@@ -45,6 +45,9 @@ export interface HandSample {
   left: boolean;
   right: boolean;
   leftX: number;
+  /** Filtered, normalised VERTICAL anchor of the left hand (0..1, 0 = top).
+      Needed so one hand can turn the globe in BOTH axes, not just sideways. */
+  leftY: number;
   span: number;
   pinch: number;
   thumbUp: number;
@@ -138,6 +141,7 @@ const SMOOTH = { x: 0.4, span: 0.35, pinch: 0.5, openness: 0.4, thumbUp: 0.5 } a
 export function createHandMetrics(): HandMetrics {
   let haveLeft = false;
   let sx = 0;
+  let sy = 0;
   let haveSpan = false;
   let sSpan = 0;
   let haveRight = false;
@@ -155,7 +159,7 @@ export function createHandMetrics(): HandMetrics {
   return {
     measure(input: HandMetricsInput): HandSample {
       const out: HandSample = {
-        ready: input.ready, left: false, right: false, leftX: 0,
+        ready: input.ready, left: false, right: false, leftX: 0, leftY: 0,
         span: 0, pinch: 0, thumbUp: 0, openness: 0, rightX: 0, rightY: 0, targetId: input.targetId,
       };
       if (!input.ready) {
@@ -174,9 +178,11 @@ export function createHandMetrics(): HandMetrics {
       if (validHand(lh)) {
         const a = anchor(lh);
         sx = haveLeft ? step(a.x, sx, SMOOTH.x) : a.x;
+        sy = haveLeft ? step(a.y, sy, SMOOTH.x) : a.y;
         haveLeft = true;
         out.left = true;
         out.leftX = sx;
+        out.leftY = sy;
       } else {
         haveLeft = false;
       }

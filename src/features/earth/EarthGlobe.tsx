@@ -70,6 +70,8 @@ export interface EarthHoverState {
 export interface GlobeControlApi {
   /** Turn the globe by a longitude delta (degrees). */
   rotateBy: (dLon: number) => void;
+  /** Tilt the globe by a latitude delta (degrees, positive = toward the north). */
+  tiltBy: (dLat: number) => void;
   /** Multiply the camera distance ( <1 closer ). */
   zoomBy: (factor: number) => void;
   /** Select the region under the view centre; returns its id or null. */
@@ -236,6 +238,8 @@ export function EarthGlobe({
   const sceneRef = useRef<{
     dispose: () => void;
     rotateBy: (dLon: number) => void;
+    /** Tilt by a latitude delta (degrees, positive = north). */
+    tiltBy: (dLat: number) => void;
     resetView: () => void;
     zoomBy: (factor: number) => void;
     /** Pause/resume the idle auto-rotation (gesture coordination). */
@@ -1776,6 +1780,12 @@ export function EarthGlobe({
           rotation.lon += dLon;
           applyRotation();
         },
+        tiltBy: (dLat: number) => {
+          // Same clamped range the pointer drag uses, so the poles stay reachable
+          // but the globe never flips over its own axis.
+          rotation.lat = Math.max(-72, Math.min(72, rotation.lat + dLat));
+          applyRotation();
+        },
         resetView: () => {
           // Restores the opening view, which is the lit hemisphere rather than a
           // hard-coded longitude — so "reset" means the same thing from one visit
@@ -1819,6 +1829,7 @@ export function EarthGlobe({
           queryAtScreen: (ndcX: number, ndcY: number) => sceneRef.current?.queryAtScreen(ndcX, ndcY) ?? null,
           reset: () => sceneRef.current?.resetView(),
           setAutoRotate: (on: boolean) => sceneRef.current?.setAutoRotate(on),
+    tiltBy: (dLat: number) => sceneRef.current?.tiltBy(dLat),
           setSpin: (degPerSecond: number) => sceneRef.current?.setSpin(degPerSecond),
         };
         controlRef.current = api;

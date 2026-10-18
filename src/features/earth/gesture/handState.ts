@@ -30,6 +30,8 @@ export interface HandSample {
   right: boolean;
   /** Filtered, normalised horizontal anchor of the left hand (0..1). */
   leftX: number;
+  /** Filtered, normalised vertical anchor of the left hand (0..1, 0 = top). */
+  leftY: number;
   /** Normalised distance between the two hands (only meaningful with both). */
   span: number;
   /** Right-hand thumb–index pinch strength, 0 (open) .. 1 (closed). */
@@ -46,6 +48,8 @@ export interface HandOutput {
   mode: HandMode;
   /** Degrees to turn this frame (left-hand rotation + its short inertia). */
   rotateDeg: number;
+  /** Degrees to tilt vertically this frame (left hand moving up or down). */
+  tiltDeg: number;
   /** Multiplier for the camera distance (both-hand span + finger fine-tune). */
   zoomFactor: number;
   /** True once a region has been hovered long enough to name it. */
@@ -97,6 +101,7 @@ function clamp(v: number, a: number, b: number): number {
 
 export function createHandMachine(): HandMachine {
   let prevLeftX = 0;
+  let prevLeftY = 0;
   let haveLeft = false;
   let vel = 0; // deg/second, left-hand rotational inertia
   let prevSpan = 0;
@@ -122,7 +127,7 @@ export function createHandMachine(): HandMachine {
 
   function step(s: HandSample, dtMs: number): HandOutput {
     const out: HandOutput = {
-      mode: 'off', rotateDeg: 0, zoomFactor: 1, showName: false,
+      mode: 'off', rotateDeg: 0, tiltDeg: 0, zoomFactor: 1, showName: false,
       confirmId: null, reset: false, selectProgress: 0, hint: '',
     };
     const dt = Math.max(0.001, dtMs / 1000);
@@ -172,11 +177,26 @@ export function createHandMachine(): HandMachine {
     if (s.left) {
       if (!haveLeft) {
         prevLeftX = s.leftX;
+        prevLeftY = s.leftY;
         haveLeft = true;
         vel = 0;
       } else {
         const dx = dz(s.leftX - prevLeftX, HAND.MOVE_DZ);
+        const dy = dz(s.leftY - prevLeftY, HAND.MOVE_DZ);
         prevLeftX = s.leftX;
+        prevLeftY = s.leftY;
+        /*
+         * Vertical uses a LOWER gain than horizontal on purpose: latitude only
+         * spans -90..90, so matching the horizontal gain would let a small hand
+         * movement slam the view from pole to pole. It also gets no inertia —
+         * an overshooting tilt is disorienting in a way an overshooting spin is
+         * not.
+         */
+        out.tiltDeg = clamp(
+          dy * HAND.ROTATE_GAIN * 0.55,
+          -HAND.MAX_ROT_STEP * 0.55,
+          HAND.MAX_ROT_STEP * 0.55
+        );
         const stepDeg = clamp(dx * HAND.ROTATE_GAIN, -HAND.MAX_ROT_STEP, HAND.MAX_ROT_STEP);
         vel = stepDeg / dt;
         out.rotateDeg = stepDeg;
@@ -186,6 +206,7 @@ export function createHandMachine(): HandMachine {
       vel *= Math.pow(0.5, dt / HAND.INERTIA_HALFLIFE);
       if (Math.abs(vel) < HAND.MIN_INERTIA_VEL) vel = 0;
       out.rotateDeg = vel * dt;
+      out.tiltDeg = 0;
     }
 
     /* --- right pinch → selection mode; freezes ALL zoom --- */
