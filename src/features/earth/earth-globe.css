@@ -291,3 +291,37 @@
     transition: none;
   }
 }
+
+/* ------------------------------------------------- place names (2D overlay) --
+   Projected from the city records each frame. pointer-events:none so a label can
+   never swallow a drag or a click meant for the globe. */
+.eglobe__labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 220ms ease-out;
+  contain: strict;
+}
+
+.eglobe__labels[data-show='false'] {
+  opacity: 0;
+}
+
+.eglobe__label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: #e8f2fb;
+  background: rgb(6 12 20 / 0.55);
+  border: 1px solid rgb(150 200 255 / 0.18);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.85);
+  will-change: transform;
+}

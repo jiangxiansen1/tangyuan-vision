@@ -191,6 +191,8 @@ export function EarthGlobe({
   className,
 }: EarthGlobeProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  /** Place-name overlay. Absolutely positioned spans projected from 3D each frame. */
+  const labelLayerRef = useRef<HTMLDivElement>(null);
   /** Preview mode is read inside the wheel listener without re-binding it. */
   const previewRef = useRef(preview);
   previewRef.current = preview;
@@ -818,6 +820,79 @@ const MAX_DISTANCE = 6.2;
           }
         }
       };
+      /* ---- place-name labels (2D overlay) ----------------------------------
+         Projected from the same city records the markers use, so a label and its
+         dot can never disagree. Only the most populous names are drawn, and only
+         once zoomed in: 200 labels at world scale is noise, not information. */
+      const labelSpans: HTMLSpanElement[] = [];
+      const labelVec = new THREE.Vector3();
+      let labelFrame = 0;
+      let labelCityList: City[] | null = null;
+      let labelCityKey = -1;
+
+      const updatePlaceLabels = () => {
+        const layer = labelLayerRef.current;
+        if (!layer) return;
+        // ~15 Hz is plenty for text and keeps this off the critical path.
+        if (labelFrame++ % 4 !== 0) return;
+
+        const show = distance < 2.35;
+        layer.dataset.show = show ? 'true' : 'false';
+        if (!show) return;
+
+        const rect = hostEl.getBoundingClientRect();
+        /*
+         * Rank by population ONCE, not every frame. Taking the first 40 entries
+         * of the dataset showed Vatican City and San Marino while Shanghai was
+         * missing, because the array is alphabetical-ish rather than ranked. The
+         * cache is keyed on the list length, which is stable for a session.
+         */
+        const cities = citiesRef.current ?? [];
+        if (cities.length !== labelCityKey || !labelCityList) {
+          labelCityKey = cities.length;
+          labelCityList = [...cities]
+            .sort((a, b) => (b.pop ?? 0) - (a.pop ?? 0))
+            .slice(0, 60);
+        }
+        const list = labelCityList;
+        let used = 0;
+
+        for (const c of list) {
+          if (used >= labelSpans.length) {
+            const span = document.createElement('span');
+            span.className = 'eglobe__label';
+            layer.appendChild(span);
+            labelSpans.push(span);
+          }
+          const span = labelSpans[used];
+
+          const lonR = ((-180 - c.lon) * Math.PI) / 180;
+          const latR = (c.lat * Math.PI) / 180;
+          labelVec
+            .set(0, 0, CITY_R + 0.004)
+            .applyAxisAngle(X_AXIS, -latR)
+            .applyAxisAngle(Y_AXIS, -lonR)
+            .applyMatrix4(globe.matrixWorld)
+            .project(camera);
+
+          // z > 1 means behind the camera; a label on the far hemisphere would be
+          // drawn through the planet, which is worse than no label.
+          if (labelVec.z > 1) {
+            span.style.display = 'none';
+            continue;
+          }
+
+          const x = (labelVec.x * 0.5 + 0.5) * rect.width;
+          const y = (-labelVec.y * 0.5 + 0.5) * rect.height;
+          span.style.display = '';
+          span.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -50%)`;
+          const text = c.nameZh || c.name;
+          if (span.textContent !== text) span.textContent = text;
+          used++;
+        }
+        for (let i = used; i < labelSpans.length; i++) labelSpans[i].style.display = 'none';
+      };
+
       const syncAdmin1 = () => {
         const items = admin1Ref.current;
         const visited = visitedProvincesRef.current ?? [];
@@ -1623,6 +1698,8 @@ const MAX_DISTANCE = 6.2;
         syncPhotoPins();
         photoPinGroup.visible = distance < PHOTO_PIN_DISTANCE;
 
+        updatePlaceLabels();
+
         /*
          * Settle a click that was made before its province geometry arrived.
          * Runs only while a click is actually pending, so the per-frame cost in
@@ -2037,6 +2114,9 @@ const MAX_DISTANCE = 6.2;
         tabIndex={0}
         onKeyDown={onKeyDown}
       />
+
+      {/* Place names, projected each frame. Never interactive. */}
+      <div className="eglobe__labels" ref={labelLayerRef} data-show="false" aria-hidden="true" />
 
       {hover ? (
         <div className="eglobe__tip" style={{ left: hover.x, top: hover.y }} aria-hidden="true">
