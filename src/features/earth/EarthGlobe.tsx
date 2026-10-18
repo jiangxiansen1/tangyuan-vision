@@ -38,6 +38,13 @@ import type { Admin1Item } from './admin1';
 import { directionToLatLon, subSolarPoint } from './solar';
 import { pickProvince } from './admin1-pick';
 import {
+  amapZoomForDistance,
+  buildPatchGeometry,
+  PATCH_HALF_DEG,
+  readAmapKey,
+  staticMapUrl,
+} from './map-overlay';
+import {
   EARTH_POINTS_VERTEX,
   EARTH_POINTS_FRAGMENT,
   CITY_VERTEX,
@@ -159,6 +166,16 @@ const ADMIN1_R = 1.008;
  */
 const PHOTO_PIN_R = 1.014;
 const PHOTO_PIN_DISTANCE = 1.98;
+
+/**
+ * Camera distance at which the real basemap starts to appear.
+ *
+ * The patch covers about +-18 deg of sphere, so it is only shown once the visible
+ * area is roughly that size; any earlier and the "detailed" layer would be a small
+ * bright patch floating in the middle of the dots.
+ */
+const OVERLAY_DISTANCE = 1.9;
+const OVERLAY_FADE_BAND = 0.28;
 const PHOTO_PIN_MAX = 60;
 
 /** Degrees per second of idle rotation. One revolution ≈ 2.5 minutes. */
@@ -547,6 +564,7 @@ const MAX_DISTANCE = 6.2;
           uSunDirection: { value: sunVec },
           uOceanColor: { value: new THREE.Color(0.04, 0.1, 0.27) },
           uLandColor: { value: new THREE.Color(0.74, 0.86, 1.0) },
+          uPointOpacity: { value: 1 },
           uNightSurface: { value: 0.22 },
           uTerminatorSoftness: { value: TERMINATOR_SOFTNESS },
           uAtmosphereColor: { value: new THREE.Color(0.32, 0.6, 1.0) },
@@ -557,6 +575,89 @@ const MAX_DISTANCE = 6.2;
         },
       });
       const earthPoints = new THREE.Points(pointGeometry, pointMaterial);
+
+      /* ---- real basemap patch (AMap static map) ------------------------------
+         One image per view, laid on the sphere patch the camera is looking at.
+         Absent VITE_AMAP_KEY the whole layer is inert, so the globe behaves
+         exactly as before until a key is configured. */
+      const amapKey = readAmapKey();
+      const overlayMaterial = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      });
+      let overlayMesh: import('three').Mesh | null = null;
+      let overlayTexture: import('three').Texture | null = null;
+      let overlayRequestKey = '';
+      let overlayPending = false;
+      let overlayCenterLat = 999;
+      let overlayCenterLon = 999;
+
+      if (amapKey) {
+        overlayMesh = new THREE.Mesh(buildPatchGeometry(1.0012, 0, 0, PATCH_HALF_DEG), overlayMaterial);
+        overlayMesh.visible = false;
+        globe.add(overlayMesh);
+      }
+
+      const overlayLoader = new THREE.TextureLoader();
+      overlayLoader.setCrossOrigin('anonymous');
+
+      const updateBasemapPatch = () => {
+        if (!amapKey || !overlayMesh) return;
+
+        const appear = Math.max(0, Math.min(1, (OVERLAY_DISTANCE - distance) / OVERLAY_FADE_BAND));
+        overlayMaterial.opacity = appear * 0.96;
+        overlayMesh.visible = appear > 0.01;
+        // The dots step back rather than vanish: the point lattice is the identity
+        // of this globe, so it stays visible underneath the imagery.
+        pointMaterial.uniforms.uPointOpacity.value = 1 - appear * 0.6;
+        if (appear <= 0.01) return;
+
+        // Which point of the sphere is the camera looking at?
+        let centreLon = -180 - rotation.lon;
+        while (centreLon > 180) centreLon -= 360;
+        while (centreLon < -180) centreLon += 360;
+        const centreLat = Math.max(-70, Math.min(70, rotation.lat));
+
+        // Rebuild the patch only when the view has actually moved; rebuilding it
+        // every frame would allocate a geometry per frame for no visible gain.
+        if (Math.abs(centreLat - overlayCenterLat) > 1 || Math.abs(centreLon - overlayCenterLon) > 1) {
+          overlayCenterLat = centreLat;
+          overlayCenterLon = centreLon;
+          const old = overlayMesh.geometry;
+          overlayMesh.geometry = buildPatchGeometry(1.0012, centreLat, centreLon, PATCH_HALF_DEG);
+          old.dispose();
+        }
+
+        const zoom = amapZoomForDistance(distance);
+        const requestKey = `${zoom}|${centreLat.toFixed(1)}|${centreLon.toFixed(1)}`;
+        if (requestKey === overlayRequestKey || overlayPending) return;
+        overlayRequestKey = requestKey;
+        overlayPending = true;
+
+        overlayLoader.load(
+          staticMapUrl({ lat: centreLat, lon: centreLon, zoom, key: amapKey! }),
+          (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            tex.generateMipmaps = false;
+            if (overlayTexture) overlayTexture.dispose();
+            overlayTexture = tex;
+            overlayMaterial.map = tex;
+            overlayMaterial.needsUpdate = true;
+            overlayPending = false;
+          },
+          undefined,
+          () => {
+            // Keep whatever image is already showing; a failed fetch must not
+            // blank the layer or throw.
+            overlayPending = false;
+          }
+        );
+      };
       globe.add(earthPoints);
 
       /* ---- clouds: removed (Stage 1). The brief forbids a cloud layer; the
@@ -1716,6 +1817,7 @@ const MAX_DISTANCE = 6.2;
         photoPinGroup.visible = distance < PHOTO_PIN_DISTANCE;
 
         updatePlaceLabels();
+        updateBasemapPatch();
 
         /*
          * Settle a click that was made before its province geometry arrived.
@@ -1992,6 +2094,12 @@ const MAX_DISTANCE = 6.2;
         specTex.dispose();
 
         pointGeometry.dispose();
+        if (overlayMesh) {
+          overlayMesh.geometry.dispose();
+          globe.remove(overlayMesh);
+        }
+        if (overlayTexture) overlayTexture.dispose();
+        overlayMaterial.dispose();
         pointMaterial.dispose();
 
         orbitDotGeometry.dispose();

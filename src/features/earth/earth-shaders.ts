@@ -58,6 +58,10 @@ export const EARTH_FRAGMENT = /* glsl */ `
   uniform vec3  uAtmosphereColor;
   uniform float uAtmosphereStrength;
   uniform vec3  uCameraPosition;
+  /* Global fade for the whole dot lattice. The real basemap patch fades in over
+     the dots as the camera closes in; without this the two layers fight and the
+     transition is a hard cut. */
+  uniform float uPointOpacity;
 
   varying vec2 vUv;
   varying vec3 vNormalW;
@@ -362,7 +366,7 @@ export const EARTH_POINTS_FRAGMENT = /* glsl */ `
     float fres = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.0);
     color += uAtmosphereColor * fres * uAtmosphereStrength * (0.18 + 0.82 * max(sunDot, 0.0));
 
-    gl_FragColor = vec4(color, alpha);
+    gl_FragColor = vec4(color, alpha * uPointOpacity);
 
     #include <colorspace_fragment>
   }

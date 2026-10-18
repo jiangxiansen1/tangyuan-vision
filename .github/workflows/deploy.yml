@@ -90,6 +90,13 @@ jobs:
       - name: Build
         # GITHUB_REPOSITORY is provided by Actions and is what vite.config.ts
         # turns into the correct Pages sub-path. Do not hardcode a base here.
+        #
+        # VITE_AMAP_KEY is optional: absent (no repository secret set) the globe
+        # simply never loads the basemap patch, it does not fail. Vite inlines
+        # VITE_* at BUILD time, so a secret is the only way to get it into the
+        # deployed bundle without committing it.
+        env:
+          VITE_AMAP_KEY: ${{ secrets.VITE_AMAP_KEY }}
         run: pnpm run build
 
       - name: Verify the deep-link fallback was emitted
