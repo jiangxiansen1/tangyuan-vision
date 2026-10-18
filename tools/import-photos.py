@@ -58,6 +58,9 @@ COUNTRIES = ROOT / "src" / "features" / "earth" / "data" / "countries-110m.json"
 
 SUPPORTED = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff"}
 
+# 原图长边上限。手机原图 4096px 对网页没有意义，却能把仓库撑到几百 MB。
+MAX_SIDE = 2560
+
 # --------------------------------------------------------------------------- #
 #  Natural Earth TopoJSON → 国家判定
 # --------------------------------------------------------------------------- #
@@ -119,11 +122,94 @@ def point_in_ring(lon, lat, ring):
 
 
 def lookup_country(countries, lon, lat):
-    """返回 (iso_numeric, name_en) 或 (None, None)。"""
+    """返回 (iso_numeric, name_en) 或 (None, None)。
+
+    先用 110m 国界（快、全球覆盖）；没命中再用省级数据兜底。
+
+    为什么需要兜底：110m 的海岸线太粗糙。实测 32 张海南照片里有 5 张落在
+    三亚/万宁一带，坐标明明在陆地上，却被判成「无国家」—— 因为点在粗糙的
+    海岸多边形外面。省级数据（10m 级）能正确判出来。宁可多读几 MB，也不能
+    让真实的旅行照片凭空消失。
+    """
     for iso, name, rings in countries:
         for ring in rings:
             if point_in_ring(lon, lat, ring):
                 return iso, name
+    iso, _ = lookup_country_admin1(lon, lat)
+    if iso:
+        # 省级数据只给 ADM0_A3，用 110m 的 iso→name 反查英文国名
+        for c_iso, c_name, _rings in countries:
+            if c_iso == iso:
+                return iso, c_name
+        return iso, None
+    return None, None
+
+
+# --------------------------------------------------------------------------- #
+#  省级兜底（只在 110m 未命中时触发）
+# --------------------------------------------------------------------------- #
+
+ADMIN1_DIR = ROOT / "public" / "assets" / "earth" / "admin1"
+_admin1_boxes = None  # [(minx, miny, maxx, maxy, adm0, rings), ...]
+_iso_by_adm0 = {}
+
+
+def _rings_of(geometry):
+    if not geometry:
+        return []
+    kind = geometry.get("type")
+    if kind == "Polygon":
+        return geometry.get("coordinates") or []
+    if kind == "MultiPolygon":
+        out = []
+        for poly in geometry.get("coordinates") or []:
+            out.extend(poly)
+        return out
+    return []
+
+
+def load_admin1_fallback():
+    """把每个省的多边形连同 bbox 读进内存一次，之后按 bbox 快速筛。"""
+    global _admin1_boxes, _iso_by_adm0
+    if _admin1_boxes is not None:
+        return
+    _admin1_boxes = []
+    if not ADMIN1_DIR.is_dir():
+        return
+
+    map_file = ADMIN1_DIR / "map.json"
+    if map_file.exists():
+        try:
+            _iso_by_adm0 = (json.loads(map_file.read_text(encoding="utf-8")) or {}).get("map") or {}
+        except Exception:
+            _iso_by_adm0 = {}
+
+    for f in sorted(ADMIN1_DIR.glob("*.json")):
+        if f.name in ("map.json", "index.json"):
+            continue
+        try:
+            doc = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for item in doc.get("items") or []:
+            rings = _rings_of(item.get("geometry") or {})
+            pts = [p for ring in rings for p in ring if p]
+            if not pts:
+                continue
+            xs = [p[0] for p in pts]
+            ys = [p[1] for p in pts]
+            _admin1_boxes.append((min(xs), min(ys), max(xs), max(ys), f.stem, rings))
+
+
+def lookup_country_admin1(lon, lat):
+    """按省级边界反查国家。返回 (iso_numeric, None) 或 (None, None)。"""
+    load_admin1_fallback()
+    for minx, miny, maxx, maxy, adm0, rings in _admin1_boxes:
+        if not (minx <= lon <= maxx and miny <= lat <= maxy):
+            continue
+        for ring in rings:
+            if point_in_ring(lon, lat, ring):
+                return _iso_by_adm0.get(adm0), None
     return None, None
 
 
@@ -262,7 +348,13 @@ def slugify(text: str) -> str:
 
 
 def export_image(src: Path, photo_id: str):
-    """统一导出为 JPG（应用 EXIF 方向），并生成缩略图。返回 (宽, 高)。"""
+    """统一导出为 JPG（应用 EXIF 方向），限制长边并生成缩略图。返回 (宽, 高)。
+
+    为什么必须限制长边：手机原图 4096×3072、每张 3–8MB。32 张就是一两百 MB，
+    GitHub 仓库会被撑爆（单文件 100MB 硬限制之外，仓库体积也影响 clone 与
+    部署速度）。网页灯箱和手机屏幕都不可能用到 4096px，长边 2560 在 Retina
+    屏上仍然清晰，而体积降到 1/4 左右。
+    """
     PHOTO_DIR.mkdir(parents=True, exist_ok=True)
     dst = PHOTO_DIR / f"{photo_id}.jpg"
     thumb = PHOTO_DIR / f"{photo_id}@thumb.jpg"
@@ -277,7 +369,9 @@ def export_image(src: Path, photo_id: str):
         elif img.mode != "RGB":
             img = img.convert("RGB")
 
-        img.save(dst, "JPEG", quality=90, optimize=True, progressive=True)
+        # 长边限制：4096px 的原图对网页没有意义，却让仓库涨到几百 MB。
+        img.thumbnail((MAX_SIDE, MAX_SIDE), Image.LANCZOS)
+        img.save(dst, "JPEG", quality=88, optimize=True, progressive=True)
 
         t = img.copy()
         t.thumbnail((480, 480), Image.LANCZOS)
