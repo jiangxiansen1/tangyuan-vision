@@ -61,6 +61,23 @@ export default function EarthPage() {
   }, []);
   const stats = useMemo(() => regionStats(geoIndex?.size ?? 0), [geoIndex]);
   const records = useMemo(() => readTravelRecords(travelData), []);
+  /**
+   * Provinces that have a recorded city inside them.
+   *
+   * Derived from the records rather than stored separately, so there is exactly
+   * one source of truth: adding a city in the CMS lights its province up on the
+   * globe with no further bookkeeping.
+   */
+  const visitedProvinces = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of records) {
+      if (r.status !== 'visited' || r.published === false) continue;
+      for (const place of r.places ?? []) {
+        if (place.province) set.add(place.province);
+      }
+    }
+    return [...set];
+  }, [records]);
   const markers = useMemo(() => deriveMarkers(records, geoIndex), [records, geoIndex]);
   const photosById = useMemo(
     () =>
@@ -212,6 +229,7 @@ export default function EarthPage() {
           admin1={admin1?.items ?? null}
           admin1Country={admin1?.countryId ?? null}
           onSelectProvince={handleSelectProvince}
+          visitedProvinces={visitedProvinces}
         />
         <Reticle labelOf={labelOf} />
       </div>

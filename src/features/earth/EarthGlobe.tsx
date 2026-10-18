@@ -116,6 +116,13 @@ export interface EarthGlobeProps {
   /** Called when the visitor activates a real Admin-1 province interior. */
   onSelectProvince?: (countryId: string, province: Admin1Item) => void;
   /**
+   * Province names (matching admin1 `nameZh`, e.g. "云南省") that have a recorded
+   * visit. These are FILLED rather than outlined, so a visited region reads as a
+   * lit area the way a travelled-through zone does on a real map — a single dot
+   * per province says "somewhere here", which is not what the visitor did.
+   */
+  visitedProvinces?: string[] | null;
+  /**
    * Return-to-opening-view request. The scene bumps this counter (panel closed,
    * “返回全球”) and the globe re-aims through its own resetView(): the same
    * single WebGL instance, the same textures, no remount — only the camera
@@ -157,6 +164,7 @@ export function EarthGlobe({
   admin1 = null,
   admin1Country = null,
   onSelectProvince,
+  visitedProvinces = null,
   resetSignal,
   controlRef,
   className,
@@ -180,6 +188,8 @@ export function EarthGlobe({
   admin1CountryRef.current = admin1Country;
   const onSelectProvinceRef = useRef(onSelectProvince);
   onSelectProvinceRef.current = onSelectProvince;
+  const visitedProvincesRef = useRef(visitedProvinces);
+  visitedProvincesRef.current = visitedProvinces;
   /*
    * Selection is read through a ref for a measured reason: `onSelectRegion`
    * arrives as a fresh arrow function on every parent render, and it used to
@@ -758,6 +768,7 @@ export function EarthGlobe({
       globe.add(admin1Group);
       let admin1Key = '';
       let admin1Lines: import('three').LineSegments | null = null;
+      let admin1Fill: import('three').Points | null = null;
       const a1v = new THREE.Vector3();
       const pushRing = (ring: number[][], out: number[]) => {
         for (let i = 1; i < ring.length; i++) {
@@ -773,11 +784,26 @@ export function EarthGlobe({
       };
       const syncAdmin1 = () => {
         const items = admin1Ref.current;
-        const key = items && items.length ? items.map((it) => it.id).join(',') : '';
+        const visited = visitedProvincesRef.current ?? [];
+        const key =
+          (items && items.length ? items.map((it) => it.id).join(',') : '') + '|' + visited.join(',');
         if (key === admin1Key) return;
         admin1Key = key;
-        if (admin1Lines) { admin1Group.remove(admin1Lines); admin1Lines.geometry.dispose(); (admin1Lines.material as import('three').Material).dispose(); admin1Lines = null; }
+
+        if (admin1Lines) {
+          admin1Group.remove(admin1Lines);
+          admin1Lines.geometry.dispose();
+          (admin1Lines.material as import('three').Material).dispose();
+          admin1Lines = null;
+        }
+        if (admin1Fill) {
+          admin1Group.remove(admin1Fill);
+          admin1Fill.geometry.dispose();
+          (admin1Fill.material as import('three').Material).dispose();
+          admin1Fill = null;
+        }
         if (!items || !items.length) return;
+
         const out: number[] = [];
         for (const it of items) {
           const g = it.geometry;
@@ -790,9 +816,115 @@ export function EarthGlobe({
         const mat = new THREE.LineBasicMaterial({ color: 0x8fc7ff, transparent: true, opacity: 0.42, depthWrite: false });
         admin1Lines = new THREE.LineSegments(geo, mat);
         admin1Group.add(admin1Lines);
+
+        /*
+         * FILLED VISITED PROVINCES.
+         *
+         * A dot per province says "somewhere in here", which is not what a visit
+         * looks like on a map. The visited provinces are therefore filled with a
+         * point lattice clipped to the real polygon, so the whole administrative
+         * area lights up. Triangulating a concave province on a sphere is far
+         * more code and far more ways to be subtly wrong; a clipped lattice is
+         * exact about which points are inside and cheap to draw.
+         *
+         * The lattice step is in DEGREES, so densely detailed provinces simply
+         * produce more points; the cap keeps a pathological polygon from
+         * generating a million of them.
+         */
+        if (visited.length) {
+          const fill: number[] = [];
+          /*
+           * Normalise an administrative name down to its bare place name, so
+           * "云南省" and the record's "云南" compare equal, and so the long
+           * autonomous-region forms ("广西壮族自治区") do not reduce to
+           * "广西壮族自" by stripping single characters in the wrong order.
+           */
+          const norm = (s: string) =>
+            s
+              .replace(/壮族自治区|回族自治区|维吾尔自治区|自治区|自治州|特别行政区/g, '')
+              .replace(/[省市地区盟县]/g, '')
+              .trim();
+          const wanted = new Set(visited.map(norm));
+
+          for (const it of items) {
+            const nameZh = it.nameZh ?? it.name ?? '';
+            const nameEn = it.nameEn ?? it.name ?? '';
+            if (!wanted.has(norm(nameZh)) && !wanted.has(norm(nameEn))) continue;
+
+            const g = it.geometry;
+            const polys =
+              g.type === 'Polygon'
+                ? [g.coordinates as number[][][]]
+                : (g.coordinates as number[][][][]);
+
+            for (const poly of polys) {
+              const rings = poly as number[][][];
+              if (!rings.length) continue;
+
+              let minLon = 180;
+              let maxLon = -180;
+              let minLat = 90;
+              let maxLat = -90;
+              for (const ring of rings) {
+                for (const c of ring) {
+                  if (c[0] < minLon) minLon = c[0];
+                  if (c[0] > maxLon) maxLon = c[0];
+                  if (c[1] < minLat) minLat = c[1];
+                  if (c[1] > maxLat) maxLat = c[1];
+                }
+              }
+
+              const STEP = 0.22;
+              for (let lon = minLon; lon <= maxLon; lon += STEP) {
+                for (let lat = minLat; lat <= maxLat; lat += STEP) {
+                  // Even-odd over every ring, so holes and islands behave.
+                  let inside = false;
+                  for (const ring of rings) {
+                    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                      const xi = ring[i][0];
+                      const yi = ring[i][1];
+                      const xj = ring[j][0];
+                      const yj = ring[j][1];
+                      if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+                        inside = !inside;
+                      }
+                    }
+                  }
+                  if (!inside) continue;
+                  const lonR = ((-180 - lon) * Math.PI) / 180;
+                  const latR = (lat * Math.PI) / 180;
+                  a1v
+                    .set(0, 0, ADMIN1_R + 0.0015)
+                    .applyAxisAngle(X_AXIS, -latR)
+                    .applyAxisAngle(Y_AXIS, -lonR);
+                  fill.push(a1v.x, a1v.y, a1v.z);
+                  if (fill.length > 90000) break;
+                }
+                if (fill.length > 90000) break;
+              }
+            }
+          }
+
+          if (fill.length) {
+            const fgeo = new THREE.BufferGeometry();
+            fgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(fill), 3));
+            const fmat = new THREE.PointsMaterial({
+              color: 0x5fd0ff,
+              size: 0.011,
+              sizeAttenuation: true,
+              transparent: true,
+              opacity: 0.5,
+              depthWrite: false,
+              blending: THREE.AdditiveBlending,
+            });
+            admin1Fill = new THREE.Points(fgeo, fmat);
+            admin1Group.add(admin1Fill);
+          }
+        }
       };
       cleanups.push(() => {
         if (admin1Lines) { admin1Lines.geometry.dispose(); (admin1Lines.material as import('three').Material).dispose(); }
+        if (admin1Fill) { admin1Fill.geometry.dispose(); (admin1Fill.material as import('three').Material).dispose(); }
         globe.remove(admin1Group);
       });
 
