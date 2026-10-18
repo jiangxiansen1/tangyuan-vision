@@ -487,6 +487,44 @@ collections:
           - { name: secretEnabled, label: 启用隐藏空间入口, widget: boolean, default: true }
           - { name: bootEnabled, label: 启用启动动画, widget: boolean, default: true }
           - { name: locale, label: 语言, widget: string, default: 'zh-CN' }
+          # 首页背景照片。机制早已存在（VisionBackdrop 读这个字段），但之前没在
+          # 后台暴露，所以只能在 JSON 里手改。现在可以直接在这里换图。
+          # 留空 / 加载失败都没关系：页面会回退到程序绘制的渐变，不会破图。
+          - name: homeBackground
+            label: 首页背景
+            widget: object
+            required: false
+            collapsed: true
+            fields:
+              - name: src
+                label: 背景图片
+                widget: image
+                required: false
+                hint: '上传后会存到 /assets/uploads/。建议横向、较暗、主体不居中的照片。'
+              - name: tone
+                label: 主色调
+                widget: color
+                default: '#0b1017'
+                hint: '取自照片的主色，用于字标对比度'
+              - name: overlay
+                label: 压暗程度
+                widget: number
+                value_type: float
+                min: 0
+                max: 1
+                default: 0.55
+                hint: '0 = 原图，1 = 全压黑。深色主题建议 0.55–0.75：背景要克制，但必须看得见。'
+              - name: provenance
+                label: 图片来源
+                widget: select
+                options:
+                  - { label: '真实照片 / real', value: real }
+                  - { label: '示例 / sample', value: sample }
+                default: real
+              - name: note
+                label: 说明
+                widget: text
+                required: false
           - name: keywords
             label: 关键词
             widget: list
