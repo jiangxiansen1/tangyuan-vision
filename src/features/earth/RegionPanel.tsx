@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { assetUrl } from '@/lib/asset';
 import { ProvenanceBadge } from '@/components/ui/ProvenanceBadge';
 import { travelFor } from './regions';
 import { provinceCenter } from './admin1-pick';
@@ -253,7 +254,14 @@ export function RegionPanel({ region, label, photosById, province = null, onBack
               {photos.map((photo) => (
                 <li key={photo.src}>
                   <img
-                    src={photo.src}
+                    /*
+                     * MUST go through assetUrl(). Content stores base-less paths
+                     * like /assets/photography/x.jpg; on a project Pages site the
+                     * app lives under /tangyuan-vision/, so a raw leading slash
+                     * resolves to the DOMAIN root and every thumbnail 404s. This
+                     * only ever looked fine on a local root-served preview.
+                     */
+                    src={assetUrl(photo.src)}
                     alt={photo.title}
                     width={photo.width}
                     height={photo.height}
