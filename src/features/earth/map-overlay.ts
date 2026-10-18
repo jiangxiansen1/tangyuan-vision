@@ -20,6 +20,7 @@
  */
 
 import * as THREE from 'three';
+import { AMAP_KEY } from './amap-key';
 
 /** Half-size of the covered patch, in degrees of latitude. */
 export const PATCH_HALF_DEG = 18;
@@ -125,9 +126,16 @@ export function staticMapUrl({ lat, lon, zoom, key, size = 1024, scale = 2 }: St
   return `https://restapi.amap.com/v3/staticmap?${params.toString()}`;
 }
 
-/** Read the key from the environment. Absent = the whole layer stays off. */
+/**
+ * Read the build-time key. Absent = the whole basemap layer stays off.
+ *
+ * `__AMAP_KEY__` is a plain global injected by vite.config.ts rather than a
+ * VITE_* variable, because Vite owns `import.meta.env.*` and ignores define()
+ * entries aimed at it. `typeof` guards the case where the global was not injected
+ * at all (a build made without the define).
+ */
 export function readAmapKey(): string | null {
-  const raw = (import.meta.env as Record<string, string | undefined>).VITE_AMAP_KEY;
-  const key = typeof raw === 'string' ? raw.trim() : '';
+  const fromEnv = (import.meta.env as Record<string, string | undefined>).VITE_AMAP_KEY;
+  const key = (fromEnv ?? AMAP_KEY ?? '').trim();
   return key ? key : null;
 }

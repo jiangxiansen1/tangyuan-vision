@@ -1,17 +1,17 @@
-import { defineConfig, type Plugin } from 'vite';
+﻿import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import { readFileSync, mkdirSync, copyFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 /**
- * htmlMetaPlugin — substitutes the {{TOKEN}} markers in index.html from the
+ * htmlMetaPlugin 鈥?substitutes the {{TOKEN}} markers in index.html from the
  * content files at build time.
  *
  * WHY THIS IS A BUILD STEP AND NOT A RUNTIME WRITE
  * A client-rendered SPA can set its own <title> and meta tags at runtime, and
  * this project does exactly that per route (see useDocumentTitle). But a crawler
- * or link unfurler that does not execute JavaScript sees only the static shell —
+ * or link unfurler that does not execute JavaScript sees only the static shell 鈥?
  * so the shell itself must already carry the correct site-level metadata. Reading
  * it from src/content/data/settings.json means there is still exactly one source
  * of truth for the site's name and description.
@@ -46,14 +46,14 @@ function htmlMetaPlugin(): Plugin {
       order: 'post',
       handler(html) {
         const settings = readJson('./src/content/data/settings.json');
-        const title = String(settings.siteTitleSuffix ?? settings.siteTitle ?? '汤圆Vision');
+        const title = String(settings.siteTitleSuffix ?? settings.siteTitle ?? '姹ゅ渾Vision');
         const description = String(settings.siteDescription ?? '');
         const themeColor = String(settings.themeColor ?? '#F4F6F8');
         const ogImage = String(settings.ogImage ?? '/assets/brand/logo-light.png');
         const keywords = Array.isArray(settings.keywords) ? settings.keywords.join(',') : '';
 
         // The inline shell needs three literal colours, not one. It paints before
-        // the stylesheet exists, so it cannot reference a custom property — and a
+        // the stylesheet exists, so it cannot reference a custom property 鈥?and a
         // single themeColor would leave the pre-stylesheet text and links with the
         // wrong contrast on a light ground.
         const shell = {
@@ -89,7 +89,7 @@ function htmlMetaPlugin(): Plugin {
 }
 
 /**
- * maplibreWorkerPlugin — ship MapLibre's web worker next to the bundle.
+ * maplibreWorkerPlugin 鈥?ship MapLibre's web worker next to the bundle.
  *
  * THE FAILURE THIS PREVENTS, AND WHY IT IS INVISIBLE
  * MapLibre derives its worker URL from its OWN module filename:
@@ -99,11 +99,11 @@ function htmlMetaPlugin(): Plugin {
  *
  * In dev that resolves to the real file in node_modules and everything works. In a
  * production build Rollup bundles the library into `assets/vendor-maplibre-*.js`, so the
- * same expression looks for `assets/maplibre-gl-worker.mjs` — a file the build never
+ * same expression looks for `assets/maplibre-gl-worker.mjs` 鈥?a file the build never
  * emits, because Rollup has no idea the string refers to an asset.
  *
  * The result is not a build error. The map renders its raster basemap perfectly, because
- * raster tiles are fetched on the main thread — and silently draws NO vector geometry at
+ * raster tiles are fetched on the main thread 鈥?and silently draws NO vector geometry at
  * all, because vector tiles are parsed in the worker. Measured on the production build:
  * `roads 0`, `place-city 0`, `water 0`. The same audit against the dev server reports
  * `roads 6383`, `water 103`, `place-city 8`.
@@ -141,13 +141,13 @@ function maplibreWorkerPlugin(): Plugin {
  * GitHub Pages sub-path support.
  *
  * The public site is hosted from a project sub-path, so every emitted asset URL
- * must be prefixed. We deliberately do NOT hardcode the repository name — that
- * is not known yet — so the base is resolved in this order:
+ * must be prefixed. We deliberately do NOT hardcode the repository name 鈥?that
+ * is not known yet 鈥?so the base is resolved in this order:
  *
- *   1. VITE_BASE_PATH           — explicit override, e.g. "/my-repo/"
- *   2. GITHUB_REPOSITORY        — set automatically inside GitHub Actions,
+ *   1. VITE_BASE_PATH           鈥?explicit override, e.g. "/my-repo/"
+ *   2. GITHUB_REPOSITORY        鈥?set automatically inside GitHub Actions,
  *                                 e.g. "owner/TangyuanVision" -> "/TangyuanVision/"
- *   3. "/"                      — local dev and any root-hosted deploy
+ *   3. "/"                      鈥?local dev and any root-hosted deploy
  *
  * A user/organisation Pages site (owner.github.io) must resolve to "/", which
  * the GITHUB_REPOSITORY branch handles automatically by detecting the
@@ -170,6 +170,7 @@ function resolveBasePath(): string {
   return '/';
 }
 
+
 export default defineConfig(({ mode }) => {
   const base = resolveBasePath();
   return {
@@ -182,6 +183,8 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       __BASE_PATH__: JSON.stringify(base),
+      // A build-time global, not import.meta.env.* 鈥?Vite owns that namespace and
+      // silently ignores a define() entry there.
     },
     /*
      * maplibre-gl MUST NOT be dependency-pre-bundled.
@@ -193,7 +196,7 @@ export default defineConfig(({ mode }) => {
      *   Error: Worker failed to load. Check that the worker URL is correct.
      *
      * The failure is quiet and misleading. The style document loads, raster tiles are
-     * fetched (35 of them in the measured run) and the globe even appears — but the
+     * fetched (35 of them in the measured run) and the globe even appears 鈥?but the
      * worker is what parses VECTOR tiles, so `load` never fires, `data-status` stays
      * 'loading' forever, and the map never becomes interactive. It reads as "the map
      * is slow" rather than as an error, which is why it is worth stating here.
