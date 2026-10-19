@@ -10,7 +10,7 @@
 
 import { useMemo, useState } from 'react';
 import { NAVIGABLE_ROUTES } from '@/app/routes';
-import { PHOTOS } from '@/content';
+import { isCoverPhoto, PHOTOS } from '@/content';
 import type { Photo } from '@/content/types';
 import { SmartImage } from '@/components/ui/SmartImage';
 import { ProvenanceBadge } from '@/components/ui/ProvenanceBadge';
@@ -48,7 +48,10 @@ export function PhotoScene() {
    * lead; everything else keeps its order behind them.
    */
   const shown = useMemo(() => {
-    const ordered = [...pool].sort((a, b) => Number(!!b.feature) - Number(!!a.feature));
+    const anyFlagged = PHOTOS.some((p) => p.feature === true);
+    const ordered = [...pool].sort(
+      (a, b) => Number(isCoverPhoto(b, anyFlagged)) - Number(isCoverPhoto(a, anyFlagged))
+    );
     return ordered.slice(0, 3);
   }, [pool]);
 

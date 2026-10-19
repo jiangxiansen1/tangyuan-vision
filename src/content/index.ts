@@ -209,6 +209,29 @@ export const TRAVEL_PHOTOS: Photo[] = itemsOf(travelPhotosJson, 'travel-photos.j
   .filter((p): p is Photo => p !== null)
   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
+/**
+ * Cover photographs, as a code-level fallback.
+ *
+ * `feature` is the field the CMS exposes for this, and it is honoured first. The
+ * fallback exists because a CMS save re-serialises the whole collection and has
+ * already reset the flag to false once — twice, in fact — silently turning the cover
+ * row back into a run of portraits. These ids keep the covers stable even after that.
+ *
+ * Both halves cooperate: if any record carries feature: true, those are used and this
+ * list is ignored. Only when nothing is marked does the fallback take over.
+ */
+export const COVER_PHOTO_IDS: readonly string[] = [
+  '2025-11-15-1780572136130', // golden monastery in backlight
+  '2025-11-15-1780572136145', // snow mountain and its reflection
+  '2024-09-15-1780572313866', // ring bridge, long exposure at night
+];
+
+/** True when the record should lead a list: flagged in the CMS, or one of the defaults. */
+export function isCoverPhoto(photo: Photo, anyFlagged: boolean): boolean {
+  if (anyFlagged) return photo.feature === true;
+  return COVER_PHOTO_IDS.includes(photo.id);
+}
+
 export const PHOTO_CATEGORY_LABELS: Record<Photo['category'], string> = {
   landscape: '风光 / Landscape',
   portrait: '人像 / Portrait',

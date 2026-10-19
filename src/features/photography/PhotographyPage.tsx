@@ -22,7 +22,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BRAND, PHOTOS, PHOTO_CATEGORY_LABELS, SETTINGS } from '@/content';
+import { BRAND, isCoverPhoto, PHOTOS, PHOTO_CATEGORY_LABELS, SETTINGS } from '@/content';
 import type { PhotoCategory } from '@/content/types';
 import { NAVIGABLE_ROUTES } from '@/app/routes';
 import { SceneLayout } from '@/components/layout/SceneLayout';
@@ -68,7 +68,10 @@ export default function PhotographyPage() {
    */
   const visible = useMemo(() => {
     const pool = filter === 'all' ? PHOTOS : PHOTOS.filter((p) => p.category === filter);
-    return [...pool].sort((a, b) => Number(!!b.feature) - Number(!!a.feature));
+    const anyFlagged = PHOTOS.some((p) => p.feature === true);
+    return [...pool].sort(
+      (a, b) => Number(isCoverPhoto(b, anyFlagged)) - Number(isCoverPhoto(a, anyFlagged))
+    );
   }, [filter]);
 
   /* Keep the selection inside the filtered list — otherwise switching category
