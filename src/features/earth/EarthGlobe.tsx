@@ -39,7 +39,6 @@ import { directionToLatLon, subSolarPoint } from './solar';
 import { pickProvince } from './admin1-pick';
 import {
   buildPatchGeometry,
-  createPatchMaterial,
   imageryExportUrl,
   imagerySizeForDistance,
   PATCH_HALF_DEG,
@@ -440,7 +439,7 @@ export function EarthGlobe({
  * The globe has radius 1 and the camera's near plane is 0.1, so 1.10 pushes right
  * up against the surface without clipping through it.
  */
-const MIN_DISTANCE = 1.1;
+const MIN_DISTANCE = 1.34;
 const MAX_DISTANCE = 6.2;
       camera.position.copy(CAMERA_HOME);
 
@@ -581,7 +580,13 @@ const MAX_DISTANCE = 6.2;
          The endpoint is public and sends Access-Control-Allow-Origin: *, and it
          delivers Web-Mercator (imageSR=3857), which is the projection the patch
          vertices are laid out in — so the image lands with no resampling. */
-      const overlayMaterial = createPatchMaterial();
+      const overlayMaterial = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      });
       let overlayMesh: import('three').Mesh | null = null;
       let overlayTexture: import('three').Texture | null = null;
       let overlayRequestKey = '';
@@ -603,7 +608,7 @@ const MAX_DISTANCE = 6.2;
         if (!overlayMesh) return;
 
         const appear = Math.max(0, Math.min(1, (OVERLAY_DISTANCE - distance) / OVERLAY_FADE_BAND));
-        overlayMaterial.uniforms.uOpacity.value = appear * 0.96;
+        overlayMaterial.opacity = appear * 0.96;
         overlayMesh.visible = appear > 0.01;
         // The dots step back rather than vanish: the point lattice is the identity
         // of this globe, so it stays visible underneath the imagery.
@@ -641,8 +646,8 @@ const MAX_DISTANCE = 6.2;
             tex.generateMipmaps = false;
             if (overlayTexture) overlayTexture.dispose();
             overlayTexture = tex;
-            overlayMaterial.uniforms.uMap.value = tex;
-            overlayMaterial.uniforms.uHasMap.value = 1;
+            overlayMaterial.map = tex;
+            overlayMaterial.needsUpdate = true;
             overlayPending = false;
           },
           undefined,
@@ -678,6 +683,18 @@ const MAX_DISTANCE = 6.2;
       });
       const atmosphere = new THREE.Mesh(atmoGeometry, atmoMaterial);
       scene.add(atmosphere);
+      /*
+       * The shell is drawn with BackSide, so it shows the FAR hemisphere and reads
+       * as a halo. Zoom past its radius and the camera is INSIDE it: BackSide then
+       * fills the viewport with additive glow and the ground vanishes behind a solid
+       * blue wash. Fade it out before that can happen.
+       */
+      const ATMOSPHERE_R = earthRadius * 1.16;
+      const setAtmosphereForDistance = (d: number) => {
+        const fade = Math.max(0, Math.min(1, (d - ATMOSPHERE_R) / 0.22));
+        atmoMaterial.uniforms.uIntensity.value = 0.85 * fade;
+        atmosphere.visible = fade > 0.01;
+      };
 
       /* ---- starfield ----
          A ring of points well outside the globe. Brightness is biased low so the
@@ -1039,7 +1056,7 @@ const MAX_DISTANCE = 6.2;
         if (!out.length) return;
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(out), 3));
-        const mat = new THREE.LineBasicMaterial({ color: 0xa8d8ff, transparent: true, opacity: 0.6, depthWrite: false });
+        const mat = new THREE.LineBasicMaterial({ color: 0x14506e, transparent: true, opacity: 0.55, depthWrite: false });
         admin1Lines = new THREE.LineSegments(geo, mat);
         admin1Group.add(admin1Lines);
 
@@ -1138,15 +1155,13 @@ const MAX_DISTANCE = 6.2;
             const fgeo = new THREE.BufferGeometry();
             fgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(fill), 3));
             const fmat = new THREE.MeshBasicMaterial({
-              color: 0x5ec8ff,
+              // A LIGHT basemap inverts the old choice: additive pale cyan is
+              // invisible on cream, so the fill darkens instead of glowing.
+              color: 0x2f7fb8,
               transparent: true,
-              // Raised from 0.30: over satellite imagery a thin wash disappears,
-              // and this layer is the one piece of information the visitor cares
-              // about most.
-              opacity: 0.42,
+              opacity: 0.34,
               depthWrite: false,
               side: THREE.DoubleSide,
-              blending: THREE.AdditiveBlending,
             });
             admin1Fill = new THREE.Mesh(fgeo, fmat);
             admin1Group.add(admin1Fill);
@@ -1818,6 +1833,7 @@ const MAX_DISTANCE = 6.2;
 
         updatePlaceLabels();
         updateBasemapPatch();
+        setAtmosphereForDistance(distance);
 
         /*
          * Settle a click that was made before its province geometry arrived.
