@@ -26,7 +26,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NAVIGABLE_ROUTES } from '@/app/routes';
-import { PHOTOS } from '@/content';
+import { TRAVEL_PHOTOS } from '@/content';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useVisualStore } from '@/store/useVisualStore';
 import { Icon } from '@/components/ui/Icon';
@@ -105,8 +105,8 @@ export function EarthScene() {
   const photos = useMemo(() => {
     const ids = travel?.photoIds ?? [];
     return ids
-      .map((id) => PHOTOS.find((p) => p.id === id))
-      .filter((p): p is (typeof PHOTOS)[number] => Boolean(p));
+      .map((id) => TRAVEL_PHOTOS.find((p) => p.id === id))
+      .filter((p): p is (typeof TRAVEL_PHOTOS)[number] => Boolean(p));
   }, [travel]);
 
   const focus = useMemo(

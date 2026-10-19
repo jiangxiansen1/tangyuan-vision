@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PHOTOS } from '@/content';
+import { TRAVEL_PHOTOS } from '@/content';
 import { NAVIGABLE_ROUTES } from '@/app/routes';
 import { Icon } from '@/components/ui/Icon';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -88,7 +88,7 @@ export default function EarthPage() {
    */
   const photoPins = useMemo(
     () =>
-      PHOTOS.filter(
+      TRAVEL_PHOTOS.filter(
         (p) => typeof p.latitude === 'number' && typeof p.longitude === 'number'
       ).map((p) => ({
         lat: p.latitude as number,
@@ -101,7 +101,7 @@ export default function EarthPage() {
   const photosById = useMemo(
     () =>
       new Map(
-        PHOTOS.map((p) => [
+        TRAVEL_PHOTOS.map((p) => [
           p.id,
           { src: p.src, thumb: p.thumb, title: p.title, width: p.width, height: p.height, tone: p.tone },
         ])
@@ -149,7 +149,7 @@ export default function EarthPage() {
    */
   const provincePhotos = useMemo(() => {
     if (!selectedProvince || !admin1) return null;
-    return PHOTOS.filter((photo) => {
+    return TRAVEL_PHOTOS.filter((photo) => {
       if (typeof photo.latitude !== 'number' || typeof photo.longitude !== 'number') {
         return false;
       }

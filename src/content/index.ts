@@ -29,6 +29,7 @@ import type {
 import brandJson from './data/brand.json';
 import profileJson from './data/profile.json';
 import photographyJson from './data/photography.json';
+import travelPhotosJson from './data/travel-photos.json';
 import ridingJson from './data/riding.json';
 import labJson from './data/lab.json';
 import projectsJson from './data/projects.json';
@@ -187,6 +188,23 @@ function toPhoto(raw: Record<string, unknown>, i: number): Photo | null {
 }
 
 export const PHOTOS: Photo[] = itemsOf(photographyJson, 'photography.json')
+  .map(toPhoto)
+  .filter((p): p is Photo => p !== null)
+  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+/**
+ * Travel photographs — a SEPARATE collection from the gallery.
+ *
+ * They were one list once, which meant every travel snapshot also appeared in the
+ * portfolio and every portfolio piece had to be filtered out of the globe. They
+ * answer different questions: one is "where have I been", the other is "what have I
+ * made". Splitting the data is what keeps the two pages from leaking into each
+ * other — no filtering, no hidden flags.
+ *
+ * Only photographs with real coordinates live here; a travel photo without a
+ * position could not be placed on the globe anyway.
+ */
+export const TRAVEL_PHOTOS: Photo[] = itemsOf(travelPhotosJson, 'travel-photos.json')
   .map(toPhoto)
   .filter((p): p is Photo => p !== null)
   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
