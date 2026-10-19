@@ -167,7 +167,7 @@ const PHOTO_PIN_MAX = 120;
 const AUTO_ROTATE_SPEED = 2.4;
 
 /** Seconds for the velocity to halve after a drag is released. */
-const INERTIA_HALFLIFE = 1.4;
+const INERTIA_HALFLIFE = 0.12;
 
 /** A gesture spin below this (degrees/second) is treated as finished. */
 const SPIN_MIN = 0.5;
@@ -1304,6 +1304,8 @@ const MAX_DISTANCE = 6.2;
       const rotation = { lon: HOME_ROTATION.lon, lat: HOME_ROTATION.lat };
 
       const velocity = { lon: 0, lat: 0 };
+      /** Time of the previous drag move, for degrees-per-second. */
+      let lastMoveAt = 0;
   /*
    * Gesture spin, in degrees per second, supplied by the shared gesture session
    * (see GlobeControlApi.setSpin). It is integrated at DISPLAY rate here and
@@ -1494,8 +1496,31 @@ const MAX_DISTANCE = 6.2;
           const scale = (180 / Math.max(rect.width, 1)) * distanceGain;
           rotation.lon += dx * scale;
           rotation.lat = Math.max(-72, Math.min(72, rotation.lat + dy * scale * 0.7));
-          velocity.lon = dx * scale;
-          velocity.lat = dy * scale * 0.7;
+          /*
+           * INERTIA IN REAL UNITS.
+           *
+           * This used to store the per-move delta (degrees) and integrate it as if
+           * it were degrees-per-frame, so a fast flick started the glide at whatever
+           * the last mouse delta happened to be — unrelated to how fast the hand was
+           * actually moving, and often enormous. Divided by the actual time between
+           * moves it becomes degrees/second, which is what the integration below
+           * expects.
+           */
+          const moveNow = performance.now();
+          const moveDt = Math.max(8, moveNow - lastMoveAt);
+          lastMoveAt = moveNow;
+          const maxSpin = 420; // degrees/second: a hard flick still stops quickly
+          /*
+           * 0.55, not 1.0.
+           *
+           * A glide that carries further than the drag itself reads as "the globe
+           * ran away": measured, an unscaled flick coasted 45 degrees after a 27
+           * degree drag. At this factor plus the short half-life below, the coast is
+           * roughly 40% of the drag and stops inside a second.
+           */
+          const glide = 0.55;
+          velocity.lon = Math.max(-maxSpin, Math.min(maxSpin, (dx * scale * 1000 * glide) / moveDt));
+          velocity.lat = Math.max(-maxSpin, Math.min(maxSpin, (dy * scale * 0.7 * 1000 * glide) / moveDt));
           applyRotation();
           // While dragging, the identified country is stale by definition.
           setHover(null);
@@ -1661,13 +1686,18 @@ const MAX_DISTANCE = 6.2;
           const decay = Math.pow(0.5, dt / INERTIA_HALFLIFE);
           velocity.lon *= decay;
           velocity.lat *= decay;
-          if (Math.abs(velocity.lon) > 0.001) {
-            rotation.lon += velocity.lon;
+          // Degrees per SECOND, so the integration needs dt.
+          if (Math.abs(velocity.lon) > 0.5) {
+            rotation.lon += velocity.lon * dt;
             applyRotation();
+          } else {
+            velocity.lon = 0;
           }
-          if (Math.abs(velocity.lat) > 0.001) {
-            rotation.lat = Math.max(-72, Math.min(72, rotation.lat + velocity.lat));
+          if (Math.abs(velocity.lat) > 0.5) {
+            rotation.lat = Math.max(-72, Math.min(72, rotation.lat + velocity.lat * dt));
             applyRotation();
+          } else {
+            velocity.lat = 0;
           }
           /* Gesture inertia: integrated per frame (display rate) so it stays
              smooth regardless of the ~24 Hz recognition rate, then decayed. */
