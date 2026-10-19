@@ -204,3 +204,118 @@
     font-size: 0.92rem;
   }
 }
+
+
+/* ================================================= glowing lettering =======
+   The reference is light emitted BY the type: a bloom that hugs the glyphs, and
+   streaks radiating away from the word. Both are here, and neither is an image.
+
+   The bloom is text-shadow in five layers, each wider and fainter than the last.
+   One shadow reads as a drop shadow; five read as light. */
+.bcore {
+  position: relative;
+  /* The rays are painted on their own layer behind the text. */
+  isolation: isolate;
+}
+
+.bcore__rays {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 190vmax;
+  height: 190vmax;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+
+  /*
+   * The streaks. repeating-conic-gradient gives evenly spaced wedges; the radial
+   * mask fades them out with distance so they behave like light falloff rather
+   * than like a pinwheel.
+   */
+  background: repeating-conic-gradient(
+    from 0deg at 50% 50%,
+    rgb(206 230 255 / 0.055) 0deg 1.5deg,
+    transparent 1.5deg 10.5deg
+  );
+  -webkit-mask-image: radial-gradient(
+    circle at 50% 50%,
+    rgb(0 0 0 / 0.95) 0%,
+    rgb(0 0 0 / 0.5) 16%,
+    transparent 44%
+  );
+  mask-image: radial-gradient(
+    circle at 50% 50%,
+    rgb(0 0 0 / 0.95) 0%,
+    rgb(0 0 0 / 0.5) 16%,
+    transparent 44%
+  );
+  opacity: 0.85;
+  animation: bcore-rays-breathe 8s ease-in-out infinite;
+}
+
+@keyframes bcore-rays-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* The type itself: white, with a halo that tightens at the stroke. */
+.bcore__cn,
+.bcore__latin {
+  color: #fff;
+  text-shadow:
+    0 0 1px rgb(255 255 255 / 0.95),
+    0 0 8px rgb(224 240 255 / 0.8),
+    0 0 24px rgb(176 212 255 / 0.55),
+    0 0 60px rgb(126 172 255 / 0.32),
+    0 0 140px rgb(82 128 230 / 0.18);
+}
+
+/* On the brand stage the lettering also breathes very slightly, so the glow reads
+   as light rather than as a printed halo. */
+.bcore--full .bcore__cn,
+.bcore--full .bcore__latin {
+  animation: bcore-glow 8s ease-in-out infinite;
+}
+
+@keyframes bcore-glow {
+  0%,
+  100% {
+    text-shadow:
+      0 0 1px rgb(255 255 255 / 0.85),
+      0 0 8px rgb(224 240 255 / 0.66),
+      0 0 24px rgb(176 212 255 / 0.44),
+      0 0 60px rgb(126 172 255 / 0.26),
+      0 0 140px rgb(82 128 230 / 0.14);
+  }
+  50% {
+    text-shadow:
+      0 0 1px rgb(255 255 255 / 1),
+      0 0 10px rgb(230 244 255 / 0.9),
+      0 0 30px rgb(186 220 255 / 0.62),
+      0 0 76px rgb(136 182 255 / 0.38),
+      0 0 170px rgb(92 138 240 / 0.22);
+  }
+}
+
+/* The gloss line picks up a trace of the same light, so it belongs to the mark
+   rather than sitting under it as a caption. */
+.bcore--full .bcore__gloss-text {
+  text-shadow: 0 0 18px rgb(150 195 255 / 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bcore__rays,
+  .bcore--full .bcore__cn,
+  .bcore--full .bcore__latin {
+    animation: none;
+  }
+  .bcore__rays {
+    opacity: 0.7;
+  }
+}

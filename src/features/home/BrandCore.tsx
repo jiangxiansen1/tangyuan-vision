@@ -38,6 +38,18 @@ export function BrandCore({ variant = 'full', className }: BrandCoreProps) {
   return (
     <div className={`bcore bcore--${variant} ${className ?? ''}`}>
       {/*
+        The rays behind the lettering.
+
+        In the reference scene the glow is not a filter on the type — it is light
+        coming FROM the type: a soft bloom plus streaks radiating outward. The bloom
+        is text-shadow (so it follows the glyph shapes exactly); the streaks need
+        their own layer, because no text-shadow can produce a radial fan.
+
+        Decorative and non-interactive: aria-hidden, pointer-events none, and it
+        carries no information the text does not already.
+      */}
+      {variant === 'full' ? <span className="bcore__rays" aria-hidden="true" /> : null}
+      {/*
         h1: the accessible name is the full brand read once, so a screen reader
         announces 「汤圆Vision」 as a single name rather than two stray fragments.
         The visible spans are aria-hidden because the h1 text already contains
