@@ -457,6 +457,32 @@ def main() -> int:
     photos = photos_doc["items"] if isinstance(photos_doc, dict) else photos_doc
     travels = travels_doc["items"] if isinstance(travels_doc, dict) else travels_doc
 
+    # ---- already-imported source files ------------------------------------
+    # A record's id is NOT a stable identity for its source file: the collision loop
+    # below appends -2, -3, ... when a base name is taken, which is right for two
+    # different photos that happen to share a name and wrong for re-running the same
+    # folder — a second run produced a full duplicate set with -2 suffixes.
+    # The sidecar keys on the source file's own fingerprint instead.
+    imports_path = PHOTO_JSON.parent / '.photo-imports.json'
+    try:
+        imported_sources = json.loads(imports_path.read_text(encoding="utf-8"))
+        if not isinstance(imported_sources, dict):
+            imported_sources = {}
+    except Exception:
+        imported_sources = {}
+
+    def fingerprint(path):
+        st = path.stat()
+        return f"{path.name}|{st.st_size}|{int(st.st_mtime)}"
+
+    already = [f for f in files if fingerprint(f) in imported_sources]
+    if already:
+        files = [f for f in files if fingerprint(f) not in imported_sources]
+        print(f"其中 {len(already)} 张已经导入过，本次跳过。")
+        if not files:
+            print("没有新照片需要导入。")
+            return
+
     existing_ids = {p.get("id") for p in photos}
     by_region = {t.get("regionId"): t for t in travels}
 
@@ -530,6 +556,7 @@ def main() -> int:
                 continue
 
         photos.append(entry)
+        imported_sources[fingerprint(path)] = photo_id
         imported.append(
             {
                 "id": photo_id,
@@ -637,6 +664,9 @@ def main() -> int:
         print("这是预演，没有写任何文件。确认无误后加 --apply 真正导入。")
         return 0
 
+    imports_path.write_text(
+        json.dumps(imported_sources, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     PHOTO_JSON.write_text(
         json.dumps({"items": photos}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

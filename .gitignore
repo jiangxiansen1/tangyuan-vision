@@ -62,3 +62,7 @@ public/__*
 # public/assets/earth/admin1/ and src/features/earth/data/. See docs/DATA_SOURCES.md.
 tools/_data/
 
+
+# Python 缓存（导入脚本运行时会生成）
+tools/__pycache__/
+*.pyc
