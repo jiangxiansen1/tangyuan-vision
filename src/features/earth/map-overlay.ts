@@ -29,8 +29,14 @@
 
 import * as THREE from 'three';
 
-/** Half-size of the covered patch, in degrees of latitude. */
-export const PATCH_HALF_DEG = 18;
+/**
+ * Half-size of the covered patch, in degrees of latitude.
+ *
+ * 22 rather than 18 because the edge is now feathered: the fully-opaque middle
+ * reaches only ~0.40 of the half-width, so the useful coverage is about 9 degrees
+ * unless the patch itself is larger. Before feathering, 18 was the visible edge.
+ */
+export const PATCH_HALF_DEG = 22;
 
 /**
  * Pixel resolution to request for a given camera distance.
@@ -139,6 +145,61 @@ export function imageryExportUrl(
     f: 'image',
   });
   return `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?${params.toString()}`;
+}
+
+/**
+ * Material for the basemap patch: a radial alpha falloff so the imagery dissolves
+ * into the dots instead of ending on a straight edge.
+ *
+ * A canvas-generated alphaMap would be simpler, but the patch's UV space is
+ * Mercator while the texture is sampled linearly, so a circular mask baked into a
+ * texture arrives on screen as an ellipse. Computing the falloff in the fragment
+ * shader from vUv keeps the decision in one place and lets the radii be tuned
+ * without regenerating any image.
+ *
+ * Inner radius 0.36 keeps the useful middle fully opaque; the outer 0.14 of the
+ * patch is the whole fade band.
+ */
+export function createPatchMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uMap: { value: null as THREE.Texture | null },
+      uOpacity: { value: 0 },
+      uHasMap: { value: 0 },
+    },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      precision highp float;
+      uniform sampler2D uMap;
+      uniform float uOpacity;
+      uniform float uHasMap;
+      varying vec2 vUv;
+
+      void main() {
+        // Nothing to draw until the first image arrives; avoids a black patch
+        // appearing for the moment between fading in and the texture loading.
+        if (uHasMap < 0.5) discard;
+
+        // Distance from the patch centre in UV space. The patch spans exactly one
+        // full 0..1 square, so 0.5 is its half-width.
+        float d = distance(vUv, vec2(0.5));
+        float alpha = smoothstep(0.5, 0.40, d) * uOpacity;
+        if (alpha <= 0.004) discard;
+
+        vec4 texel = texture2D(uMap, vUv);
+        gl_FragColor = vec4(texel.rgb, alpha);
+      }
+    `,
+  });
 }
 
 

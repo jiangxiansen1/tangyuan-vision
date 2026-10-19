@@ -39,6 +39,7 @@ import { directionToLatLon, subSolarPoint } from './solar';
 import { pickProvince } from './admin1-pick';
 import {
   buildPatchGeometry,
+  createPatchMaterial,
   imageryExportUrl,
   imagerySizeForDistance,
   PATCH_HALF_DEG,
@@ -580,13 +581,7 @@ const MAX_DISTANCE = 6.2;
          The endpoint is public and sends Access-Control-Allow-Origin: *, and it
          delivers Web-Mercator (imageSR=3857), which is the projection the patch
          vertices are laid out in — so the image lands with no resampling. */
-      const overlayMaterial = new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        toneMapped: false,
-      });
+      const overlayMaterial = createPatchMaterial();
       let overlayMesh: import('three').Mesh | null = null;
       let overlayTexture: import('three').Texture | null = null;
       let overlayRequestKey = '';
@@ -608,7 +603,7 @@ const MAX_DISTANCE = 6.2;
         if (!overlayMesh) return;
 
         const appear = Math.max(0, Math.min(1, (OVERLAY_DISTANCE - distance) / OVERLAY_FADE_BAND));
-        overlayMaterial.opacity = appear * 0.96;
+        overlayMaterial.uniforms.uOpacity.value = appear * 0.96;
         overlayMesh.visible = appear > 0.01;
         // The dots step back rather than vanish: the point lattice is the identity
         // of this globe, so it stays visible underneath the imagery.
@@ -646,8 +641,8 @@ const MAX_DISTANCE = 6.2;
             tex.generateMipmaps = false;
             if (overlayTexture) overlayTexture.dispose();
             overlayTexture = tex;
-            overlayMaterial.map = tex;
-            overlayMaterial.needsUpdate = true;
+            overlayMaterial.uniforms.uMap.value = tex;
+            overlayMaterial.uniforms.uHasMap.value = 1;
             overlayPending = false;
           },
           undefined,
