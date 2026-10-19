@@ -161,7 +161,7 @@ const PHOTO_PIN_R = 1.014;
 const PHOTO_PIN_DISTANCE = 2.4;
 
 
-const PHOTO_PIN_MAX = 60;
+const PHOTO_PIN_MAX = 120;
 
 /** Degrees per second of idle rotation. One revolution ≈ 2.5 minutes. */
 const AUTO_ROTATE_SPEED = 2.4;
@@ -1093,24 +1093,19 @@ const MAX_DISTANCE = 6.2;
 
       const syncPhotoPins = () => {
         /*
-         * Cluster by ~0.1 degree (about 11 km) before placing sprites.
+         * ONE PIN PER PHOTOGRAPH — no clustering.
          *
-         * A single trip produces many shots from nearly the same spot - this set
-         * has a dozen inside a few kilometres of Lijiang. Drawn one sprite each,
-         * they pile into an unreadable stack, so one representative thumbnail is
-         * shown per cluster while every photo still exists in the gallery. The
-         * record of what was taken where is never lost; only the drawing is
-         * de-duplicated.
+         * Clustering at ~11 km was tried and removed: it made the globe disagree
+         * with the side panel, which lists every photograph of the province. Hainan
+         * has ten photographs inside a couple of grid cells, so the globe showed two
+         * pins while the panel said ten, and the numbers could never be reconciled
+         * from the UI.
+         *
+         * Overlapping thumbnails are handled by drawing instead of by dropping data:
+         * the sprites are small and sorted so that the nearer ones win, and PNG_MAX
+         * still bounds the total.
          */
-        const seen = new Set<string>();
-        const pins = (photoPinsRef.current ?? [])
-          .filter((p) => {
-            const k = `${p.lat.toFixed(1)},${p.lon.toFixed(1)}`;
-            if (seen.has(k)) return false;
-            seen.add(k);
-            return true;
-          })
-          .slice(0, PHOTO_PIN_MAX);
+        const pins = (photoPinsRef.current ?? []).slice(0, PHOTO_PIN_MAX);
         const key = pins.map((p) => `${p.lat.toFixed(4)},${p.lon.toFixed(4)},${p.thumb ?? ''}`).join('|');
         if (key === photoPinKey) return;
         photoPinKey = key;

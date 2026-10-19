@@ -44,6 +44,8 @@ export interface RegionPanelProps {
    * photo was imported. Null means "no province selected", not "no photos".
    */
   provincePhotos?: RegionPanelPhoto[] | null;
+  /** Open the lightbox at a photo index (province photos only). */
+  onOpenPhoto?: (index: number) => void;
   /** Return from the province to its country panel. */
   onBackToCountry?: () => void;
   onClose: () => void;
@@ -80,7 +82,7 @@ function provinceLabel(p: Admin1Item): string {
   return p.nameZh || p.nameEn || p.name;
 }
 
-export function RegionPanel({ region, label, photosById, province = null, provincePhotos = null, onBackToCountry, onClose }: RegionPanelProps) {
+export function RegionPanel({ region, label, photosById, province = null, provincePhotos = null, onOpenPhoto, onBackToCountry, onClose }: RegionPanelProps) {
   const travel = travelFor(region.id);
   const panelRef = useRef<HTMLElement>(null);
   const [now, setNow] = useState(() => new Date());
@@ -239,16 +241,23 @@ export function RegionPanel({ region, label, photosById, province = null, provin
                   共 {provincePhotos.length} 张，按拍摄点的真实坐标归入本省。
                 </p>
                 <ul className="rpanel__photos">
-                  {provincePhotos.map((photo) => (
+                  {provincePhotos.map((photo, photoIndex) => (
                     <li key={photo.src}>
-                      <img
-                        src={assetUrl(photo.src)}
-                        alt={photo.title}
-                        width={photo.width}
-                        height={photo.height}
-                        loading="lazy"
-                        decoding="async"
-                      />
+                      <button
+                        type="button"
+                        className="rpanel__photo-button"
+                        onClick={() => onOpenPhoto?.(photoIndex)}
+                        aria-label={`放大查看《${photo.title}》`}
+                      >
+                        <img
+                          src={assetUrl(photo.src)}
+                          alt={photo.title}
+                          width={photo.width}
+                          height={photo.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </button>
                     </li>
                   ))}
                 </ul>

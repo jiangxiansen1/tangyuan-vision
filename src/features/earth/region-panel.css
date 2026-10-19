@@ -382,3 +382,27 @@
   color: var(--c-fog, #c7d0dc);
   opacity: 0.75;
 }
+
+/* Province photo thumbnails are buttons (they open the lightbox), so strip the
+   default control chrome and keep the gallery look. */
+.rpanel__photo-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rpanel__photo-button img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.rpanel__photo-button:focus-visible {
+  outline: 2px solid var(--accent, #6fd0ff);
+  outline-offset: 2px;
+}

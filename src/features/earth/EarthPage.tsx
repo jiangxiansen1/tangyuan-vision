@@ -30,6 +30,7 @@ import { EarthGlobe, type GlobeControlApi } from './EarthGlobe';
 import { GeoIndex } from './geo-index';
 import { regionLabel, regionStats } from './regions';
 import { RegionPanel } from './RegionPanel';
+import { Lightbox } from '@/features/photography/Lightbox';
 import { pickProvince } from './admin1-pick';
 import { GestureHud } from './gesture/GestureHud';
 import { Reticle } from './gesture/Reticle';
@@ -154,15 +155,17 @@ export default function EarthPage() {
       }
       const found = pickProvince(admin1.items, photo.longitude, photo.latitude);
       return found?.id === selectedProvince.id;
-    }).map((photo) => ({
-      src: photo.src,
-      thumb: photo.thumb,
-      title: photo.title,
-      width: photo.width,
-      height: photo.height,
-      tone: photo.tone,
-    }));
+    });
   }, [selectedProvince, admin1]);
+
+  /*
+   * Lightbox state for the province's photographs.
+   *
+   * Kept on the page rather than inside the panel: the lightbox covers the whole
+   * viewport, and the panel is unmounted when the visitor closes the region.
+   */
+  const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const closeLightbox = useCallback(() => setLightboxIndex(-1), []);
 
 
 
@@ -376,11 +379,21 @@ export default function EarthPage() {
           label={regionLabel(selected.id, selected.nameEn)}
           photosById={photosById}
           provincePhotos={provincePhotos}
+          onOpenPhoto={(photoIndex) => setLightboxIndex(photoIndex)}
           province={selectedProvince}
           onBackToCountry={() => setSelectedProvince(null)}
           onClose={returnToGlobal}
         />
       ) : null}
+
+        {provincePhotos && provincePhotos.length > 0 ? (
+          <Lightbox
+            photos={provincePhotos}
+            index={lightboxIndex}
+            onIndexChange={setLightboxIndex}
+            onClose={closeLightbox}
+          />
+        ) : null}
 
       <p className="visually-hidden">
         三维地球。方向键左右旋转、上下缩放，Home 恢复视角，Enter 选中准星所在地区，Esc 关闭地区面板。
