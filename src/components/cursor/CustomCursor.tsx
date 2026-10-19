@@ -1,21 +1,29 @@
 /**
- * CustomCursor — the pointer enhancement.
+ * CustomCursor — a comet, not a ring.
  *
- * DESIGN CONSTRAINTS TAKEN FROM THE BRIEF, AND HOW EACH IS MET
- *   • "Don't replace the system cursor everywhere." The native cursor is never
- *     hidden over text inputs, textareas, contenteditable, selects, or elements
- *     marked `data-native-cursor`. There the custom cursor simply does not
- *     render, and the OS cursor behaves normally.
- *   • "Touch devices use native touch, no custom mouse." The whole component
- *     returns null unless the device reports a fine pointer.
- *   • "Don't require hover to use a feature." This is decoration only. Nothing
- *     is discoverable exclusively through it.
+ * WHY THIS CHANGED
+ * The first version was a dot plus a lagging ring. That reads as a "crosshair with
+ * weight": it is a circle around a dot and nothing else, so the pointer never
+ * appears to be in motion — fast movement across the page looks identical to slow
+ * movement.
+ *
+ * This version is a comet: the head tracks the pointer EXACTLY (a lagging head makes
+ * aiming feel broken), and a tail of motes follows through a chain of lerps. The
+ * tail bends on turns and stretches with speed, so direction and speed become
+ * visible, which is the whole point.
+ *
+ * DESIGN CONSTRAINTS THAT STILL HOLD
+ *   • The native cursor is never hidden over text entry (input/textarea/select/
+ *     contenteditable/[data-native-cursor]); the comet hides and the platform
+ *     I-beam returns for those elements.
+ *   • Touch devices and `prefers-reduced-motion` get nothing at all: the whole
+ *     component returns null, leaving the platform cursor untouched.
+ *   • Decoration only. Nothing is discoverable exclusively through it.
  *
  * PERFORMANCE
- * The dot follows the pointer 1:1 on a transform (no lag, so aiming stays
- * accurate — a lagging dot feels broken). The ring chases with a lerp, which is
- * what produces the sense of weight. Both are written directly to transforms, so
- * React renders this component exactly once.
+ * One pointer listener, one rAF loop that stops as soon as the tail settles, and
+ * direct transform writes — React renders this component exactly once. The tail is
+ * a fixed array of elements; nothing is allocated while the pointer moves.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -25,6 +33,9 @@ import './cursor.css';
 
 type CursorMode = 'default' | 'link' | 'view' | 'drag';
 
+/** Tail motes behind the head. Enough to read as a tail, few enough to stay cheap. */
+const TAIL = 9;
+
 const INTERACTIVE_SELECTOR = 'a, button, [role="button"], [data-interactive="true"], summary, label[for]';
 const TEXT_SELECTOR = 'input, textarea, select, [contenteditable="true"], [data-native-cursor]';
 const VIEW_SELECTOR = '[data-cursor="view"]';
@@ -33,8 +44,8 @@ const DRAG_SELECTOR = '[data-cursor="drag"]';
 export function CustomCursor() {
   const finePointer = useHasFinePointer();
   const { reduced } = usePrefersReducedMotion();
-  const dotRef = useRef<HTMLDivElement | null>(null);
-  const ringRef = useRef<HTMLDivElement | null>(null);
+  const headRef = useRef<HTMLDivElement | null>(null);
+  const tailRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [mode, setMode] = useState<CursorMode>('default');
   const [visible, setVisible] = useState(false);
   const enabled = finePointer && !reduced;
@@ -42,33 +53,49 @@ export function CustomCursor() {
   useEffect(() => {
     if (!enabled) return;
 
-    // Opt the document into the custom cursor. cursor.css keys the suppression of
-    // the platform cursor off this class, so it is added and removed together
-    // with the component's lifetime rather than by a global stylesheet rule.
     document.documentElement.classList.add('cursor-active');
 
-    const pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-    const ring = { x: pointer.x, y: pointer.y };
+    const head = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    // Each mote chases the one before it, so the chain is what bends on a turn.
+    const tail = Array.from({ length: TAIL }, () => ({ x: head.x, y: head.y }));
     let raf = 0;
     let running = false;
 
     const render = () => {
-      if (dotRef.current) {
-        dotRef.current.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0) translate(-50%, -50%)`;
+      if (headRef.current) {
+        headRef.current.style.transform = `translate3d(${head.x}px, ${head.y}px, 0) translate(-50%, -50%)`;
       }
-      if (ringRef.current) {
-        ringRef.current.style.transform = `translate3d(${ring.x}px, ${ring.y}px, 0) translate(-50%, -50%)`;
+      for (let i = 0; i < TAIL; i++) {
+        const el = tailRefs.current[i];
+        if (el) {
+          el.style.transform = `translate3d(${tail[i].x}px, ${tail[i].y}px, 0) translate(-50%, -50%)`;
+        }
       }
     };
 
     const loop = () => {
-      ring.x += (pointer.x - ring.x) * 0.18;
-      ring.y += (pointer.y - ring.y) * 0.18;
+      let settled = true;
+
+      // The first mote follows tightly, later ones more loosely: the decaying
+      // stiffness is what makes the tail taper and straighten out behind a turn.
+      for (let i = 0; i < TAIL; i++) {
+        const lead = i === 0 ? head : tail[i - 1];
+        const stiffness = 0.46 - i * 0.035;
+        const dx = lead.x - tail[i].x;
+        const dy = lead.y - tail[i].y;
+        tail[i].x += dx * stiffness;
+        tail[i].y += dy * stiffness;
+        if (Math.abs(dx) > 0.12 || Math.abs(dy) > 0.12) settled = false;
+      }
+
       render();
-      // Settle and stop rather than burning frames on an idle page.
-      if (Math.abs(pointer.x - ring.x) < 0.08 && Math.abs(pointer.y - ring.y) < 0.08) {
-        ring.x = pointer.x;
-        ring.y = pointer.y;
+
+      // Stop when the tail has caught up: an idle page should cost no frames.
+      if (settled) {
+        for (let i = 0; i < TAIL; i++) {
+          tail[i].x = head.x;
+          tail[i].y = head.y;
+        }
         render();
         running = false;
         return;
@@ -84,13 +111,13 @@ export function CustomCursor() {
     };
 
     const onMove = (e: PointerEvent) => {
-      pointer.x = e.clientX;
-      pointer.y = e.clientY;
+      head.x = e.clientX;
+      head.y = e.clientY;
       if (!visible) setVisible(true);
       pulse();
     };
 
-    /** Decide what the cursor should look like over this element. */
+    /** Decide what the comet should look like over this element. */
     const resolveMode = (target: EventTarget | null): CursorMode => {
       if (!(target instanceof Element)) return 'default';
       if (target.closest(DRAG_SELECTOR)) return 'drag';
@@ -101,8 +128,8 @@ export function CustomCursor() {
 
     const onOver = (e: PointerEvent) => {
       const el = e.target instanceof Element ? e.target : null;
-      // Text entry keeps the platform cursor entirely — the custom one hides and
-      // cursor.css hands the native I-beam / caret back for that element.
+      // Text entry keeps the platform cursor entirely — the comet hides and css
+      // hands the native I-beam / caret back for that element.
       const overText = el?.closest(TEXT_SELECTOR) != null;
       document.documentElement.dataset.cursorHidden = overText ? 'true' : 'false';
       if (!overText) setMode(resolveMode(e.target));
@@ -117,8 +144,8 @@ export function CustomCursor() {
     const onLeaveWindow = () => setVisible(false);
     const onEnterWindow = () => setVisible(true);
 
-    // Hide entirely when focus moves to the keyboard: a custom cursor lingering
-    // over a keyboard-driven interaction is visual noise.
+    // Hide entirely when focus moves to the keyboard: a comet lingering over a
+    // keyboard-driven interaction is visual noise.
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') document.documentElement.dataset.cursorKeyboard = 'true';
     };
@@ -158,8 +185,17 @@ export function CustomCursor() {
 
   return (
     <div className="cursor" data-visible={visible || undefined} data-mode={mode} aria-hidden="true">
-      <div ref={ringRef} className="cursor__ring" />
-      <div ref={dotRef} className="cursor__dot" />
+      {Array.from({ length: TAIL }, (_, i) => (
+        <div
+          key={i}
+          ref={(el) => {
+            tailRefs.current[i] = el;
+          }}
+          className="cursor__mote"
+          style={{ ['--i' as string]: String(i) }}
+        />
+      ))}
+      <div ref={headRef} className="cursor__head" />
     </div>
   );
 }

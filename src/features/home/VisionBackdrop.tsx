@@ -28,16 +28,46 @@ import './vision-backdrop.css';
 /**
  * A deterministic star field.
  *
- * Generated rather than hand-placed so it stays identical across renders and builds
- * (Math.random would make every reload a different sky, and would differ between
- * the server and the client). Kept above the horizon band only.
+ * WHY NOT `(i * prime) % n`
+ * The first version used modular arithmetic, which is a linear congruential walk:
+ * with a prime step it distributes the points perfectly evenly, and a perfectly even
+ * sky reads as a texture, not as stars. A real sky is clumped, with a few prominent
+ * stars and a great many barely visible ones.
+ *
+ * So: mulberry32 — still deterministic (same sky on every reload and every build, so
+ * screenshots stay comparable), but with the irregularity of a random field. Brightness
+ * follows a power curve, which is what produces "a few bright, many faint" instead of
+ * uniform dots.
  */
-const STARS = Array.from({ length: 88 }, (_, i) => ({
-  x: ((i * 73) % 997) / 9.97,
-  y: (((i * 149) % 613) / 6.13) * 0.62,
-  size: 1 + ((i * 37) % 15) / 10,
-  delay: ((i * 53) % 57) / 10,
-}));
+function mulberry32(seed: number): () => number {
+  let a = seed;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const STARS = (() => {
+  const rand = mulberry32(20261019);
+  return Array.from({ length: 128 }, () => {
+    const x = rand();
+    const y = rand();
+    const r = rand();
+    return {
+      x: x * 100,
+      y: y * 62,
+      // Power curve: most stars are specks, a handful are prominent.
+      size: 0.7 + Math.pow(r, 3.4) * 2.8,
+      opacity: 0.2 + Math.pow(r, 1.7) * 0.8,
+      // Independent period per star, so they never pulse in unison.
+      duration: 3.4 + rand() * 5.2,
+      delay: rand() * 7,
+    };
+  });
+})();
 
 interface HomeBackground {
   src?: string;
@@ -112,13 +142,14 @@ export function VisionBackdrop() {
               top: `${star.y}%`,
               width: star.size,
               height: star.size,
+              opacity: star.opacity,
+              animationDuration: `${star.duration}s`,
               animationDelay: `${star.delay}s`,
             }}
           />
         ))}
       </div>
       <div className="vback__planet" />
-      <div className="vback__glint" />
 
       {/* Layer 2 — the photograph, when one resolves. */}
       {status === 'loaded' && src ? (

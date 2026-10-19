@@ -228,25 +228,6 @@
   pointer-events: none;
 }
 
-.vback__glint {
-  /* The sun catching the horizon. Soft, small, and slightly off-centre. */
-  position: absolute;
-  left: 50%;
-  top: calc(63vh - 0.4vh);
-  width: 30vw;
-  height: 30vw;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgb(255 255 255 / 0.95) 0%,
-    rgb(206 232 255 / 0.62) 8%,
-    rgb(136 183 255 / 0.26) 22%,
-    transparent 56%
-  );
-  filter: blur(3px);
-  pointer-events: none;
-}
 
 .vback__stars {
   position: absolute;
@@ -262,8 +243,8 @@
   position: absolute;
   border-radius: 50%;
   background: #e6f1ff;
-  opacity: 0.62;
-  animation: vback-twinkle 5.5s ease-in-out infinite;
+  /* Opacity and period are set per star inline (a real sky is not uniform). */
+  animation: vback-twinkle ease-in-out infinite;
   will-change: opacity;
 }
 
@@ -280,6 +261,5 @@
 @media (prefers-reduced-motion: reduce) {
   .vback__star {
     animation: none;
-    opacity: 0.5;
   }
 }

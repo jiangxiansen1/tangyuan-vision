@@ -1,29 +1,30 @@
 /* ==========================================================================
-   CustomCursor.
+   CustomCursor — a comet: a bright head and a tapering tail of motes.
 
-   Two elements: a dot that tracks the pointer exactly, and a ring that lags
-   behind it. The ring carries the state (link / view / drag) by changing shape,
-   which is why the affordance reads without any text.
+   The head tracks the pointer exactly (a lagging head makes aiming feel broken).
+   The tail is nine motes, each chasing the one before it, so the chain bends on a
+   turn and stretches with speed. Size and opacity taper with --i, which the
+   component sets per mote.
 
    THE NATIVE CURSOR
    The platform cursor is suppressed ONLY under a compound condition, set by the
-   component: the custom cursor is mounted (fine pointer, motion allowed) AND the
-   pointer is not over a text-entry element. The moment the pointer enters an
-   input, textarea, select or contenteditable, the component writes
-   data-cursor-hidden="true" and the native cursor returns for that element —
-   so the caret and the I-beam behave exactly as the platform intends.
+   component: the comet is mounted (fine pointer, motion allowed) AND the pointer is
+   not over a text-entry element. The moment the pointer enters an input, textarea,
+   select or contenteditable, the component writes data-cursor-hidden="true" and the
+   native cursor returns for that element — so the caret and the I-beam behave
+   exactly as the platform intends.
    ========================================================================== */
 
-/* Suppress the platform cursor while the custom one is active and no text
-   element is hovered. Interaction is unaffected: hit-testing, selection and
-   drag all continue normally with a hidden cursor. */
+/* Suppress the platform cursor while the comet is active and no text element is
+   hovered. Interaction is unaffected: hit-testing, selection and drag all continue
+   normally with a hidden cursor. */
 html:not([data-cursor-hidden='true']) .cursor-active,
 html:not([data-cursor-hidden='true']) .cursor-active * {
   cursor: none;
 }
 
-/* Keyboard-driven navigation hides the custom cursor too; a ring parked over the
-   content while focus moves is pure noise. */
+/* Keyboard-driven navigation hides the comet too; a tail parked over the content
+   while focus moves is pure noise. */
 html[data-cursor-keyboard='true'] .cursor-active,
 html[data-cursor-keyboard='true'] .cursor-active * {
   cursor: auto;
@@ -42,8 +43,8 @@ html[data-cursor-keyboard='true'] .cursor-active * {
   opacity: 1;
 }
 
-/* When the pointer sits over a text field, the ring and dot step aside so the
-   platform caret and I-beam behave exactly as expected. */
+/* Over a text field the comet steps aside so the platform caret and I-beam behave
+   exactly as expected. */
 html[data-cursor-hidden='true'] .cursor {
   opacity: 0 !important;
 }
@@ -52,101 +53,118 @@ html[data-cursor-keyboard='true'] .cursor {
   opacity: 0 !important;
 }
 
-.cursor__dot,
-.cursor__ring {
+/* --------------------------------------------------------------- the head -- */
+
+.cursor__head {
   position: absolute;
   top: 0;
   left: 0;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
+  background: #fff;
+  /* A tight halo is what makes the head read as a light source rather than a dot. */
+  box-shadow:
+    0 0 4px rgb(255 255 255 / 0.95),
+    0 0 12px rgb(186 222 255 / 0.7),
+    0 0 26px rgb(120 175 255 / 0.4);
   will-change: transform;
   transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
-}
-
-.cursor__dot {
-  width: var(--cursor-size);
-  height: var(--cursor-size);
-  background: var(--c-frost);
-  box-shadow: 0 0 0 1px rgb(5 7 10 / 0.6);
   transition: width var(--t-fast) var(--ease-standard), height var(--t-fast) var(--ease-standard),
     background-color var(--t-fast) var(--ease-standard);
 }
 
-.cursor__ring {
-  width: var(--cursor-ring);
-  height: var(--cursor-ring);
-  border: 1px solid color-mix(in srgb, var(--c-frost) 42%, transparent);
-  /* Very light displacement feel: a faint inner highlight, no blur. */
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04);
-  transition:
-    width var(--t-slow) var(--ease-entrance),
-    height var(--t-slow) var(--ease-entrance),
-    border-color var(--t-base) var(--ease-standard),
-    border-radius var(--t-slow) var(--ease-entrance),
-    background-color var(--t-base) var(--ease-standard);
+/* --------------------------------------------------------------- the tail -- */
+
+.cursor__mote {
+  --i: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(226 240 255 / calc(0.62 - var(--i) * 0.055)) 0%,
+    rgb(150 195 255 / calc(0.3 - var(--i) * 0.028)) 45%,
+    transparent 72%
+  );
+  /* Taper: the first mote is nearly head-sized, the last is a speck. */
+  width: calc(9px - var(--i) * 0.75px);
+  height: calc(9px - var(--i) * 0.75px);
+  will-change: transform;
+  transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
 }
 
-/* ------------------------------------------------------------ states -- */
+/* -------------------------------------------------------------- states -- */
 
-.cursor[data-mode='link'] .cursor__ring {
-  width: calc(var(--cursor-ring) * 1.5);
-  height: calc(var(--cursor-ring) * 1.5);
-  border-color: color-mix(in srgb, var(--scene-accent, var(--c-cryo-300)) 62%, transparent);
-  background: color-mix(in srgb, var(--scene-accent, var(--c-cryo-300)) 8%, transparent);
-}
-
-.cursor[data-mode='link'] .cursor__dot {
-  width: calc(var(--cursor-size) * 0.7);
-  height: calc(var(--cursor-size) * 0.7);
+/* 'link' — the comet warms to the scene accent and the head grows slightly. */
+.cursor[data-mode='link'] .cursor__head {
+  width: 9px;
+  height: 9px;
   background: var(--scene-accent, var(--c-cryo-300));
+  box-shadow:
+    0 0 5px color-mix(in srgb, var(--scene-accent, #8fe3ff) 90%, transparent),
+    0 0 14px color-mix(in srgb, var(--scene-accent, #8fe3ff) 55%, transparent),
+    0 0 30px color-mix(in srgb, var(--scene-accent, #8fe3ff) 30%, transparent);
 }
 
-/* 'view' — over photo tiles: the ring becomes a soft square, the visual idiom
-   for "this opens". A square reads as a frame; a circle does not. */
-.cursor[data-mode='view'] .cursor__ring {
-  width: calc(var(--cursor-ring) * 2.1);
-  height: calc(var(--cursor-ring) * 2.1);
-  border-radius: var(--r-md);
-  border-color: color-mix(in srgb, var(--c-frost) 56%, transparent);
-  background: color-mix(in srgb, var(--c-void) 24%, transparent);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+.cursor[data-mode='link'] .cursor__mote {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--scene-accent, #8fe3ff) calc(58% - var(--i) * 5%), transparent) 0%,
+    transparent 70%
+  );
 }
 
-.cursor[data-mode='view'] .cursor__dot {
-  opacity: 0;
-}
-
-/* 'drag' — over a horizontal scroller. */
-.cursor[data-mode='drag'] .cursor__ring {
-  width: calc(var(--cursor-ring) * 1.8);
-  height: calc(var(--cursor-ring) * 1.1);
-  border-radius: var(--r-pill);
-  border-color: color-mix(in srgb, var(--c-frost) 50%, transparent);
-}
-
-/* Press feedback: the ring contracts. */
-html[data-cursor-pressed='true'] .cursor__ring {
-  width: calc(var(--cursor-ring) * 0.78);
-  height: calc(var(--cursor-ring) * 0.78);
-  border-color: color-mix(in srgb, var(--c-frost) 78%, transparent);
-}
-
-/* High contrast / reduced transparency: give the ring a solid outline so it
-   stays visible against any backdrop. */
-[data-contrast='high'] .cursor__ring {
-  border-width: 2px;
-  border-color: var(--c-frost);
+/* 'view' — over photo tiles: the head becomes a small ring, the idiom for
+   "this opens". A ring reads as a frame; a filled dot does not. */
+.cursor[data-mode='view'] .cursor__head {
+  width: 26px;
+  height: 26px;
   background: transparent;
+  border: 1px solid rgb(255 255 255 / 0.72);
+  box-shadow: 0 0 14px rgb(160 205 255 / 0.35);
 }
 
-[data-contrast='high'] .cursor__dot {
+.cursor[data-mode='view'] .cursor__mote {
+  opacity: 0.35;
+}
+
+/* 'drag' — over a horizontal scroller: the head widens into a pill. */
+.cursor[data-mode='drag'] .cursor__head {
+  width: 20px;
+  height: 9px;
+  border-radius: var(--r-pill);
+}
+
+/* Press feedback: the whole comet contracts and brightens. */
+html[data-cursor-pressed='true'] .cursor__head {
+  width: 12px;
+  height: 12px;
+  box-shadow:
+    0 0 6px rgb(255 255 255 / 1),
+    0 0 18px rgb(200 230 255 / 0.85),
+    0 0 40px rgb(140 190 255 / 0.55);
+}
+
+html[data-cursor-pressed='true'] .cursor__mote {
+  opacity: 0.7;
+}
+
+/* High contrast: solid head, visible tail, no reliance on a soft glow. */
+[data-contrast='high'] .cursor__head {
+  background: #fff;
   box-shadow: none;
-  background: var(--c-frost);
+  border: 2px solid #000;
 }
 
-/* The custom cursor is decoration; nothing may depend on it. Under reduced
-   motion it is not rendered at all (see the component), and if a pointer: fine
-   device nevertheless reports coarse, the component bails out too. */
+[data-contrast='high'] .cursor__mote {
+  background: rgb(255 255 255 / calc(0.5 - var(--i) * 0.045));
+}
+
+/* The comet is decoration; nothing may depend on it. Under reduced motion it is
+   not rendered at all (see the component), and if a pointer:fine device
+   nevertheless reports coarse, the component bails out too. */
 @media (hover: none), (pointer: coarse) {
   .cursor {
     display: none;
