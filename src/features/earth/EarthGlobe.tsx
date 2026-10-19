@@ -35,7 +35,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GeoIndex, type RegionShape } from './geo-index';
 import type { City } from './cities';
 import type { Admin1Item } from './admin1';
-import { directionToLatLon, subSolarPoint } from './solar';
+import { directionToLatLon, subSolarPoint , latLonToDirection } from './solar';
 import { pickProvince } from './admin1-pick';
 import {
   buildPatchGeometry,
@@ -164,7 +164,7 @@ const ADMIN1_R = 1.008;
  * from the patch of ground you have just zoomed into.
  */
 const PHOTO_PIN_R = 1.014;
-const PHOTO_PIN_DISTANCE = 1.98;
+const PHOTO_PIN_DISTANCE = 2.4;
 
 /**
  * Camera distance at which the real basemap starts to appear.
@@ -1180,6 +1180,9 @@ const MAX_DISTANCE = 6.2;
          actually carry a fix: nothing is placed approximately. */
       const photoPinGroup = new THREE.Group();
       photoPinGroup.visible = false;
+      // Above the basemap: the photographs are the point of this layer, so they must
+      // never be hidden by the map that was added to give them context.
+      photoPinGroup.renderOrder = 5;
       globe.add(photoPinGroup);
       let photoPinKey = '';
       const pinTextures = new Map<string, import('three').Texture>();
@@ -1227,7 +1230,7 @@ const MAX_DISTANCE = 6.2;
             color: 0xffffff,
             transparent: true,
             opacity: 0.97,
-            depthTest: true,
+            depthTest: false,
             depthWrite: false,
             /*
              * Hidden until the thumbnail actually decodes. A visible placeholder
@@ -1237,12 +1240,18 @@ const MAX_DISTANCE = 6.2;
             visible: false,
           });
           const sprite = new THREE.Sprite(mat);
-          const lonR = ((-180 - p.lon) * Math.PI) / 180;
-          const latR = (p.lat * Math.PI) / 180;
-          sprite.position
-            .set(0, 0, PHOTO_PIN_R)
-            .applyAxisAngle(X_AXIS, -latR)
-            .applyAxisAngle(Y_AXIS, -lonR);
+          /*
+           * The project's OWN coordinate convention.
+           *
+           * latLonToDirection gives the direction the globe's rotation expects, so a
+           * pin placed this way stays exactly on its capture coordinate however the
+           * globe is turned. The (-180 - lon) mapping used before does not compose
+           * with globe.rotation, which is why the pins sat at the wrong longitude —
+           * the positions were not "approximate", they were computed in a different
+           * frame.
+           */
+          const dir = latLonToDirection(p.lat, p.lon);
+          sprite.position.set(dir[0] * PHOTO_PIN_R, dir[1] * PHOTO_PIN_R, dir[2] * PHOTO_PIN_R);
           // Small on purpose: neighbouring clusters are only a few degrees apart,
           // so a larger sprite would overlap the next one. The position is the
           // photo's real coordinate and is never nudged to dodge a neighbour.
