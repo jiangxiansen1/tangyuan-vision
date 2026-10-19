@@ -5,9 +5,9 @@
       "label": "抖音",
       "labelEn": "Douyin",
       "handle": "汤圆Visfon",
-      "url": "https://v.douyin.com/JE_g6CkfDn0/ 2@4.com :4pm",
+      "url": "https://jiangxiansen1.github.io/tangyuan-vision/admin/",
       "confirmed": true,
-      "note": "未提供。请把真实的抖音主页链接填到后台 CMS 的「联系方式」里（config.yml → settings → contact）。填写之前这里显示为待填写，不会伪造一个点不开的链接。"
+      "note": ""
     },
     {
       "id": "email",
