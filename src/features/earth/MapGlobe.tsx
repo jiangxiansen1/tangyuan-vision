@@ -63,12 +63,39 @@ export interface MapGlobeProps {
    */
   preview?: boolean;
   className?: string;
+  /**
+   * Where to open. The globe hands over its own centre and zoom when the visitor
+   * crosses the switch threshold, so the handoff does not jump.
+   */
+  initialCenter?: [number, number];
+  initialZoom?: number;
+  /**
+   * Photographs to pin at their capture coordinates.
+   *
+   * A Marker per photo, not a symbol layer: the pictures are thumbnails, which a
+   * map style cannot draw. Their positions are the coordinates from EXIF, so they
+   * land exactly where the photo was taken — no clustering, no nudging.
+   */
+  photoPins?: { id: string; lat: number; lon: number; src: string; thumb?: string; title: string }[];
+  /** Called when the visitor clicks a photo pin. */
+  onSelectPhoto?: (photoId: string) => void;
 }
 
 /** Where the globe opens. Roughly the middle of the populated world. */
 const HOME_VIEW = { center: [104, 24] as [number, number], zoom: 1.6 };
 
-export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, preview = false, className }: MapGlobeProps) {
+export function MapGlobe({
+  geoIndex,
+  onSelectRegion,
+  onHoverRegion,
+  onFail,
+  preview = false,
+  className,
+  initialCenter,
+  initialZoom,
+  photoPins,
+  onSelectPhoto,
+}: MapGlobeProps) {
   /*
    * TWO REFS, BECAUSE TWO DIFFERENT ELEMENTS ARE INVOLVED — and conflating them was a
    * real bug that took far too long to find.
@@ -94,7 +121,7 @@ export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, prev
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [failure, setFailure] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(HOME_VIEW.zoom);
+  const [zoom, setZoom] = useState(initialZoom ?? HOME_VIEW.zoom);
 
   /*
    * The callbacks live in a ref so the map is built ONCE.
@@ -139,8 +166,10 @@ export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, prev
         map = new maplibregl.Map({
           container: host,
           style: style as never,
-          center: HOME_VIEW.center,
-          zoom: HOME_VIEW.zoom,
+          // The globe passes its own centre/zoom when it hands over, so the switch
+          // does not jump; without them the map opens at its documented home view.
+          center: initialCenter ?? HOME_VIEW.center,
+          zoom: initialZoom ?? HOME_VIEW.zoom,
           minZoom: 0,
           // MapLibre will overzoom the last available tile past the source's maxzoom,
           // so allowing a deeper camera than the imagery is not a lie as long as the
@@ -398,7 +427,9 @@ export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, prev
 
     void boot();
 
-    return () => {
+
+
+  return () => {
       disposed = true;
       // MapLibre owns its own GL resources; `remove()` releases the context, the
       // tile cache and every DOM node it created. Without it, each visit to this page
@@ -413,6 +444,53 @@ export function MapGlobe({ geoIndex, onSelectRegion, onHoverRegion, onFail, prev
       shell.removeAttribute('data-map-ready');
     };
   }, [geoIndex]);
+
+  /* ---- photo pins -------------------------------------------------------
+     One Marker per photograph, at its real coordinate. Rebuilt only when the set
+     changes, so panning and zooming never churn DOM nodes.
+
+     The library is imported here rather than shared with the boot effect: it is
+     already in the module cache by the time this runs, and a shared mutable ref
+     would have to be ordered against the boot effect for no gain. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !photoPins || photoPins.length === 0) return;
+
+    let cancelled = false;
+    const created: import('maplibre-gl').Marker[] = [];
+
+    void import('maplibre-gl').then((maplibre) => {
+      if (cancelled || mapRef.current !== map) return;
+      for (const pin of photoPins) {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'mglobe__pin';
+        el.title = pin.title;
+        el.setAttribute('aria-label', `打开《${pin.title}》`);
+        const img = document.createElement('img');
+        img.src = pin.thumb || pin.src;
+        img.alt = '';
+        img.loading = 'lazy';
+        el.appendChild(img);
+        if (onSelectPhoto) {
+          el.addEventListener('click', (event) => {
+            event.stopPropagation();
+            onSelectPhoto(pin.id);
+          });
+        }
+        created.push(
+          new maplibre.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([pin.lon, pin.lat])
+            .addTo(map)
+        );
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      for (const marker of created) marker.remove();
+    };
+  }, [photoPins, onSelectPhoto]);
 
   const maptilerActive = readMapTilerKey() !== null;
 
