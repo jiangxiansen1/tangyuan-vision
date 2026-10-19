@@ -205,6 +205,8 @@ function createSession(): GestureSession {
 
   const counts = { rotate: 0, zoom: 0, confirm: 0 };
   const listeners = new Set<() => void>();
+  /** Milliseconds since the last reticle push to the UI. */
+  let emitAccum = 0;
   /* The globe fills its control ref asynchronously (after its textures load) and
      has no way to notify a plain module, so a light watcher emits when the target
      appears or disappears — that is what keeps the UI telling the truth. */
@@ -387,6 +389,23 @@ function createSession(): GestureSession {
     if (api && lastHandOut.confirmId) {
       /* Confirm the region the reticle is actually over (query id == confirm id). */
       api.selectAtScreen(reticle.x, reticle.y);
+    }
+
+    /*
+     * PUSH THE RETICLE STATE TO THE UI.
+     *
+     * This is the missing link that made the crosshair invisible while selection
+     * still worked: `reticle` was updated here every frame, but emit() was only
+     * called when a control target was attached or cleared, so Reticle's React
+     * subscription never fired and it kept rendering its initial active:false.
+     *
+     * Throttled to ~15 Hz: the reticle is a small overlay, and re-rendering React at
+     * the full recognition rate would spend frames on a crosshair.
+     */
+    emitAccum += dt * 1000;
+    if (emitAccum >= 66) {
+      emitAccum = 0;
+      emit();
     }
 
     /* The gesture STATE MACHINE drives the globe (Step 3):
