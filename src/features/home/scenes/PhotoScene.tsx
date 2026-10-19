@@ -38,9 +38,19 @@ export function PhotoScene() {
     () => PHOTOS.filter((p) => (filter === 'all' ? true : bucketOf(p) === filter)),
     [filter]
   );
-  /** One lead + two supports: enough to be a photograph scene, small enough to
-      stay inside a single viewport. The rest lives on the route. */
-  const shown = pool.slice(0, 3);
+  /*
+   * One lead + two supports: enough to be a photograph scene, small enough to stay
+   * inside a single viewport. The rest lives on the route.
+   *
+   * COVER PHOTOS COME FIRST. Taking the first three by sort order meant the scene
+   * showed whatever had been imported first — for a while, three near-identical
+   * portraits. The three marked `feature` are the ones chosen as the cover, so they
+   * lead; everything else keeps its order behind them.
+   */
+  const shown = useMemo(() => {
+    const ordered = [...pool].sort((a, b) => Number(!!b.feature) - Number(!!a.feature));
+    return ordered.slice(0, 3);
+  }, [pool]);
 
   return (
     <SceneShell
@@ -96,7 +106,9 @@ export function PhotoScene() {
         </ul>
       )}
       <p className="vscene__note">
-        当前 {PHOTOS.length} 张均为程序生成的占位素材（带示例标记）；最终摄影视觉以真实作品替换后的复评为准。
+        共 {PHOTOS.length} 张：风光{' '}
+        {PHOTOS.filter((p) => bucketOf(p) === 'landscape').length} 张，人像{' '}
+        {PHOTOS.filter((p) => bucketOf(p) === 'portrait').length} 张。
       </p>
     </SceneShell>
   );

@@ -737,7 +737,7 @@
       "height": 1438,
       "description": "",
       "tone": "#2b3a4a",
-      "feature": false,
+      "feature": true,
       "order": 91,
       "provenance": "real",
       "takenAt": "2025-11-15"
@@ -767,7 +767,7 @@
       "height": 1806,
       "description": "",
       "tone": "#2b3a4a",
-      "feature": false,
+      "feature": true,
       "order": 93,
       "provenance": "real",
       "takenAt": "2025-11-15"
@@ -939,7 +939,7 @@
       "height": 1703,
       "description": "",
       "tone": "#2b3a4a",
-      "feature": false,
+      "feature": true,
       "order": 104,
       "provenance": "real",
       "camera": "Viltrox AF 50/1.8 Z",
