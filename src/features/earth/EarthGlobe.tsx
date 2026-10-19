@@ -167,7 +167,6 @@ const PHOTO_PIN_MAX = 120;
 const AUTO_ROTATE_SPEED = 2.4;
 
 /** Seconds for the velocity to halve after a drag is released. */
-const INERTIA_HALFLIFE = 0.12;
 
 /** A gesture spin below this (degrees/second) is treated as finished. */
 const SPIN_MIN = 0.5;
@@ -1518,7 +1517,12 @@ const MAX_DISTANCE = 6.2;
            * degree drag. At this factor plus the short half-life below, the coast is
            * roughly 40% of the drag and stops inside a second.
            */
-          const glide = 0.55;
+          /*
+           * The glide is scaled by zoom: long and smooth at world scale, short up
+           * close, where a few degrees of overshoot is a different place.
+           */
+          const zoomT = Math.max(0, Math.min(1, (distance - MIN_DISTANCE) / (CAMERA_HOME.z - MIN_DISTANCE)));
+          const glide = 0.32 + 0.68 * zoomT;
           velocity.lon = Math.max(-maxSpin, Math.min(maxSpin, (dx * scale * 1000 * glide) / moveDt));
           velocity.lat = Math.max(-maxSpin, Math.min(maxSpin, (dy * scale * 0.7 * 1000 * glide) / moveDt));
           applyRotation();
@@ -1683,7 +1687,8 @@ const MAX_DISTANCE = 6.2;
           // Inertia. Exponential decay with a fixed half-life, which is
           // frame-rate independent — a fixed per-frame multiplier would spin
           // wildly on a 144 Hz display.
-          const decay = Math.pow(0.5, dt / INERTIA_HALFLIFE);
+          const halfLife = 0.08 + 0.22 * Math.max(0, Math.min(1, (distance - MIN_DISTANCE) / (CAMERA_HOME.z - MIN_DISTANCE)));
+          const decay = Math.pow(0.5, dt / halfLife);
           velocity.lon *= decay;
           velocity.lat *= decay;
           // Degrees per SECOND, so the integration needs dt.
