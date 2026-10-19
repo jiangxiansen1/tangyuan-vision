@@ -25,6 +25,20 @@ import { assetUrl } from '@/lib/asset';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import './vision-backdrop.css';
 
+/**
+ * A deterministic star field.
+ *
+ * Generated rather than hand-placed so it stays identical across renders and builds
+ * (Math.random would make every reload a different sky, and would differ between
+ * the server and the client). Kept above the horizon band only.
+ */
+const STARS = Array.from({ length: 88 }, (_, i) => ({
+  x: ((i * 73) % 997) / 9.97,
+  y: (((i * 149) % 613) / 6.13) * 0.62,
+  size: 1 + ((i * 37) % 15) / 10,
+  delay: ((i * 53) % 57) / 10,
+}));
+
 interface HomeBackground {
   src?: string;
   tone?: string;
@@ -78,6 +92,33 @@ export function VisionBackdrop() {
     <div className="vback" aria-hidden="true">
       {/* Layer 1 — the drawn field. Always present. */}
       <div className="vback__drawn" />
+
+      {/*
+        Layer 1b — the planetary horizon.
+
+        The reference scene is a planet's limb: a black body, a brilliant band of
+        atmosphere hugging it, stars above, and the sun catching the edge. Drawn here
+        rather than embedded from a third-party WebGL service: no CDN round trip, no
+        tracking script, nothing to fail offline, and it inherits the page's own
+        colours. It sits UNDER the photograph so a configured CMS image still wins.
+      */}
+      <div className="vback__stars">
+        {STARS.map((star, i) => (
+          <span
+            key={i}
+            className="vback__star"
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              width: star.size,
+              height: star.size,
+              animationDelay: `${star.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+      <div className="vback__planet" />
+      <div className="vback__glint" />
 
       {/* Layer 2 — the photograph, when one resolves. */}
       {status === 'loaded' && src ? (

@@ -177,3 +177,109 @@
     animation: none;
   }
 }
+
+
+/* ================================================== planetary horizon ======
+   The reference scene: a planet's limb seen from orbit. A black body whose top
+   edge IS the horizon, a brilliant atmosphere band hugging that edge, stars above,
+   and the sun catching one point of it.
+
+   Drawn in CSS rather than embedded: one enormous disc with a stacked box-shadow
+   for the atmosphere is cheaper and more controllable than a WebGL scene, costs no
+   network request, and cannot fail to load. */
+.vback__planet {
+  position: absolute;
+  left: 50%;
+  /*
+   * vh, NOT %. `.vback` spans the whole five-scene scroll column (several thousand
+   * pixels), so a percentage top put the horizon on the third screen instead of the
+   * first. The reference scene is the opening view only.
+   */
+  top: 63vh;
+  width: 240vw;
+  height: 240vw;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 0%, #0b1724 0%, #05080f 38%, #02040a 100%);
+  /* The rim, then the atmosphere: a hard bright line, a tight glow, a wide haze. */
+  box-shadow:
+    /* The limb itself: a hard, almost white line. */
+    0 -1.5px 0 rgb(214 240 255 / 0.95),
+    /* Then three widening haloes of air, each weaker and further out. */
+    0 -9px 32px 2px rgb(146 198 255 / 0.55),
+    0 -46px 140px 28px rgb(72 128 222 / 0.34),
+    0 -145px 380px 92px rgb(38 80 168 / 0.2);
+  pointer-events: none;
+}
+
+.vback__planet::after {
+  /* The band of air that glows above the surface, brightest right at the limb. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgb(130 182 255 / 0.42) 0%,
+    rgb(84 136 226 / 0.18) 1.2%,
+    rgb(46 88 174 / 0.08) 3%,
+    transparent 7.5%
+  );
+  pointer-events: none;
+}
+
+.vback__glint {
+  /* The sun catching the horizon. Soft, small, and slightly off-centre. */
+  position: absolute;
+  left: 50%;
+  top: calc(63vh - 0.4vh);
+  width: 30vw;
+  height: 30vw;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 255 255 / 0.95) 0%,
+    rgb(206 232 255 / 0.62) 8%,
+    rgb(136 183 255 / 0.26) 22%,
+    transparent 56%
+  );
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.vback__stars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  /* Only the opening view: same 63vh horizon as the planet. */
+  height: 63vh;
+  pointer-events: none;
+}
+
+.vback__star {
+  position: absolute;
+  border-radius: 50%;
+  background: #e6f1ff;
+  opacity: 0.62;
+  animation: vback-twinkle 5.5s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@keyframes vback-twinkle {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vback__star {
+    animation: none;
+    opacity: 0.5;
+  }
+}
