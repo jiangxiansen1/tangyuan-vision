@@ -345,9 +345,10 @@ def guess_category(path: Path, root: Path, fallback: str) -> str:
         rel = str(path.relative_to(root)).lower()
     except ValueError:
         return fallback
-    if '人像' in rel or 'portrait' in rel:
+    # Single characters are accepted because folders are often named 人 / 景.
+    if any(k in rel for k in ('人像', '人', '肖像', 'portrait', 'person')):
         return 'portrait'
-    if '风光' in rel or '风景' in rel or 'landscape' in rel:
+    if any(k in rel for k in ('风光', '风景', '景', 'landscape', 'scenery')):
         return 'landscape'
     return fallback
 
