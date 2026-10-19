@@ -57,10 +57,19 @@ export default function PhotographyPage() {
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState(-1);
 
-  const visible = useMemo(
-    () => (filter === 'all' ? PHOTOS : PHOTOS.filter((p) => p.category === filter)),
-    [filter]
-  );
+  /*
+   * Cover photographs lead. The gallery used to open on whatever had been imported
+   * first, which was a run of portraits — the visitor asked "why is it portraits
+   * again?" twice. `feature` is the field the CMS already exposes for exactly this
+   * ("用大幅头图排版"), so honouring it here makes the flag meaningful instead of
+   * decorative.
+   *
+   * The sort is stable, so everything else keeps its existing order behind the covers.
+   */
+  const visible = useMemo(() => {
+    const pool = filter === 'all' ? PHOTOS : PHOTOS.filter((p) => p.category === filter);
+    return [...pool].sort((a, b) => Number(!!b.feature) - Number(!!a.feature));
+  }, [filter]);
 
   /* Keep the selection inside the filtered list — otherwise switching category
      would leave the viewer pointing at a work that is no longer shown. */
