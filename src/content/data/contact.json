@@ -5,15 +5,15 @@
       "label": "抖音",
       "labelEn": "Douyin",
       "handle": "汤圆Visfon",
-      "url": "https://jiangxiansen1.github.io/tangyuan-vision/admin/",
+      "url": "https://www.douyin.com/user/MS4wLjABAAAAxk9c_PrziU7MO22RGiXTLCSoUQG70aJuOwaoVOddMe4",
       "confirmed": true,
-      "note": ""
+      "note": "摄影与旅行的视频"
     },
     {
       "id": "email",
       "label": "电子邮箱",
       "labelEn": "Email",
-      "handle": "jiangxiansen1@gemail.com",
+      "handle": "jiangxiansen1@gmail.com",
       "url": null,
       "confirmed": true,
       "note": "未提供。请在后台 CMS 的「联系方式」中填入你希望公开的邮箱；在填写之前，这里显示为待填写状态，而不是一个看起来像真的但发不出去的地址。"
