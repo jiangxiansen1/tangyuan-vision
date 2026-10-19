@@ -298,7 +298,8 @@ export default function EarthPage() {
           </dl>
         </div>
         <p className="epure__credit">
-          地球影像：NASA Blue Marble / MODIS（公有领域） · 国界与地区：Natural Earth（公有领域）
+          地球影像：NASA Blue Marble / MODIS（公有领域） · 放大后的高清影像：Esri, Maxar,
+          Earthstar Geographics, and the GIS User Community · 国界与地区：Natural Earth（公有领域）
         </p>
       </div>
 
