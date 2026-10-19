@@ -33,12 +33,30 @@ export interface RegionPanelProps {
   /** Chinese label resolved by the caller, so this component does not re-derive it. */
   label: string;
   /** Photography lookup, so a visited region can show its own photos. */
-  photosById: Map<string, { src: string; thumb?: string; title: string; width: number; height: number; tone: string }>;
+  photosById: Map<string, RegionPanelPhoto>;
   /** The real Admin-1 province the visitor picked, or null to show the country. */
   province?: Admin1Item | null;
+  /**
+   * Photographs whose REAL coordinates fall inside the selected province.
+   *
+   * Derived by the caller from EXIF positions against the province polygons — not
+   * from a hand-maintained per-province list, which would go stale the moment a new
+   * photo was imported. Null means "no province selected", not "no photos".
+   */
+  provincePhotos?: RegionPanelPhoto[] | null;
   /** Return from the province to its country panel. */
   onBackToCountry?: () => void;
   onClose: () => void;
+}
+
+/** The photo fields this panel renders. */
+export interface RegionPanelPhoto {
+  src: string;
+  thumb?: string;
+  title: string;
+  width: number;
+  height: number;
+  tone: string;
 }
 
 /** Chinese label for a Natural Earth Admin-1 feature type, when one exists. */
@@ -62,7 +80,7 @@ function provinceLabel(p: Admin1Item): string {
   return p.nameZh || p.nameEn || p.name;
 }
 
-export function RegionPanel({ region, label, photosById, province = null, onBackToCountry, onClose }: RegionPanelProps) {
+export function RegionPanel({ region, label, photosById, province = null, provincePhotos = null, onBackToCountry, onClose }: RegionPanelProps) {
   const travel = travelFor(region.id);
   const panelRef = useRef<HTMLElement>(null);
   const [now, setNow] = useState(() => new Date());
@@ -99,15 +117,26 @@ export function RegionPanel({ region, label, photosById, province = null, onBack
     unrecorded: { label: '尚未记录', tone: 'unrecorded' as const },
   }[travel.status];
 
-  const photos = (travel.photoIds ?? [])
-    .map((id) => photosById.get(id))
-    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  /*
+   * When a province is selected, its own photographs win: the record's photoIds are
+   * attached to the country, so showing them inside a single province would repeat
+   * photos taken elsewhere. Without a province the country-level list stays.
+   */
+  const photos = province && provincePhotos
+    ? provincePhotos
+    : (travel.photoIds ?? [])
+        .map((id) => photosById.get(id))
+        .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
   return (
     <aside
       ref={panelRef}
       className="rpanel"
       data-status={travel.status}
+      data-region-id={region.id}
+      data-travel-status={travel.status}
+      data-province-photos={provincePhotos ? provincePhotos.length : -1}
+      data-province={province ? province.id : 'none'}
       role="dialog"
       aria-modal={false}
       aria-labelledby="rpanel-title"
@@ -190,6 +219,46 @@ export function RegionPanel({ region, label, photosById, province = null, onBack
               不代表作者到访、拍摄或收藏过这里——旅行记录由内容文件单独管理。
             </p>
           </section>
+
+          {/*
+            The province's photographs, decided by real capture coordinates.
+
+            This lives in the province branch because the panel's outer ternary
+            renders EITHER the province OR the country, and the country branch's
+            "travelled" section (with its photo list) never runs here — which is why
+            a province used to show no photographs at all.
+          */}
+          <section className="rpanel__section" aria-labelledby="rpanel-province-photos">
+            <h3 id="rpanel-province-photos" className="u-label">
+              这个省份的作品
+            </h3>
+
+            {provincePhotos && provincePhotos.length > 0 ? (
+              <>
+                <p className="rpanel__missing">
+                  共 {provincePhotos.length} 张，按拍摄点的真实坐标归入本省。
+                </p>
+                <ul className="rpanel__photos">
+                  {provincePhotos.map((photo) => (
+                    <li key={photo.src}>
+                      <img
+                        src={assetUrl(photo.src)}
+                        alt={photo.title}
+                        width={photo.width}
+                        height={photo.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="rpanel__missing">
+                这个省份还没有照片。照片按 EXIF 拍摄坐标归省，没有坐标的照片不会被猜进任何一个省。
+              </p>
+            )}
+          </section>
         </>
       ) : (
       <>
@@ -231,22 +300,37 @@ export function RegionPanel({ region, label, photosById, province = null, onBack
       </p>
 
       {/* ===================================================== VISITED ==== */}
-      {travel.status === 'visited' ? (
+      {/*
+        A selected province shows its own photographs even when the COUNTRY record is
+        what carries the visit: "travelled in China" and "photographed in Yunnan" are
+        different facts, and the panel is showing the province.
+      */}
+      {travel.status === 'visited' || (province && (provincePhotos?.length ?? 0) > 0) ? (
         <section className="rpanel__section" aria-labelledby="rpanel-visited">
           <h3 id="rpanel-visited" className="u-label">
             旅行记录
           </h3>
 
-          {travel.title ? <p className="rpanel__entry-title">{travel.title}</p> : null}
-
-          {travel.story ? (
-            <div className="rpanel__story u-prose">
-              {travel.story.split('\n\n').map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
-            </div>
+          {province ? (
+            <p className="rpanel__missing">
+              {provincePhotos && provincePhotos.length > 0
+                ? `这个省份共 ${provincePhotos.length} 张作品，按拍摄点的真实坐标归入。`
+                : '这个省份还没有照片。「去过」是以行政区的旅行记录为准的。'}
+            </p>
           ) : (
-            <p className="rpanel__missing">这次旅行还没有写下正文。</p>
+            <>
+              {travel.title ? <p className="rpanel__entry-title">{travel.title}</p> : null}
+
+              {travel.story ? (
+                <div className="rpanel__story u-prose">
+                  {travel.story.split('\n\n').map((para, i) => (
+                    <p key={i}>{para}</p>
+                  ))}
+                </div>
+              ) : (
+                <p className="rpanel__missing">这次旅行还没有写下正文。</p>
+              )}
+            </>
           )}
 
           {photos.length > 0 ? (

@@ -30,6 +30,7 @@ import { EarthGlobe, type GlobeControlApi } from './EarthGlobe';
 import { GeoIndex } from './geo-index';
 import { regionLabel, regionStats } from './regions';
 import { RegionPanel } from './RegionPanel';
+import { pickProvince } from './admin1-pick';
 import { GestureHud } from './gesture/GestureHud';
 import { Reticle } from './gesture/Reticle';
 import { loadAdmin1ForCountry, type Admin1Item } from './admin1';
@@ -135,6 +136,35 @@ export default function EarthPage() {
    */
   const admin1Ref = useRef<{ countryId: string; items: Admin1Item[] } | null>(null);
   admin1Ref.current = admin1;
+
+  /*
+   * The selected province's photographs, decided by their EXIF coordinates against
+   * the province polygons.
+   *
+   * Not from a per-province id list: photographs carry a real position, the province
+   * geometry is already loaded, and one point-in-polygon test per photo is cheaper
+   * than maintaining a mapping that goes stale on every import. A photo with no
+   * recorded position is left out rather than guessed into a province.
+   */
+  const provincePhotos = useMemo(() => {
+    if (!selectedProvince || !admin1) return null;
+    return PHOTOS.filter((photo) => {
+      if (typeof photo.latitude !== 'number' || typeof photo.longitude !== 'number') {
+        return false;
+      }
+      const found = pickProvince(admin1.items, photo.longitude, photo.latitude);
+      return found?.id === selectedProvince.id;
+    }).map((photo) => ({
+      src: photo.src,
+      thumb: photo.thumb,
+      title: photo.title,
+      width: photo.width,
+      height: photo.height,
+      tone: photo.tone,
+    }));
+  }, [selectedProvince, admin1]);
+
+
 
   /*
    * Which country's provinces are drawn when nothing is selected.
@@ -345,6 +375,7 @@ export default function EarthPage() {
           region={selected}
           label={regionLabel(selected.id, selected.nameEn)}
           photosById={photosById}
+          provincePhotos={provincePhotos}
           province={selectedProvince}
           onBackToCountry={() => setSelectedProvince(null)}
           onClose={returnToGlobal}

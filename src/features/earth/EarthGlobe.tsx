@@ -38,12 +38,6 @@ import type { Admin1Item } from './admin1';
 import { directionToLatLon, subSolarPoint , latLonToDirection } from './solar';
 import { pickProvince } from './admin1-pick';
 import {
-  buildPatchGeometry,
-  imageryExportUrl,
-  imagerySizeForDistance,
-  PATCH_HALF_DEG,
-} from './map-overlay';
-import {
   EARTH_POINTS_VERTEX,
   EARTH_POINTS_FRAGMENT,
   CITY_VERTEX,
@@ -166,15 +160,7 @@ const ADMIN1_R = 1.008;
 const PHOTO_PIN_R = 1.014;
 const PHOTO_PIN_DISTANCE = 2.4;
 
-/**
- * Camera distance at which the real basemap starts to appear.
- *
- * The patch covers about +-18 deg of sphere, so it is only shown once the visible
- * area is roughly that size; any earlier and the "detailed" layer would be a small
- * bright patch floating in the middle of the dots.
- */
-const OVERLAY_DISTANCE = 1.9;
-const OVERLAY_FADE_BAND = 0.28;
+
 const PHOTO_PIN_MAX = 60;
 
 /** Degrees per second of idle rotation. One revolution ≈ 2.5 minutes. */
@@ -439,7 +425,7 @@ export function EarthGlobe({
  * The globe has radius 1 and the camera's near plane is 0.1, so 1.10 pushes right
  * up against the surface without clipping through it.
  */
-const MIN_DISTANCE = 1.34;
+const MIN_DISTANCE = 1.12;
 const MAX_DISTANCE = 6.2;
       camera.position.copy(CAMERA_HOME);
 
@@ -575,89 +561,6 @@ const MAX_DISTANCE = 6.2;
       });
       const earthPoints = new THREE.Points(pointGeometry, pointMaterial);
 
-      /* ---- real basemap patch (Esri World Imagery) ---------------------------
-         One image per view, laid on the sphere patch the camera is looking at.
-         The endpoint is public and sends Access-Control-Allow-Origin: *, and it
-         delivers Web-Mercator (imageSR=3857), which is the projection the patch
-         vertices are laid out in — so the image lands with no resampling. */
-      const overlayMaterial = new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        toneMapped: false,
-      });
-      let overlayMesh: import('three').Mesh | null = null;
-      let overlayTexture: import('three').Texture | null = null;
-      let overlayRequestKey = '';
-      let overlayPending = false;
-      let overlayCenterLat = 999;
-      let overlayCenterLon = 999;
-
-      overlayMesh = new THREE.Mesh(buildPatchGeometry(1.0012, 0, 0, PATCH_HALF_DEG), overlayMaterial);
-      overlayMesh.visible = false;
-      // Imagery first, province layer after: the fill states what the visitor did,
-      // so it must never end up underneath a photograph of the ground.
-      overlayMesh.renderOrder = 1;
-      globe.add(overlayMesh);
-
-      const overlayLoader = new THREE.TextureLoader();
-      overlayLoader.setCrossOrigin('anonymous');
-
-      const updateBasemapPatch = () => {
-        if (!overlayMesh) return;
-
-        const appear = Math.max(0, Math.min(1, (OVERLAY_DISTANCE - distance) / OVERLAY_FADE_BAND));
-        overlayMaterial.opacity = appear * 0.96;
-        overlayMesh.visible = appear > 0.01;
-        // The dots step back rather than vanish: the point lattice is the identity
-        // of this globe, so it stays visible underneath the imagery.
-        pointMaterial.uniforms.uPointOpacity.value = 1 - appear * 0.6;
-        if (appear <= 0.01) return;
-
-        // Which point of the sphere is the camera looking at?
-        let centreLon = -180 - rotation.lon;
-        while (centreLon > 180) centreLon -= 360;
-        while (centreLon < -180) centreLon += 360;
-        const centreLat = Math.max(-70, Math.min(70, rotation.lat));
-
-        // Rebuild the patch only when the view has actually moved; rebuilding it
-        // every frame would allocate a geometry per frame for no visible gain.
-        if (Math.abs(centreLat - overlayCenterLat) > 1 || Math.abs(centreLon - overlayCenterLon) > 1) {
-          overlayCenterLat = centreLat;
-          overlayCenterLon = centreLon;
-          const old = overlayMesh.geometry;
-          overlayMesh.geometry = buildPatchGeometry(1.0012, centreLat, centreLon, PATCH_HALF_DEG);
-          old.dispose();
-        }
-
-        const size = imagerySizeForDistance(distance);
-        const requestKey = `${size}|${centreLat.toFixed(1)}|${centreLon.toFixed(1)}`;
-        if (requestKey === overlayRequestKey || overlayPending) return;
-        overlayRequestKey = requestKey;
-        overlayPending = true;
-
-        overlayLoader.load(
-          imageryExportUrl(centreLat, centreLon, PATCH_HALF_DEG, size),
-          (tex) => {
-            tex.colorSpace = THREE.SRGBColorSpace;
-            tex.minFilter = THREE.LinearFilter;
-            tex.magFilter = THREE.LinearFilter;
-            tex.generateMipmaps = false;
-            if (overlayTexture) overlayTexture.dispose();
-            overlayTexture = tex;
-            overlayMaterial.map = tex;
-            overlayMaterial.needsUpdate = true;
-            overlayPending = false;
-          },
-          undefined,
-          () => {
-            // Keep whatever image is already showing; a failed fetch must not
-            // blank the layer or throw.
-            overlayPending = false;
-          }
-        );
-      };
       globe.add(earthPoints);
 
       /* ---- clouds: removed (Stage 1). The brief forbids a cloud layer; the
@@ -1841,7 +1744,6 @@ const MAX_DISTANCE = 6.2;
         photoPinGroup.visible = distance < PHOTO_PIN_DISTANCE;
 
         updatePlaceLabels();
-        updateBasemapPatch();
         setAtmosphereForDistance(distance);
 
         /*
@@ -2119,12 +2021,6 @@ const MAX_DISTANCE = 6.2;
         specTex.dispose();
 
         pointGeometry.dispose();
-        if (overlayMesh) {
-          overlayMesh.geometry.dispose();
-          globe.remove(overlayMesh);
-        }
-        if (overlayTexture) overlayTexture.dispose();
-        overlayMaterial.dispose();
         pointMaterial.dispose();
 
         orbitDotGeometry.dispose();
