@@ -92,6 +92,9 @@ collections:
   # ========================================================= brand & identity
   - name: brand
     label: 个人品牌
+    description: >-
+      首页第一屏的文字都在这里：品牌名、副标题、标语，以及最重要的一句「个人宣言」。
+      改完点右上角保存并发布，约 2 分钟后网站更新。
     files:
       - name: identity
         label: 品牌与宣言
@@ -140,9 +143,8 @@ collections:
   - name: photography
     label: 摄影作品
     description: >-
-      照片在这里上传：每张作品的「原图」和「缩略图」都是图片字段。
-      每张作品必须有一个「唯一标识」id（英文小写加连字符）；旅行记录的 photoIds 引用的就是这个 id，
-      所以 id 定好之后不要随意更改。未填写的可选字段不会在页面上显示空标签。
+      上传一张作品 = 填标题、选分类、传原图。其余都可以留空。
+      图片的宽高请照着原图填（上传后图片右下角会显示尺寸），它决定页面不留白。
     files:
       - name: photos
         label: 作品列表
@@ -152,36 +154,43 @@ collections:
             label: 作品
             label_singular: 一张作品
             widget: list
-            summary: '{{fields.title}}'
+            summary: '{{fields.title}}  ·  {{fields.category}}'
             fields:
-              - { name: id, label: '唯一标识（英文小写加连字符）', widget: string, hint: '旅行记录的 photoIds 引用这个值。添加作品时先定好它，之后稳定不要改（改了要同步更新引用它的旅行记录）。' }
-              - { name: title, label: 标题, widget: string }
+              # ---- 必填的四样：标题、分类、原图、宽高 --------------------
+              - { name: id, label: '唯一标识', widget: string, hint: '英文小写加连字符，例如 2025-11-13-dali-01。旅行记录靠它引用这张照片，定好别改。' }
+              - { name: title, label: 标题, widget: string, hint: '页面和灯箱里显示的名字。' }
               - name: category
                 label: 分类
                 widget: select
                 options:
-                  - { label: 风光 landscape, value: landscape }
-                  - { label: 人像 portrait, value: portrait }
-                  - { label: '未分类 other（历史作品）', value: other }
-              - { name: src, label: 原图, widget: image }
-              - { name: thumb, label: '缩略图（可选，留空则用原图）', widget: image, required: false }
-              - { name: width, label: '宽度（像素）', widget: number, value_type: int, min: 1 }
-              - { name: height, label: '高度（像素）', widget: number, value_type: int, min: 1 }
-              - { name: description, label: 描述, widget: text }
-              - { name: tone, label: 主色调, widget: color, hint: '用于占位背景与灯箱环境色' }
-              - { name: takenAt, label: '拍摄时间（可选）', widget: string, required: false, hint: '未提供请留空，不要填写推测值' }
-              - { name: location, label: '拍摄地点（可选）', widget: string, required: false }
-              - { name: camera, label: '相机（可选）', widget: string, required: false }
-              - { name: lens, label: '镜头（可选）', widget: string, required: false }
-              - { name: feature, label: 使用大幅头条排版, widget: boolean, default: false }
-              - { name: order, label: 排序权重, widget: number, value_type: int, default: 0 }
+                  - { label: '风光', value: landscape }
+                  - { label: '人像', value: portrait }
+                  - { label: '未分类（历史作品）', value: other }
+                hint: '只影响摄影页的筛选，不影响地球上的位置。'
+              - { name: src, label: 原图, widget: image, hint: '灯箱里看的大图。建议长边 1920px。' }
+              - { name: width, label: 原图宽度, widget: number, value_type: int, min: 1, hint: '像素。上传后打开原图看一眼尺寸，照着填（例如 1920）。' }
+              - { name: height, label: 原图高度, widget: number, value_type: int, min: 1, hint: '像素。例如 1280。' }
+
+              # ---- 描述与拍摄信息：都可以留空 ----------------------------
+              - { name: description, label: 一句话描述, widget: text, required: false, hint: '会显示在大图下方。留空则不显示。' }
+              - { name: takenAt, label: 拍摄时间, widget: string, required: false, hint: '例如 2025-11-13。不知道就留空，不要猜。' }
+              - { name: location, label: 拍摄地点, widget: string, required: false, hint: '例如 云南 · 大理。' }
+              - { name: camera, label: 相机, widget: string, required: false, hint: '例如 Xiaomi 15 Pro。' }
+              - { name: lens, label: 镜头/参数, widget: string, required: false, hint: '例如 7mm f/1.4 1/76s ISO 125。' }
+              - { name: thumb, label: 缩略图, widget: image, required: false, hint: '可选。留空会自动用原图，但列表会更慢。建议长边 480px。' }
+
+              # ---- 技术字段：不认识就保持默认 ----------------------------
+              - { name: tone, label: 主色调, widget: color, required: false, default: '#8fa4bb', hint: '图片加载前占位用的底色。不确定就用默认值。' }
+              - { name: feature, label: 用大幅头图排版, widget: boolean, default: false, required: false, hint: '打开后这张会在摄影页占据整行。' }
+              - { name: order, label: 排序权重, widget: number, value_type: int, default: 0, required: false, hint: '数字越大越靠前。一般留 0。' }
               - name: provenance
                 label: 内容来源
                 widget: select
                 options:
-                  - { label: '真实拍摄 / real', value: real }
-                  - { label: '示例图像 / sample', value: sample }
+                  - { label: '真实拍摄', value: real }
+                  - { label: '示例图像', value: sample }
                 default: real
+                hint: '你自己拍的就选「真实拍摄」。示例图会带标记显示。'
 
   # =================================================================== riding
   #  NOTE: riding.json holds three sibling keys. Decap merges by key, so all
@@ -361,6 +370,8 @@ collections:
   # ================================================================== journal
   - name: journal
     label: 随笔与思考
+    description: >-
+      想写就写，不想写就空着。每条随笔有标题和正文，不需要图片。
     files:
       - name: entries
         label: 文章列表
@@ -489,6 +500,9 @@ collections:
   # ============================================================ site config
   - name: settings
     label: 网站设置
+    description: >-
+      首页背景图、站点标题这类全局设置。多数情况下你不需要改这里。
+      背景图留空就用默认的深色星空地平线。
     files:
       - name: site
         label: 基础设置
