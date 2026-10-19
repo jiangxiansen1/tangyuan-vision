@@ -38,11 +38,10 @@ import type { Admin1Item } from './admin1';
 import { directionToLatLon, subSolarPoint } from './solar';
 import { pickProvince } from './admin1-pick';
 import {
-  amapZoomForDistance,
   buildPatchGeometry,
+  imageryExportUrl,
+  imagerySizeForDistance,
   PATCH_HALF_DEG,
-  readAmapKey,
-  staticMapUrl,
 } from './map-overlay';
 import {
   EARTH_POINTS_VERTEX,
@@ -576,11 +575,11 @@ const MAX_DISTANCE = 6.2;
       });
       const earthPoints = new THREE.Points(pointGeometry, pointMaterial);
 
-      /* ---- real basemap patch (AMap static map) ------------------------------
+      /* ---- real basemap patch (Esri World Imagery) ---------------------------
          One image per view, laid on the sphere patch the camera is looking at.
-         Absent VITE_AMAP_KEY the whole layer is inert, so the globe behaves
-         exactly as before until a key is configured. */
-      const amapKey = readAmapKey();
+         The endpoint is public and sends Access-Control-Allow-Origin: *, and it
+         delivers Web-Mercator (imageSR=3857), which is the projection the patch
+         vertices are laid out in — so the image lands with no resampling. */
       const overlayMaterial = new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
@@ -595,17 +594,18 @@ const MAX_DISTANCE = 6.2;
       let overlayCenterLat = 999;
       let overlayCenterLon = 999;
 
-      if (amapKey) {
-        overlayMesh = new THREE.Mesh(buildPatchGeometry(1.0012, 0, 0, PATCH_HALF_DEG), overlayMaterial);
-        overlayMesh.visible = false;
-        globe.add(overlayMesh);
-      }
+      overlayMesh = new THREE.Mesh(buildPatchGeometry(1.0012, 0, 0, PATCH_HALF_DEG), overlayMaterial);
+      overlayMesh.visible = false;
+      // Imagery first, province layer after: the fill states what the visitor did,
+      // so it must never end up underneath a photograph of the ground.
+      overlayMesh.renderOrder = 1;
+      globe.add(overlayMesh);
 
       const overlayLoader = new THREE.TextureLoader();
       overlayLoader.setCrossOrigin('anonymous');
 
       const updateBasemapPatch = () => {
-        if (!amapKey || !overlayMesh) return;
+        if (!overlayMesh) return;
 
         const appear = Math.max(0, Math.min(1, (OVERLAY_DISTANCE - distance) / OVERLAY_FADE_BAND));
         overlayMaterial.opacity = appear * 0.96;
@@ -631,14 +631,14 @@ const MAX_DISTANCE = 6.2;
           old.dispose();
         }
 
-        const zoom = amapZoomForDistance(distance);
-        const requestKey = `${zoom}|${centreLat.toFixed(1)}|${centreLon.toFixed(1)}`;
+        const size = imagerySizeForDistance(distance);
+        const requestKey = `${size}|${centreLat.toFixed(1)}|${centreLon.toFixed(1)}`;
         if (requestKey === overlayRequestKey || overlayPending) return;
         overlayRequestKey = requestKey;
         overlayPending = true;
 
         overlayLoader.load(
-          staticMapUrl({ lat: centreLat, lon: centreLon, zoom, key: amapKey! }),
+          imageryExportUrl(centreLat, centreLon, PATCH_HALF_DEG, size),
           (tex) => {
             tex.colorSpace = THREE.SRGBColorSpace;
             tex.minFilter = THREE.LinearFilter;
@@ -904,6 +904,8 @@ const MAX_DISTANCE = 6.2;
          from real chunk data via syncAdmin1(); never invented. */
       const admin1Group = new THREE.Group();
       admin1Group.visible = false;
+      // Above the basemap patch, so visited provinces stay legible over imagery.
+      admin1Group.renderOrder = 3;
       globe.add(admin1Group);
       let admin1Key = '';
       let admin1Lines: import('three').LineSegments | null = null;
@@ -1042,7 +1044,7 @@ const MAX_DISTANCE = 6.2;
         if (!out.length) return;
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(out), 3));
-        const mat = new THREE.LineBasicMaterial({ color: 0x8fc7ff, transparent: true, opacity: 0.42, depthWrite: false });
+        const mat = new THREE.LineBasicMaterial({ color: 0xa8d8ff, transparent: true, opacity: 0.6, depthWrite: false });
         admin1Lines = new THREE.LineSegments(geo, mat);
         admin1Group.add(admin1Lines);
 
@@ -1141,9 +1143,12 @@ const MAX_DISTANCE = 6.2;
             const fgeo = new THREE.BufferGeometry();
             fgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(fill), 3));
             const fmat = new THREE.MeshBasicMaterial({
-              color: 0x4fc3ff,
+              color: 0x5ec8ff,
               transparent: true,
-              opacity: 0.3,
+              // Raised from 0.30: over satellite imagery a thin wash disappears,
+              // and this layer is the one piece of information the visitor cares
+              // about most.
+              opacity: 0.42,
               depthWrite: false,
               side: THREE.DoubleSide,
               blending: THREE.AdditiveBlending,

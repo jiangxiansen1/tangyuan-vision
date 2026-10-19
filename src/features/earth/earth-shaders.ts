@@ -329,6 +329,11 @@ export const EARTH_POINTS_FRAGMENT = /* glsl */ `
   uniform vec3  uAtmosphereColor;
   uniform float uAtmosphereStrength;
   uniform vec3  uCameraPosition;
+  /* Global fade for the dot lattice, so the real basemap patch can cross-fade
+     over it instead of cutting. Declared HERE, in the DOT shader: an earlier edit
+     put the declaration into a different shader, and this program then failed to
+     compile with "uPointOpacity : undeclared identifier". */
+  uniform float uPointOpacity;
 
   varying vec2 vUv;
   varying vec3 vNormalW;

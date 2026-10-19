@@ -9,27 +9,42 @@
  * tiles and would stall on every pan.
  *
  * So only the patch of sphere you are actually looking at gets a real basemap,
- * roughly the central ±18°. At that scale a Mercator image and the sphere differ
- * by well under a pixel, which is why the image can be laid on directly.
+ * roughly the central ±18°.
  *
- * WHY THE STATIC MAP API
- * AMap's "Web service" key grants REST endpoints, not XYZ tiles — AMap publishes
- * no public tile endpoint. /v3/staticmap returns a rendered image of a bounding
- * region, which is exactly what a patch needs: one request per view, not a tile
- * pyramid.
+ * WHY THE ESRI EXPORT ENDPOINT
+ * Esri's World_Imagery MapServer exposes /export, which returns ONE rendered
+ * image for a bounding box in a chosen spatial reference. Measured against the
+ * live service:
+ *
+ *   imageSR=3857  -> 200, image/jpeg, Access-Control-Allow-Origin: *
+ *
+ * That is the ideal primitive here: one request per view instead of a tile
+ * pyramid, delivered in Web-Mercator, which is the SAME projection the patch's
+ * vertices are laid out in (see buildPatchGeometry). The image therefore lands on
+ * the sphere with no resampling at all.
+ *
+ * The imagery is a public Esri endpoint, so no token is required. Attribution is
+ * shown in the page footer, which is what Esri's terms ask for.
  */
 
 import * as THREE from 'three';
-import { AMAP_KEY } from './amap-key';
 
 /** Half-size of the covered patch, in degrees of latitude. */
 export const PATCH_HALF_DEG = 18;
 
-/** AMap zoom that corresponds to a camera distance. Verified against the map's
- *  own scale: zoom 16 shows a few city blocks, zoom 4 shows a continent. */
-export function amapZoomForDistance(distance: number): number {
-  const z = 16.5 - (distance - 1.1) * 2.6;
-  return Math.max(3, Math.min(17, Math.round(z)));
+/**
+ * Pixel resolution to request for a given camera distance.
+ *
+ * The patch always covers the same 36 degrees of sphere, so the delivered image
+ * is what changes: closer to the surface the same angular patch is drawn across
+ * more screen pixels, and the request has to keep up. 2048 is the largest size the
+ * service reliably returns in one go.
+ */
+export function imagerySizeForDistance(distance: number): number {
+  if (distance < 1.35) return 2048;
+  if (distance < 1.6) return 1600;
+  if (distance < 1.8) return 1280;
+  return 1024;
 }
 
 /** Web-Mercator Y for a latitude, normalised to 0..1 (north = 0). */
@@ -98,44 +113,32 @@ export function buildPatchGeometry(radius: number, lat0: number, lon0: number, h
   return geo;
 }
 
-export interface StaticMapRequest {
-  lat: number;
-  lon: number;
-  zoom: number;
-  key: string;
-  /** Pixel size per side before the `scale` multiplier (max 1024). */
-  size?: number;
-  scale?: number;
-}
-
 /**
- * Build the AMap static-map URL for a centred view.
+ * Build the World Imagery export URL for a centred patch.
  *
- * `scale=2` doubles the delivered resolution, so the default request is
- * effectively 2048x2048 — enough that the patch does not look soft when the
- * camera is at its closest.
+ * bbox is (minLon, minLat, maxLon, maxLat) in WGS84; imageSR=3857 asks Esri to
+ * deliver it in Web Mercator, matching the patch geometry exactly.
+ * f=image makes the service return the picture directly instead of JSON metadata.
  */
-export function staticMapUrl({ lat, lon, zoom, key, size = 1024, scale = 2 }: StaticMapRequest): string {
+export function imageryExportUrl(
+  lat: number,
+  lon: number,
+  halfDeg: number,
+  size: number,
+): string {
+  const north = Math.min(85, lat + halfDeg);
+  const south = Math.max(-85, lat - halfDeg);
+  const west = lon - halfDeg;
+  const east = lon + halfDeg;
   const params = new URLSearchParams({
-    location: `${lon.toFixed(6)},${lat.toFixed(6)}`,
-    zoom: String(zoom),
-    size: `${size}*${size}`,
-    scale: String(scale),
-    key,
+    bbox: `${west.toFixed(5)},${south.toFixed(5)},${east.toFixed(5)},${north.toFixed(5)}`,
+    bboxSR: '4326',
+    imageSR: '3857',
+    size: `${size},${size}`,
+    format: 'jpg',
+    f: 'image',
   });
-  return `https://restapi.amap.com/v3/staticmap?${params.toString()}`;
+  return `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?${params.toString()}`;
 }
 
-/**
- * Read the build-time key. Absent = the whole basemap layer stays off.
- *
- * `__AMAP_KEY__` is a plain global injected by vite.config.ts rather than a
- * VITE_* variable, because Vite owns `import.meta.env.*` and ignores define()
- * entries aimed at it. `typeof` guards the case where the global was not injected
- * at all (a build made without the define).
- */
-export function readAmapKey(): string | null {
-  const fromEnv = (import.meta.env as Record<string, string | undefined>).VITE_AMAP_KEY;
-  const key = (fromEnv ?? AMAP_KEY ?? '').trim();
-  return key ? key : null;
-}
+
