@@ -280,3 +280,131 @@
     animation: none;
   }
 }
+
+/* ======================================================= GitHub 仓库列表 =====
+   仓库内容来自 GitHub API，不是 Content 里的静态数据，所以样式也放在这里而不是
+   content 驱动的那套里。 */
+.ghrepo {
+  margin-top: clamp(2.5rem, 6vw, 4.5rem);
+  padding-top: clamp(1.5rem, 3vw, 2rem);
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.ghrepo__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.ghrepo__profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
+  transition: color var(--t-fast) var(--ease-standard);
+}
+
+.ghrepo__profile:hover {
+  color: var(--color-text);
+}
+
+.ghrepo__note {
+  font-size: 0.88rem;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  line-height: 1.7;
+}
+
+.ghrepo__note a {
+  color: var(--scene-accent, #8fe3ff);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ghrepo__list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+}
+
+.ghrepo__item {
+  padding: 0.9rem 1rem;
+  border-radius: var(--r-md, 10px);
+  border: 1px solid color-mix(in srgb, var(--color-text) 10%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #0b0e13) 55%, transparent);
+  transition:
+    border-color var(--t-fast) var(--ease-standard),
+    transform var(--t-fast) var(--ease-standard);
+}
+
+.ghrepo__item:hover {
+  border-color: color-mix(in srgb, var(--scene-accent, #8fe3ff) 40%, transparent);
+  transform: translateY(-1px);
+}
+
+.ghrepo__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.ghrepo__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.9rem;
+  letter-spacing: -0.01em;
+}
+
+.ghrepo__badge {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-family: var(--font-body, system-ui);
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+}
+
+.ghrepo__desc {
+  margin: 0.4rem 0 0.55rem;
+  font-size: 0.83rem;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--color-text) 62%, transparent);
+}
+
+.ghrepo__desc--empty {
+  color: color-mix(in srgb, var(--color-text) 34%, transparent);
+  font-style: italic;
+}
+
+.ghrepo__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--color-text) 45%, transparent);
+}
+
+.ghrepo__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ghrepo__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

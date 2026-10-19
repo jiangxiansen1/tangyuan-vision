@@ -21,6 +21,7 @@ import { ProvenanceBadge, PendingMarker } from '@/components/ui/ProvenanceBadge'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useRevealOnView } from '@/hooks/useRevealOnView';
 import { playSfx } from '@/store/useSoundStore';
+import { GitHubRepos } from './GitHubRepos';
 import './projects.css';
 
 const route = NAVIGABLE_ROUTES.find((r) => r.id === 'projects')!;
@@ -107,6 +108,7 @@ export default function ProjectsPage() {
           <span>返回主空间</span>
         </Link>
       </div>
+          <GitHubRepos />
     </SceneLayout>
   );
 }

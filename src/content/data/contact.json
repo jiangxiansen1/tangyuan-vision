@@ -22,10 +22,10 @@
       "id": "github",
       "label": "GitHub",
       "labelEn": "GitHub",
-      "handle": null,
-      "url": null,
+      "handle": "jiangxiansen1",
+      "url": "https://github.com/jiangxiansen1",
       "confirmed": false,
-      "note": "未提供。需要你真实的 GitHub 主页地址（https://github.com/<用户名>）才会显示为链接。"
+      "note": "代码与这个网站的仓库"
     }
   ],
   "privacyNote": "隐私原则：本站只使用昵称「汤圆Vision」，不公开真实姓名、手机号、住址或任何个人敏感信息。联系方式只有抖音、邮箱、GitHub 三个可编辑字段，未填写前一律显示为待填写状态，不会伪造账号或指向空锚点的假链接。",
